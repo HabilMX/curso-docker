@@ -1,0 +1,36 @@
+
+## Un subcomando, sin servidor
+$ docker run --rm --name curso-docker-version curso-docker-revisor:1.2.0 version
+desarrollo
+
+## Como servicio
+$ docker run -d --name curso-docker-revisor -p 127.0.0.1:8080:8080 -e REVISOR_SERVICIOS='propio http://127.0.0.1:8080/salud' curso-docker-revisor:1.2.0 >/dev/null
+$ curl -s http://127.0.0.1:8080/salud; echo
+{"estado":"vivo","version":"desarrollo"}
+
+$ curl -s 'http://127.0.0.1:8080/api/estados?formato=tabla' | sed -E 's/[0-9.]+(ms|µs)/<tiempo>/'
+SERVICIO  ESTADO    TIEMPO  DETALLE
+propio    OK           <tiempo>  200
+
+## Sin shell y sin root
+$ docker exec curso-docker-revisor sh
+OCI runtime exec failed: exec failed: unable to start container process: exec: "sh": executable file not found in $PATH
+[código de salida: 127]
+$ docker inspect --format 'User={{.Config.User}} Entrypoint={{.Config.Entrypoint}} Cmd={{.Config.Cmd}}' curso-docker-revisor
+User=65532:65532 Entrypoint=[/revisor] Cmd=[]
+$ docker top curso-docker-revisor -o pid,user,args
+PID                 USER                COMMAND
+1451351             65532               /revisor
+
+## Detenerlo
+docker stop tardó 298 ms
+$ docker inspect --format 'ExitCode={{.State.ExitCode}}' curso-docker-revisor
+ExitCode=0
+$ docker logs curso-docker-revisor
+revisor desarrollo escuchando en :8080 (1 servicio(s))
+revisor: GET /salud 200 0s
+revisor: GET /salud 200 0s
+revisor: GET /salud 200 0s
+revisor: GET /api/estados 200 8ms
+revisor: recibí terminated, apagando
+revisor: apagado limpio

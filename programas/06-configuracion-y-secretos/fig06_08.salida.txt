@@ -1,0 +1,23 @@
+$ ./fig06_08.sh
+== 1. Olvidar --secret cuando el Dockerfile dice required=true
+ERROR: failed to build: failed to solve: secret netrc: not found
+[código de salida: 1]
+
+== 2. Con --secret: el RUN lo recibe
+#7 0.092 durante el RUN: /root/.netrc existe y mide 37 bytes
+#7 0.093 -r-------- 1 root root 37 Oct 21 09:17 /root/.netrc
+
+== 3. Terminado el RUN, ¿qué quedó en /root?
+total 8
+-rw-r--r-- 1 root root 607 Jul 17 17:05 .bashrc
+-rw-r--r-- 1 root root 132 Jul 17 17:05 .profile
+
+== 4. ¿Y en el historial? Ni el valor ni el archivo: solo la instrucción
+RUN /bin/sh -c echo "durante el RUN: /root/.netrc existe y mide $(wc -c < /root/.netrc) bytes"  && ls -l /root/.netrc # buildkit
+-- renglones del historial con el valor del secreto:
+0
+
+== 5. El revisor real, construido con el secreto (opcional en su Dockerfile)
+construida
+-- renglones del historial con el valor del secreto:
+0

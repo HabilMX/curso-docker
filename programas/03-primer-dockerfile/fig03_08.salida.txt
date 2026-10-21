@@ -1,0 +1,56 @@
+$ ./fig03_08.sh
+
+## Revisar el Dockerfile antes de construir
+$ docker build --check .
+#0 building with "colima" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 372B 0.0s done
+#1 DONE 0.0s
+
+#2 resolve image config for docker-image://docker.io/docker/dockerfile:1
+#2 DONE 0.2s
+
+#3 docker-image://docker.io/docker/dockerfile:1@sha256:4edf897a3ffa55b89f906fc8cc78afdb3f1834cc9c7083565e611a8a7d5fe99e
+#3 resolve docker.io/docker/dockerfile:1@sha256:4edf897a3ffa55b89f906fc8cc78afdb3f1834cc9c7083565e611a8a7d5fe99e 0.0s done
+#3 CACHED
+
+#4 [internal] load metadata for docker.io/library/golang:1.27.3-trixie
+#4 DONE 0.2s
+
+#5 [internal] load .dockerignore
+#5 transferring context: 127B 0.0s done
+#5 DONE 0.0s
+Check complete, no warnings found.
+$ docker build --check -f Dockerfile.forma-shell .
+#0 building with "colima" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile.forma-shell
+#1 transferring dockerfile: 355B done
+#1 DONE 0.0s
+
+#2 resolve image config for docker-image://docker.io/docker/dockerfile:1
+#2 DONE 0.2s
+
+#3 docker-image://docker.io/docker/dockerfile:1@sha256:4edf897a3ffa55b89f906fc8cc78afdb3f1834cc9c7083565e611a8a7d5fe99e
+#3 resolve docker.io/docker/dockerfile:1@sha256:4edf897a3ffa55b89f906fc8cc78afdb3f1834cc9c7083565e611a8a7d5fe99e 0.0s done
+#3 CACHED
+
+#4 [internal] load metadata for docker.io/library/golang:1.27.3-trixie
+#4 DONE 0.1s
+
+#5 [internal] load .dockerignore
+#5 transferring context: 127B done
+#5 DONE 0.0s
+Check complete, 1 warning has been found!
+
+WARNING: JSONArgsRecommended - https://docs.docker.com/go/dockerfile/rule/json-args-recommended/
+JSON arguments recommended for CMD to prevent unintended behavior related to OS signals
+Dockerfile.forma-shell:10
+--------------------
+   8 |     USER 10001:10001
+   9 |     EXPOSE 8080
+  10 | >>> CMD revisor
+  11 |     
+--------------------
+[código de salida: 1]

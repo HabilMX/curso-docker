@@ -1,0 +1,24 @@
+$ ./fig08_08.sh
+== 1. Dos redes: la normal y la interna
+curso-docker-red-fig08 driver=bridge interna=false
+curso-docker-interna-fig08 driver=bridge interna=true
+
+== 2. El servicio de prueba, solo en la interna; el revisor, solo en la normal
+SERVICIO  ESTADO    TIEMPO  DETALLE
+prueba    FALLA        <t>  no responde: Get "http://curso-docker-prueba-fig08:9000/": dial tcp: lookup curso-docker-prueba-fig08 on 127.0.0.11:53: no such host
+
+== 3. Conectar el revisor también a la interna, sin reiniciarlo
+SERVICIO  ESTADO    TIEMPO  DETALLE
+prueba    OK           <t>  200
+curso-docker-interna-fig08 curso-docker-red-fig08 
+-- el puerto publicado sigue en 127.0.0.1:
+8080/tcp -> 127.0.0.1:<puerto>
+
+== 4. Desde la red interna no hay salida a internet
+wget: bad address 'www.docker.com'
+[código de salida: 1]
+-- pero la puerta de enlace de la red interna sí contesta:
+<IP>/16 dev eth0 scope link  src <IP> 
+1 packets transmitted, 1 packets received, 0% packet loss
+-- desde la red normal, sí:
+desde la red normal sí hay salida

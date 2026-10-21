@@ -1,0 +1,14 @@
+$ ./fig03_04.sh
+== 1. SIN .dockerignore: lo que hay en /src dentro de la imagen
+.env
+Dockerfile
+cmd
+go.mod
+internal
+-- y el .env, leído desde la imagen:
+REVISOR_TOKEN=curso-docker-env-de-mentira-3c1d
+
+== 2. CON .dockerignore: lo que hay en /src dentro de la imagen
+cmd
+go.mod
+internal

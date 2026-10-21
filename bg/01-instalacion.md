@@ -1,0 +1,1047 @@
+# Урок 1 — Инсталиране на Docker на твоя Linux Mint
+
+Девет и четирийсет е, понеделник, а демонстрацията пред екипа е в 11. Твой ред е да покажеш `revisor`, работещ в контейнер, а на твоя Linux Mint още няма Docker. Отваряш първото ръководство, което излиза, копираш пет команди и четвъртата ти отговаря в червено: `E: The repository 'https://download.docker.com/linux/ubuntu zena Release' does not have a Release file.` Пробваш друго ръководство; то инсталира пакет на име `docker.io` от магазина за софтуер и изглежда, че работи, докато `docker compose` не каже, че не съществува. В 10:25 намираш трето ръководство, което ти препоръчва, за да се отървеш от `permission denied`, което вече излиза при всяка команда, да дадеш права `777` на файла на *сокета*. Работи. И току-що отвори вратата към `root` на компютъра си за всяка програма, която работи на него. Нито едно от трите ръководства не ти каза защо се случва всяко нещо. Този урок прави инсталацията веднъж, подред, като всяка грешка е предизвикана нарочно и обяснена, така че следващия път да ти отнеме двайсет минути, а не цяла сутрин.
+
+**Време:** 90 мин
+
+**Какво изграждаш:** средата на курса. Docker Engine, инсталиран на твоя Linux Mint от официалното хранилище на Docker, твоя потребител в групата `docker`, като знаеш какво означава това, и първия ти контейнер, `hello-world`. Съдържа седем кратки програми за диагностика и проверка в [`programas/01-instalacion/`](../programas/01-instalacion).
+
+**Какво научаваш:** кои части инсталираш и за какво служи всяка; защо Linux Mint не е официална платформа на Docker и какво да направиш по въпроса (ключовата дума е `UBUNTU_CODENAME`); да премахнеш пакетите, които влизат в конфликт с официалните; как се добавя хранилище към `apt` заедно с неговия ключ; как да провериш, че инсталацията работи; и защо членството в групата `docker` е равносилно на `root`.
+
+**Откъде идваш.** От [Урок 0](00-que-es-un-contenedor.md) носиш картата: контейнерът е изолиран процес, който работи върху ядрото на твоя компютър; Docker са две програми, клиентът `docker` и демонът `dockerd`, които си говорят през *сокет* на UNIX в `/var/run/docker.sock`; и демонът работи като `root`. Този урок инсталира тези части и те кара да погледнеш право в очите последното изречение. От курса като цяло се приема за известно, че работиш уверено с терминал и знаеш какво е `sudo`. Не е нужно да си използвал `apt` отвъд `apt install`: онова, което ти трябва от него, се обяснява тук.
+
+**Какво не прави този урок.** Не преподава командите на Docker една по една: това е тема на [Урок 2](02-contenedores-dia-a-dia.md). Не инсталира Docker Desktop, настолното приложение на Docker, а в 1.1 се казва защо. Не инсталира Docker в режим *rootless* (без `root`), макар че в 1.9 се обяснява какво е и кога би бил подходящ. `revisor` още не се появява: този урок подготвя компютъра, на който ще работи, а пакетирането му започва в Урок 3. И не обхваща други дистрибуции: ако използваш Ubuntu, Debian или Fedora, [официалната документация](https://docs.docker.com/engine/install/) има ръководство за всяка от тях, а наученото тук ще ти помогне да го разчетеш.
+
+**За изпълненията.** Този урок се различава от останалите в едно отношение и е добре да се каже преди всичко друго: **самата инсталация не е изпълнена на Linux Mint**, защото компютърът, на който е написан курсът, е Mac. За да не ти се показват измислени изходи, всеки блок с изход в този урок казва откъде идва, с един от тези три етикета:
+
+| Етикет | Какво означава |
+|---|---|
+| **Реално изпълнение · симулиран Mint** | Изпълнено наистина, на 21 октомври 2026 г., в контейнер с Ubuntu 24.04 за `amd64` (основата на Mint 22, с архитектурата на компютър с Intel или AMD), в който е поставен файлът `/etc/os-release` **на Linux Mint 22.3**, взет от официалния пакет `base-files` от [хранилището на Linux Mint](http://packages.linuxmint.com/) (версия `13ubuntu10mint22.3.0`; копието е в `programas/01-instalacion/os-release-mint-22.3.txt`). Този файл е единственото, което отличава Mint в стъпките на инсталацията, и затова симулацията е вярна в онова, което има значение. Какво **не е** същото: контейнерът няма собствените хранилища на Mint, така че твоите `apt update` ще показват и редове от `packages.linuxmint.com`; а пакетите, които пълният работен плот вече съдържа (`curl`, например), в контейнера трябваше да бъдат инсталирани. Преди да се пуснат скриптовете, в контейнера беше инсталиран `sudo`, който твоят Mint вече има. |
+| **Реално изпълнение · виртуална машина** | Изпълнено наистина, в същия ден, във виртуалната машина с Ubuntu 24.04.4 (arm64), която [Colima](https://github.com/abiosoft/colima) стартира на Mac. На тази машина Docker 29.2.1 е инсталиран **със същите официални пакети**, които инсталираш и ти (`docker-ce`, `containerd.io` и останалите, от `download.docker.com`), така че проверките след инсталацията изглеждат еднакво. Какво се променя на твоя компютър: версиите, а `arm64` ще бъде `amd64`. |
+| **От документацията** | Не е изпълнено: това е текстът на [официалното ръководство за инсталиране на Ubuntu](https://docs.docker.com/engine/install/ubuntu/) или на [стъпките след инсталацията](https://docs.docker.com/engine/install/linux-postinstall/), прегледани на 21 октомври 2026 г. Използва се само там, където нямаше честен начин да се изпълни. |
+
+Версиите: курсът беше планиран с Docker Engine 29.8.2 и Compose v5.6.0 (измерени на 7 октомври 2026 г.). В деня на тези изпълнения официалното хранилище предлагаше **29.9.2**, от 20 октомври 2026 г. ([бележки към версиите](https://docs.docker.com/engine/release-notes/29/)), с Compose 5.6.0 и Buildx 0.38.1, и това е, което би инсталирал ти в този ден; виртуалната машина на изпълненията беше с 29.2.1. Нищо от онова, на което учи този урок, не се променя между тези версии, а в 1.7 ще научиш как да видиш своята. Програмите са в [`programas/01-instalacion/`](../programas/01-instalacion), всяка със запазения си изход до нея.
+
+## След урока ще можеш да
+
+- Разчетеш `/etc/os-release` и кажеш кое кодово име на Ubuntu съответства на твоя Mint и защо това, а не това на Mint.
+- Премахнеш пакетите, които влизат в конфликт с Docker Engine, и обясниш защо влизат в конфликт.
+- Добавиш официалното хранилище на Docker към `apt`, като обясниш за какво служи всеки ред, включително ключът.
+- Инсталираш петте пакета на Docker Engine и назовеш какво прави всеки от тях.
+- Провериш с четири команди, че услугата работи, коя версия имаш и че можеш да създадеш контейнер.
+- Разчетеш грешката `permission denied while trying to connect to the docker API` и я поправиш, като добавиш потребителя си в групата `docker`.
+- Покажеш с една команда защо групата `docker` е равносилна на `root` и назовеш две алтернативи.
+
+## Защо, преди как
+
+Инсталирането на програма в Linux обикновено е един ред: `sudo apt install нещо`. С Docker може да се направи така — твоят Mint предлага пакет на име `docker.io` — а официалното ръководство на Docker иска от теб точно обратното: **да го премахнеш**. Защо толкова церемонии?
+
+Защото има два източника на пакети на Docker и те не са еднакви. Първият е твоята дистрибуция: Ubuntu (а следователно и Mint) пакетира Docker със свои имена, със свое темпо и често във версия, която изостава. Вторият е Docker, компанията, която публикува пакетите си в собствено хранилище, `download.docker.com`, в същия ден, в който публикува всяка версия. Официалното ръководство нарича първите „неофициални“ и иска от теб вторите ([Docker, инсталиране на Ubuntu](https://docs.docker.com/engine/install/ubuntu/)). Този курс използва официалните по практическа причина: всичко, на което учи — *plugin*-ът Compose, инструментът за изграждане Buildx, версиите, които се споменават — е измерено с тях, а онова, което четеш в документацията на Docker, се отнася до тях.
+
+Втората причина за церемонията е самият Mint. Mint е изграден върху Ubuntu, но не е Ubuntu, и Docker не го поддържа официално. Това не означава, че не работи: означава, че в една точно определена стъпка от инсталацията трябва да кажеш на `apt` да се държи така, сякаш си Ubuntu. Това е един-единствен ред и именно той счупи първото ръководство от сцената.
+
+А третата е сигурността. След края на инсталацията демонът работи като `root` и слуша на *сокет*. Който може да пише в този *сокет*, командва демона, а който командва демона, командва компютъра ти. Затова инсталацията завършва с решение, което взимаш ти, като знаеш какво решаваш: кой може да говори с демона.
+
+Урокът следва реда, в който би направил инсталацията:
+
+1. **Какво ще инсталираш** (1.1).
+2. **Mint не е Ubuntu: кодовото име** (1.2).
+3. **Преди инсталирането: защитната стена** (1.3).
+4. **Премахване на онова, което влиза в конфликт** (1.4).
+5. **Официалното хранилище**, с грешката на Mint, предизвикана и поправена (1.5).
+6. **Инсталиране на пакетите** (1.6) и **проверка** (1.7).
+7. **Групата `docker`** (1.8) и **защо е равносилна на `root`** (1.9).
+8. **Обновяване и деинсталиране** (1.10).
+
+С тази цел пред очи, ето какво ще видиш в края на 1.7, когато всичко е на мястото си (реално изпълнение · виртуална машина):
+
+```text
+Hello from Docker!
+This message shows that your installation appears to be working correctly.
+```
+
+## Понятията
+
+### 1.1 Какво ще инсталираш
+
+#### 1.1.1 Петте части
+
+Официалното ръководство инсталира пет пакета с една команда. Добре е да знаеш какво е всеки от тях, преди да ги инсталираш, защото всеки съответства на част от картата от Урок 0:
+
+| Пакет | Какво съдържа | В картата от Урок 0 |
+|---|---|---|
+| `docker-ce` | демона, `dockerd` (*CE* е *Community Edition*, безплатното издание с отворен код) | сървърът, който върши работата |
+| `docker-ce-cli` | клиента, командата `docker`, която въвеждаш | клиентът |
+| `containerd.io` | `containerd`, който управлява контейнерите под демона, и `runc`, който ги създава | веригата, която завършва с `containerd-shim-runc-v2`, който видя като родител на контейнер |
+| `docker-buildx-plugin` | Buildx, инструментът за изграждане на образи | ще го използваш, когато напишеш първия си Dockerfile |
+| `docker-compose-plugin` | Compose, който стартира няколко контейнера от един файл | подкомандата `docker compose` |
+
+Последните два са *plugin*-и: не са програми, които извикваш по име, а подкоманди, които се добавят към клиента. Затова се пише `docker compose`, с интервал, а не `docker-compose`, с тире. Онзи с тирето е старият Compose, отделна програма, и пакетът му е в списъка на онези, които трябва да се премахнат (1.4).
+
+Обърни внимание на името `containerd.io`. Docker Engine се нуждае от `containerd` и `runc`, а твоята дистрибуция също ги предлага с тези имена. Официалното ръководство го обяснява: Docker ги пакетира заедно в един-единствен пакет, `containerd.io`, и ако преди това си инсталирал тези на дистрибуцията си, трябва да ги премахнеш, за да не влизат в конфликт ([Docker, инсталиране на Ubuntu](https://docs.docker.com/engine/install/ubuntu/)).
+
+#### 1.1.2 Какво няма да инсталираш и защо
+
+**Docker Desktop.** Това е настолно приложение на Docker, което съществува и за Linux, и ръководството го представя като „най-лесния и бърз начин да започнеш“. Курсът не го използва по причина, която вече знаеш: според собствената му документация „Docker Desktop в Linux пуска виртуална машина“ ([Docker Desktop за Linux](https://docs.docker.com/desktop/setup/install/linux/)). Спомни си 0.2: причината да се използва Linux като референтна система е, че контейнерите работят направо върху твоето ядро, без слой по средата. Docker Desktop отново слага този слой. Ако някой ден го инсталираш, ще знаеш защо `ps` на твоя Mint не показва процесите на контейнерите: те са вътре в друга машина.
+
+**Скриптът за удобство.** Docker публикува на `get.docker.com` скрипт, който разпознава дистрибуцията ти и инсталира всичко наведнъж. Ръководството казва, че „не се препоръчва за производствени среди“, че инсталира зависимости и препоръчани пакети, без да пита, че не позволява да избереш почти нищо и че не е предназначен за обновяване на съществуваща инсталация ([Docker, скрипт за удобство](https://docs.docker.com/engine/install/ubuntu/#install-using-the-convenience-script)). Има и друга, по-проста причина: в един курс скрипт, който прави всичко, ти отнема точно онова, което си дошъл да научиш. Ако го срещнеш в някое ръководство, вече знаеш какво е.
+
+**Режимът *rootless*.** Това е начин демонът да работи без `root`. Ще го видиш в 1.9 като алтернатива; курсът използва нормалния режим, който инсталира ръководството и който ще намериш на почти всеки сървър.
+
+### 1.2 Mint не е Ubuntu: кодовото име
+
+#### 1.2.1 Какво казва Docker за Mint
+
+Официалното ръководство за Ubuntu изброява версиите, които поддържа: 26.10, 26.04, 24.04 и 22.04, всички 64-битови. А под тях има следната бележка: „инсталирането на дистрибуции, производни на Ubuntu, като Linux Mint, не се поддържа официално (макар че може да работи)“ ([Docker, инсталиране на Ubuntu](https://docs.docker.com/engine/install/ubuntu/)).
+
+„Без официална поддръжка“ има точно значение: Docker не тества пакетите си на Mint и не публикува папка за Mint в хранилището си. Има обаче папка за всяка версия на Ubuntu. А Mint 22 е изграден върху пакетите на Ubuntu 24.04. Самата страница за изтегляне на Linux Mint го казва в колоната „Package base“: Mint 22, 22.1, 22.2 и 22.3 имат за основа „Ubuntu Noble“, с поддръжка до април 2029 г. ([Linux Mint, всички версии](https://www.linuxmint.com/download_all.php)). *Noble* е кодовото име на Ubuntu 24.04. Значи номерът е следният: на Mint 22 използваш пакетите на Docker **за Ubuntu Noble**, защото те съответстват на библиотеките, които има системата ти.
+
+#### 1.2.2 Файлът, който казва всичко: `/etc/os-release`
+
+Всяка дистрибуция на Linux описва коя е в текстов файл, `/etc/os-release`. Това е файл с променливи на *shell*: редове с `ИМЕ=стойност`, които всеки скрипт може да зареди. `fig01_01.sh` го чете и ти казва кое кодово име ти се пада. Не променя нищо на компютъра ти; само чете:
+
+```bash
+#!/usr/bin/env bash
+# fig01_01.sh — ¿Qué sistema tengo y qué nombre en clave le toca en el
+# repositorio de Docker? Solo lee archivos: no cambia nada en tu equipo.
+# Uso: ./fig01_01.sh            (lee /etc/os-release, el de tu sistema)
+#      ./fig01_01.sh ARCHIVO    (lee otro archivo con el mismo formato)
+set -euo pipefail
+ARCHIVO="${1:-/etc/os-release}"
+
+# os-release es un archivo de variables de shell: «.» lo carga en este guion.
+. "$ARCHIVO"
+
+echo "== Lo que dice $ARCHIVO"
+echo "NAME=$NAME"
+echo "VERSION=${VERSION:-}"
+echo "ID=$ID  ID_LIKE=${ID_LIKE:-}"
+echo "VERSION_CODENAME=${VERSION_CODENAME:-(vacío)}"
+echo "UBUNTU_CODENAME=${UBUNTU_CODENAME:-(no existe)}"
+echo "DEBIAN_CODENAME=${DEBIAN_CODENAME:-(no existe)}"
+
+echo
+echo "== El nombre en clave que va en Suites (la regla de la guía oficial de Ubuntu)"
+echo "Suites: ${UBUNTU_CODENAME:-$VERSION_CODENAME}"
+
+echo
+echo "== Tu arquitectura, según dpkg (la de TU equipo: dpkg no lee ARCHIVO)"
+dpkg --print-architecture
+```
+
+Реално изпълнение · симулиран Mint:
+
+```text
+$ ./fig01_01.sh
+== Lo que dice /etc/os-release
+NAME=Linux Mint
+VERSION=22.3 (Zena)
+ID=linuxmint  ID_LIKE=ubuntu debian
+VERSION_CODENAME=zena
+UBUNTU_CODENAME=noble
+DEBIAN_CODENAME=(no existe)
+
+== El nombre en clave que va en Suites (la regla de la guía oficial de Ubuntu)
+Suites: noble
+
+== Tu arquitectura, según dpkg (la de TU equipo: dpkg no lee ARCHIVO)
+amd64
+```
+
+На твоя компютър, ако имаш Mint 22, 22.1 или 22.2, `VERSION` и `VERSION_CODENAME` ще казват `wilma`, `xia` или `zara`; всичко останало излиза същото. Преди да разчетеш изхода, редовете от скрипта, които не са очевидни. Самостоятелната точка (`. "$ARCHIVO"`) зарежда файла в скрипта, точно както `source`: след този ред `$NAME` или `$UBUNTU_CODENAME` имат стойностите от файла. `${VERSION:-}` означава „стойността на `VERSION` или нищо, ако не съществува“; без това `set -u` би спрял скрипта, щом срещне променлива, която я няма. А `dpkg --print-architecture` пита мениджъра на пакети за кой процесор е направена системата ти; тъй като пита системата ти, а не файла, ако му подадеш друг `os-release` като аргумент, последният блок продължава да показва архитектурата на собствения ти компютър.
+
+Сега изходът, който съдържа ключа към целия урок:
+
+1. **Mint казва, че е Mint.** `NAME=Linux Mint`, `ID=linuxmint`. Ако програма пита „Ubuntu ли си?“, като гледа `ID`, отговорът е не.
+2. **Но казва от кого произлиза.** `ID_LIKE=ubuntu debian` означава „приличам на Ubuntu, а Ubuntu прилича на Debian“.
+3. **Има две кодови имена.** `VERSION_CODENAME=zena` е това на Mint 22.3. `UBUNTU_CODENAME=noble` е това на версията на Ubuntu, върху която е изграден. Второто съществува точно за случаи като този. (`DEBIAN_CODENAME` не съществува нито в Mint, нито в Ubuntu; в 1.2.3 ще видиш кой я има.)
+4. **Правилото на официалното ръководство избира правилното.** Изразът `${UBUNTU_CODENAME:-$VERSION_CODENAME}` се чете „използвай `UBUNTU_CODENAME`, ако съществува; ако не — `VERSION_CODENAME`“. В Mint съществува и излиза `noble`. В истински Ubuntu двете променливи имат една и съща стойност, така че няма значение коя се използва. Този израз е, буква по буква, онзи, който официалното ръководство има в реда `Suites` на хранилището (1.5).
+5. **Архитектурата е `amd64`**, тази на 64-битовите процесори на Intel и AMD, която е архитектурата на почти всеки компютър с Mint. Това е стойността, която отива в полето `Architectures` на хранилището.
+
+За да видиш и другата страна, ето същия скрипт във виртуалната машина на изпълненията, която е истински Ubuntu (реално изпълнение · виртуална машина; намира се в `fig01_01.salida-ubuntu.txt`):
+
+```text
+$ ./fig01_01.sh
+== Lo que dice /etc/os-release
+NAME=Ubuntu
+VERSION=24.04.4 LTS (Noble Numbat)
+ID=ubuntu  ID_LIKE=debian
+VERSION_CODENAME=noble
+UBUNTU_CODENAME=noble
+DEBIAN_CODENAME=(no existe)
+
+== El nombre en clave que va en Suites (la regla de la guía oficial de Ubuntu)
+Suites: noble
+
+== Tu arquitectura, según dpkg (la de TU equipo: dpkg no lee ARCHIVO)
+arm64
+```
+
+В Ubuntu двете кодови имена съвпадат. В Mint — не. Цялата разлика при инсталирането на Mint се побира в тези два реда.
+
+#### 1.2.3 А ако имаш LMDE?
+
+Linux Mint има второ издание, **LMDE** (*Linux Mint Debian Edition*), което не е изградено върху Ubuntu, а върху Debian. Страницата за изтегляне на Mint изброява LMDE 7, „Gigi“, с основа „Debian Trixie“ ([Linux Mint, всички версии](https://www.linuxmint.com/download_all.php)). Ако компютърът ти е с LMDE, този урок ти е полезен за всичко освен за хранилището: трябва да следваш [официалното ръководство за Debian](https://docs.docker.com/engine/install/debian/), което използва `https://download.docker.com/linux/debian` (и за ключа: `…/linux/debian/gpg`).
+
+В реда си `Suites` ръководството за Debian използва `$VERSION_CODENAME`, която в LMDE 7 има стойност `gigi` — име, което Docker няма: това е същата грешка от 1.5.2 във версия за Debian. Ръководството казва само, че при производна дистрибуция може да се наложи да замениш кодовото име с това на съответната версия на Debian. Не е нужно да го пишеш ръчно: LMDE има в своя `/etc/os-release` променлива, създадена точно за това, `DEBIAN_CODENAME`, точно както Mint има `UBUNTU_CODENAME`. Така го казва `os-release` от официалния пакет `base-files` на LMDE 7 (версия `13.8+lmde1`, от [хранилището на Linux Mint](http://packages.linuxmint.com/); копието е в `programas/01-instalacion/os-release-lmde-7.txt`). Редът изглежда така:
+
+```text
+Suites: $(. /etc/os-release && echo "${DEBIAN_CODENAME:-$VERSION_CODENAME}")
+```
+
+Това е фрагмент, а не програма: поставя се на мястото на реда `Suites` в блока от ръководството за Debian. За да разбереш кое издание имаш, `fig01_01.sh` ще ти каже: `ID` има стойност `linuxmint` и в двете, но в LMDE `NAME=LMDE`, `ID_LIKE=debian`, без `ubuntu`, и се появява `DEBIAN_CODENAME`.
+
+> [!WARNING]
+> Ако имаш LMDE, **не пускай `fig01_03.sh` и `fig01_04.sh`**: и двата сочат към хранилището на Ubuntu, а `fig01_04.sh` би записал `Suites: gigi` за него и би те оставил с `apt update`, който се проваля. Следвай ръководството за Debian (включително собствения му списък с конфликтни пакети) с реда `Suites` отгоре и продължи урока от 1.7. При проверките, където пише `noble`, ти ще видиш `trixie`, а във версиите на пакетите — `debian.13~trixie`.
+
+> [!NOTE]
+> 🔧 **Наблюдение от инженерството 1.1**
+> „Без официална поддръжка“ не означава „не работи“, нито пък „работи по същия начин“. Означава „никой освен теб няма да провери дали работи“. Когато използваш нещо извън онова, което доставчикът поддържа, запиши точно какво си направил различно (тук: едно кодово име), така че, ако нещо се провали, да знаеш откъде да започнеш.
+
+### 1.3 Преди инсталирането: защитната стена
+
+Официалното ръководство започва с предупреждение за сигурност, преди всяка команда, и е добре да го прочетеш преди инсталирането, а не в деня, в който те ухапе: ако използваш **ufw** или **firewalld** за управление на защитната стена, „когато публикуваш портовете на контейнер с Docker, тези портове заобикалят правилата на защитната ти стена“ ([Docker, инсталиране на Ubuntu](https://docs.docker.com/engine/install/ubuntu/)).
+
+*ufw* (*Uncomplicated Firewall*) е инструментът за защитна стена, който идва с Ubuntu и който може да е активен на твоя Mint. Страницата на Docker за защитните стени обяснява механизма: когато публикуваш порт на контейнер, трафикът се пренасочва в таблицата `nat` на ядрото, **преди** да стигне до веригите `INPUT` и `OUTPUT`, които използва ufw; пакетите се маршрутизират, преди правилата на защитната стена да могат да бъдат приложени, „като на практика игнорират конфигурацията ти“ ([Docker, филтриране на пакети и защитни стени](https://docs.docker.com/engine/network/packet-filtering-firewalls/#docker-and-ufw)).
+
+Какво означава това на практика: ако имаш `ufw deny 8080` и пуснеш контейнер, който публикува порт 8080 на всички интерфейси, този порт остава отворен към мрежата ти. ufw не разбира. Затова в този курс, когато публикуваш портове, те се публикуват само на `127.0.0.1`, адреса, до който може да стигне само собственият ти компютър: той не зависи от защитната стена, за да е затворен, защото никога не се отваря към мрежата. Предвидено е Урок 2 да го покаже с порт, отворен нарочно.
+
+Същото предупреждение съдържа и втора, по-техническа точка: Docker е съвместим само с `iptables-nft` и `iptables-legacy`, а правилата на защитната стена, написани директно с `nft`, не се поддържат на система с Docker. Ако управляваш правила ръчно, те се пишат с `iptables` или `ip6tables` и се поставят във веригата `DOCKER-USER`. Ако не знаеш за какво говори този абзац, най-вероятно не те засяга: той е за онези, които вече имат ръчно написана защитна стена.
+
+### 1.4 Премахване на онова, което влиза в конфликт
+
+#### 1.4.1 Конфликтните пакети
+
+Преди да инсталираш официалните пакети, трябва да премахнеш неофициалните, защото двата комплекта съдържат файлове с едни и същи имена (командата `docker`, демона, `containerd`), а `apt` не може да има и двата едновременно. Ръководството дава точния списък ([Docker, инсталиране на Ubuntu](https://docs.docker.com/engine/install/ubuntu/)):
+
+| Пакет | Какво е |
+|---|---|
+| `docker.io` | Docker, пакетиран от Ubuntu |
+| `docker-compose` | старият Compose, програмата с тире |
+| `docker-compose-v2` | новият Compose, пакетиран от Ubuntu |
+| `docker-doc` | документацията на пакета на Ubuntu |
+| `docker-buildx` | Buildx, пакетиран от Ubuntu |
+| `podman-docker` | имитатор: кара командата `docker` да извиква Podman, друг инструмент за контейнери |
+| `containerd`, `runc` | версиите на Ubuntu на онова, което `containerd.io` съдържа заедно |
+
+Ако никога не си инсталирал нищо от Docker, най-вероятно нямаш нито един от тях. Ръководството предупреждава: „`apt` може да съобщи, че нямаш инсталиран нито един от тези пакети“.
+
+#### 1.4.2 Командата, част по част
+
+`fig01_02.sh` първо пита кои от тях имаш и след това изпълнява командата от ръководството, копирана точно както е:
+
+```bash
+#!/usr/bin/env bash
+# fig01_02.sh — Quitar los paquetes que chocan con los oficiales de Docker.
+# El segundo comando es, letra por letra, el de la guía oficial de Ubuntu.
+set -uo pipefail
+PAQUETES="docker.io docker-compose docker-compose-v2 docker-doc docker-buildx podman-docker containerd runc"
+
+echo "== ¿Cuáles de los paquetes en conflicto tienes instalados?"
+dpkg --get-selections $PAQUETES
+
+echo
+echo "== El comando de la guía oficial (quita los que encontró)"
+sudo apt remove $(dpkg --get-selections docker.io docker-compose docker-compose-v2 docker-doc docker-buildx podman-docker containerd runc | cut -f1)
+echo "código de salida: $?"
+```
+
+Реално изпълнение · симулиран Mint (току-що инсталираната система, без нищо от Docker):
+
+```text
+$ ./fig01_02.sh
+== ¿Cuáles de los paquetes en conflicto tienes instalados?
+dpkg: no packages found matching docker.io
+dpkg: no packages found matching docker-compose
+dpkg: no packages found matching docker-compose-v2
+dpkg: no packages found matching docker-doc
+dpkg: no packages found matching docker-buildx
+dpkg: no packages found matching podman-docker
+dpkg: no packages found matching containerd
+dpkg: no packages found matching runc
+
+== El comando de la guía oficial (quita los que encontró)
+dpkg: no packages found matching docker.io
+…
+dpkg: no packages found matching runc
+
+WARNING: apt does not have a stable CLI interface. Use with caution in scripts.
+
+Reading package lists...
+Building dependency tree...
+Reading state information...
+0 upgraded, 0 newly installed, 0 to remove and 3 not upgraded.
+código de salida: 0
+```
+
+`…` заменя шест реда, еднакви с горните; пълният изход е в `fig01_02.salida.txt`. Броят на пакетите за обновяване (`3 not upgraded`) зависи от компютъра ти.
+
+Командата от ръководството се чете отвътре навън:
+
+1. `dpkg --get-selections <пакети>` пита `dpkg`, мениджъра на пакети от ниско ниво, за всеки пакет от списъка. За инсталираните изписва ред с името, табулация и думата `install`. За неинсталираните се оплаква в изхода за грешки: `no packages found matching …`. Тези оплаквания не са проблем; те са отговорът „нямаш го“.
+2. `| cut -f1` запазва първата колона на всеки ред, тоест само имената.
+3. `$( … )` поставя тези имена в командния ред на `sudo apt remove`.
+
+Така `apt remove` получава само пакетите, които **наистина** имаш. Ако нямаш нито един, получава празен списък и казва `0 to remove`. Ако имаше, например, `docker.io`, щеше да ти покаже какво ще премахне и да те попита дали да продължи: прочети списъка, преди да отговориш с „да“.
+
+Предупреждението `WARNING: apt does not have a stable CLI interface` излиза, защото при това изпълнение изходът на `apt` не отиваше към терминал, а към файл: така бяха запазени изходите на курса. `apt` е инструментът за хора и предупреждава, че форматът му може да се промени, когато изхода му чете друга програма. Ако пуснеш скрипта в терминала си, няма да го видиш, а вместо това ще видиш `Done` в края на `Reading package lists...` и ленти за напредъка. За скриптове съществува `apt-get`, който е стабилен; в 1.5.3 го използваме.
+
+#### 1.4.3 Какво не премахва `apt remove`
+
+Ръководството предупреждава за нещо, което има значение, ако някога си имал Docker: образите, контейнерите, томовете и мрежите, които живеят в `/var/lib/docker/`, **не се изтриват** при деинсталиране. Деинсталирането на пакета премахва програмите; данните остават. Ако искаш наистина да започнеш от нулата, 1.10 казва как. Ако не, новите пакети ще намерят тези данни и ще ги използват.
+
+### 1.5 Официалното хранилище
+
+#### 1.5.1 Какво е хранилище на `apt`
+
+`apt` не изтегля програми откъдето и да е: изтегля ги от списък с **хранилища**, сървъри, които публикуват пакети с подписан индекс. Твоят Mint вече има тези на Ubuntu и тези на Mint. Добавянето на хранилището на Docker е две неща:
+
+- **Ключът.** Docker подписва индекса си с криптографски ключ. `apt` се нуждае от публичната част на този ключ, за да провери, че изтегленото идва от Docker и никой не го е променил по пътя.
+- **Източникът.** Файл в `/etc/apt/sources.list.d/`, който казва на `apt` къде е хранилището, коя част от него се отнася до теб и с кой ключ се проверява.
+
+Ето тази част от официалното ръководство, цялата (от документацията). **Не я въвеждай още**: в този урок ще я изпълниш на два етапа. `fig01_03.sh` прави частта с ключа точно като ръководството и записва източника с грешката на Mint; `fig01_04.sh` презаписва източника правилно. Ако предпочиташ да не предизвикваш грешката на компютъра си, въведи този блок точно както е, прескочи раздел 1.5.2 и в 1.5.3 прочети изхода, вместо да пускаш скрипта:
+
+```bash
+# Add Docker's official GPG key:
+sudo apt update
+sudo apt install ca-certificates curl
+sudo install -m 0755 -d /etc/apt/keyrings
+sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+sudo chmod a+r /etc/apt/keyrings/docker.asc
+
+# Add the repository to Apt sources:
+sudo tee /etc/apt/sources.list.d/docker.sources <<EOF
+Types: deb
+URIs: https://download.docker.com/linux/ubuntu
+Suites: $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}")
+Components: stable
+Architectures: $(dpkg --print-architecture)
+Signed-By: /etc/apt/keyrings/docker.asc
+EOF
+
+sudo apt update
+```
+
+Ред по ред:
+
+- `sudo apt update` опреснява индексите на хранилищата, които вече имаш, така че следващият `apt install` да намери актуалните версии.
+- `ca-certificates` съдържа сертификатите на органите, които подписват HTTPS сайтовете, а `curl` изтегля файлове. На Mint с работен плот почти сигурно ги имаш; да ги поискаш не вреди.
+- `install -m 0755 -d /etc/apt/keyrings` създава папката, в която живеят ключовете на външните хранилища, с права `0755`: собственикът (`root`) пише, всички четат.
+- `curl -fsSL … -o /etc/apt/keyrings/docker.asc` изтегля публичния ключ на Docker. `-f` го кара да се провали, ако сървърът отговори с грешка, вместо да запише страница с грешка, сякаш е ключът; `-s` и `-S` го карат да мълчи освен при грешки; `-L` следва пренасочванията.
+- `chmod a+r` позволява на всички да четат ключа, защото `apt` го чете с непривилегирован потребител.
+- `sudo tee … <<EOF` записва файла на източника. Използва се `tee` със `sudo`, защото пренасочването `>` се прави от твоя *shell*, който не е `root` и не би могъл да пише в `/etc`. Онова, което е между `<<EOF` и `EOF`, е съдържанието, а `$( … )` се заместват **преди** да бъде записано.
+
+Файлът `docker.sources` е във формата **deb822**: по едно именувано поле на ред. Наръчникът на `apt` го описва заедно със стария еднореден формат (`deb [опции] url версия компонент`) и казва, че намерението е deb822 постепенно да стане форматът по подразбиране ([sources.list(5)](https://manpages.debian.org/trixie/apt/sources.list.5.en.html)). Ще видиш ръководства с еднореден файл `docker.list`; работи по същия начин, това е предишната форма. Полетата:
+
+| Поле | Стойност | Какво означава |
+|---|---|---|
+| `Types` | `deb` | вече компилирани пакети (не изходен код) |
+| `URIs` | `https://download.docker.com/linux/ubuntu` | къде е хранилището; обърни внимание на `ubuntu` в края |
+| `Suites` | кодовото име | версията на Ubuntu, чиито пакети искаш; **тук е въпросът с Mint** |
+| `Components` | `stable` | само стабилни версии, не тестови |
+| `Architectures` | `amd64` на твоя Mint | за кой процесор |
+| `Signed-By` | `/etc/apt/keyrings/docker.asc` | с кой ключ се проверява **това** хранилище, и само то |
+
+Последното поле заслужава още един ред. Преди ключовете на външните хранилища се добавяха с `apt-key` в общ ключодържател и един ключ служеше за проверка на **всяко** хранилище: ключът на Docker би могъл да подпише пакет, който твърди, че идва от Ubuntu. `apt-key` е остарял: наръчникът на версията на `apt` в Ubuntu 24.04, основата на Mint 22, казва, че ще е наличен за последен път в Debian 12 и Ubuntu 24.04 ([apt-key(8), Ubuntu noble](https://manpages.ubuntu.com/manpages/noble/man8/apt-key.8.html)). Твоят Mint 22 все още го има и затова едно старо ръководство с `apt-key add` изглежда, че работи: работи, но оставя ключа на Docker валиден за всичките ти хранилища. С `Signed-By` ключът на Docker важи само за хранилището на Docker. Ако някое ръководство ти казва `apt-key add`, то е отпреди да бъде въведен `Signed-By` и не го следвай.
+
+#### 1.5.2 Грешката на Mint, предизвикана
+
+Сега грешката от сцената, нарочно. `fig01_03.sh` е същата стъпка от ръководството с **една-единствена разлика**: в `Suites` използва `VERSION_CODENAME` вместо `${UBUNTU_CODENAME:-$VERSION_CODENAME}`. Така го пишат много стари ръководства за Ubuntu, с `$VERSION_CODENAME` или с `$(lsb_release -cs)`, което в Mint също връща името на Mint (взима го от `DISTRIB_CODENAME` в `/etc/lsb-release`); и така го пише официалното ръководство **за Debian**, което няма този проблем, защото Debian няма `UBUNTU_CODENAME` ([Docker, инсталиране на Debian](https://docs.docker.com/engine/install/debian/)). Който копира от грешното ръководство на Mint, попада тук.
+
+```bash
+#!/usr/bin/env bash
+# fig01_03.sh — EL ERROR DE MINT, provocado a propósito.
+# Es el paso 1 de la guía oficial con UNA sola diferencia: «Suites» sale de
+# VERSION_CODENAME (el nombre en clave de Mint) en vez de UBUNTU_CODENAME.
+# Así lo escriben muchas guías viejas y la guía oficial de Debian.
+set -uo pipefail
+
+# Igual que la guía oficial: la llave con la que apt comprueba los paquetes.
+sudo apt update
+sudo apt install -y ca-certificates curl
+sudo install -m 0755 -d /etc/apt/keyrings
+sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+sudo chmod a+r /etc/apt/keyrings/docker.asc
+
+# La diferencia está en la línea Suites.
+sudo tee /etc/apt/sources.list.d/docker.sources <<FIN
+Types: deb
+URIs: https://download.docker.com/linux/ubuntu
+Suites: $(. /etc/os-release && echo "$VERSION_CODENAME")
+Components: stable
+Architectures: $(dpkg --print-architecture)
+Signed-By: /etc/apt/keyrings/docker.asc
+FIN
+
+echo
+echo "== apt update con ese repositorio"
+sudo apt update
+echo "código de salida: $?"
+```
+
+Реално изпълнение · симулиран Mint. Това е изходът от реда, който записва `tee`, до края; преди него са редовете на `apt update` и инсталирането на `curl`, които са пълни в `fig01_03.error-esperado.txt`:
+
+```text
+Types: deb
+URIs: https://download.docker.com/linux/ubuntu
+Suites: zena
+Components: stable
+Architectures: amd64
+Signed-By: /etc/apt/keyrings/docker.asc
+
+== apt update con ese repositorio
+
+WARNING: apt does not have a stable CLI interface. Use with caution in scripts.
+
+Ign:1 https://download.docker.com/linux/ubuntu zena InRelease
+Err:2 https://download.docker.com/linux/ubuntu zena Release
+  404  Not Found [IP: 3.161.44.57 443]
+Hit:3 http://security.ubuntu.com/ubuntu noble-security InRelease
+Hit:4 http://archive.ubuntu.com/ubuntu noble InRelease
+Hit:5 http://archive.ubuntu.com/ubuntu noble-updates InRelease
+Hit:6 http://archive.ubuntu.com/ubuntu noble-backports InRelease
+Reading package lists...
+E: The repository 'https://download.docker.com/linux/ubuntu zena Release' does not have a Release file.
+código de salida: 100
+```
+
+IP адресът в квадратните скоби е на сървъра на Docker, който отговори, и се променя от едно изпълнение до друго. Редовете `Hit:` са хранилищата на Ubuntu, които отговарят; редът, в който се появяват, може да варира. Останалото е стабилно, с изключение на кодовото име, ако твоят Mint не е 22.3. В терминала си ще видиш и редове `Hit:` от хранилищата на Mint.
+
+Чете се отгоре надолу:
+
+1. `tee` показва какво е записал и проблемът е пред очите ти: `Suites: zena`.
+2. `apt update` иска от сървъра на Docker индекса на версията `zena` на Ubuntu. Първо търси `InRelease` (индекса с подписа вътре) и го пропуска (`Ign`), защото го няма; после търси `Release` и сървърът отговаря **404**, „не е намерено“.
+3. Последната грешка го казва с думи: хранилището `… zena Release` няма файл `Release`. В превод: **не съществува версия на Ubuntu с име `zena`**. И това е вярно: `zena` е Mint.
+4. `apt` излиза с код 100, общия си код за грешка.
+
+Една подвеждаща подробност: ключът се изтегли успешно и сървърът отговори. Това не е проблем с мрежата, нито с правата, нито с ключа. Това е име, сложено погрешно в текстов файл.
+
+#### 1.5.3 Поправката
+
+Поправя се, като източникът се презапише с реда от официалното ръководство. `fig01_04.sh` го прави (не изтегля ключа отново: използва онзи, който `fig01_03.sh` остави в `/etc/apt/keyrings/docker.asc`; без него `apt update` би се провалил заради липсващия ключ), опреснява индексите и вместо да инсталира, пита: откъде би дошъл `docker-ce` и в коя версия?
+
+```bash
+#!/usr/bin/env bash
+# fig01_04.sh — El arreglo: el repositorio de Docker con el nombre en clave de
+# Ubuntu, como lo escribe la guía oficial. Después pregunta qué versión se
+# instalaría y SIMULA la instalación (apt-get -s no instala nada).
+set -euo pipefail
+
+# Letra por letra, la línea Suites de la guía oficial de Ubuntu:
+# UBUNTU_CODENAME si existe (Mint, Ubuntu) y, si no, VERSION_CODENAME.
+sudo tee /etc/apt/sources.list.d/docker.sources <<FIN
+Types: deb
+URIs: https://download.docker.com/linux/ubuntu
+Suites: $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}")
+Components: stable
+Architectures: $(dpkg --print-architecture)
+Signed-By: /etc/apt/keyrings/docker.asc
+FIN
+
+echo
+echo "== apt update"
+sudo apt update
+
+echo
+echo "== ¿De dónde saldría docker-ce, y en qué versión?"
+apt-cache policy docker-ce | sed -n 1,6p
+
+echo
+echo "== Las versiones más recientes que ofrece el repositorio"
+apt list --all-versions docker-ce 2>/dev/null | grep docker-ce | sed -n 1,3p
+
+echo
+echo "== Simulación: los paquetes de Docker que instalaría el comando de la guía"
+SIMULACION=$(apt-get install -s docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin)
+echo "$SIMULACION" | grep -E '^Inst (docker-|containerd)' | cut -d' ' -f2,3 | tr -d '('
+echo "paquetes en total, contando dependencias: $(echo "$SIMULACION" | grep -c '^Inst')"
+```
+
+Реално изпълнение · симулиран Mint:
+
+```text
+$ ./fig01_04.sh
+Types: deb
+URIs: https://download.docker.com/linux/ubuntu
+Suites: noble
+Components: stable
+Architectures: amd64
+Signed-By: /etc/apt/keyrings/docker.asc
+
+== apt update
+
+WARNING: apt does not have a stable CLI interface. Use with caution in scripts.
+
+Hit:1 http://archive.ubuntu.com/ubuntu noble InRelease
+Hit:2 https://download.docker.com/linux/ubuntu noble InRelease
+Hit:3 http://archive.ubuntu.com/ubuntu noble-updates InRelease
+Hit:4 http://security.ubuntu.com/ubuntu noble-security InRelease
+Hit:5 http://archive.ubuntu.com/ubuntu noble-backports InRelease
+Reading package lists...
+Building dependency tree...
+Reading state information...
+3 packages can be upgraded. Run 'apt list --upgradable' to see them.
+
+== ¿De dónde saldría docker-ce, y en qué versión?
+docker-ce:
+  Installed: (none)
+  Candidate: 5:29.9.2-1~ubuntu.24.04~noble
+  Version table:
+     5:29.9.2-1~ubuntu.24.04~noble 500
+        500 https://download.docker.com/linux/ubuntu noble/stable amd64 Packages
+
+== Las versiones más recientes que ofrece el repositorio
+docker-ce/noble 5:29.9.2-1~ubuntu.24.04~noble amd64
+docker-ce/noble 5:29.9.1-1~ubuntu.24.04~noble amd64
+docker-ce/noble 5:29.9.0-1~ubuntu.24.04~noble amd64
+
+== Simulación: los paquetes de Docker que instalaría el comando de la guía
+containerd.io 2.4.2-3~ubuntu.24.04~noble
+docker-ce-cli 5:29.9.2-1~ubuntu.24.04~noble
+docker-ce 5:29.9.2-1~ubuntu.24.04~noble
+docker-buildx-plugin 0.38.1-1~ubuntu.24.04~noble
+docker-ce-rootless-extras 5:29.9.2-1~ubuntu.24.04~noble
+docker-compose-plugin 5.6.0-1~ubuntu.24.04~noble
+paquetes en total, contando dependencias: 96
+```
+
+На твоя компютър се променят: версиите (тези в блока са от 21 октомври 2026 г.), броят на пакетите за обновяване и най-вече общият брой на последния ред. Контейнерът на симулацията е минимален, почти празен Ubuntu и му липсват десетки части, които твоят Mint с работен плот вече има (`systemd`, `perl`, `git`…); на твоя компютър общият брой ще е много по-малък. А тези редове от `apt update` са от **второто** изпълнение на скрипта, с вече изтеглени индекси (`Hit`). Първия път тези на Docker излязоха като изтегляния: `Get:1 https://download.docker.com/linux/ubuntu noble InRelease [48.5 kB]` и след това списъкът с пакети на `noble/stable amd64`.
+
+Какво казва изходът:
+
+1. **`Suites: noble`**. Същият Mint, сега с името на Ubuntu.
+2. **`apt update` вече не се оплаква**, а сред хранилищата се появява `https://download.docker.com/linux/ubuntu noble`.
+3. **`apt-cache policy`** отговаря на въпроса „ако инсталирам `docker-ce`, коя версия и откъде?“. `Installed: (none)`: нямаш го. `Candidate`: версията, която би се инсталирала. А в таблицата — произходът: `download.docker.com`, `noble/stable`. Ако вместо това видиш произход от `archive.ubuntu.com`, нещо се е объркало: в Ubuntu няма `docker-ce`, но има `docker.io`, и затова е добре да провериш откъде идва всяко нещо, преди да инсталираш.
+4. **Номерът на версията** се чете така: `5:` е „епохата“, брояч, който служи само за това `apt` да подрежда версиите правилно; `29.9.2` е версията на Docker; `-1~ubuntu.24.04~noble` казва за коя дистрибуция е пакетиран.
+5. **Симулацията** показва шест пакета на Docker, а не пет. Шестия, `docker-ce-rootless-extras`, не си го поискал: `apt` го добавя като *препоръчан* пакет на `docker-ce`. Това са инструментите за режима *rootless* (1.9); не пречат.
+
+`apt-get install -s` (от *simulate*) изчислява всичко, което би направила една инсталация, и го отпечатва в редове `Inst`, без да докосва нищо. Добър навик е преди всяка голяма инсталация: да видиш какво ще влезе.
+
+### 1.6 Инсталиране на пакетите
+
+Със заредено хранилище инсталацията е една-единствена команда (от документацията):
+
+```bash
+sudo apt install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+```
+
+`apt` ще ти покаже списъка с пакети, колко ще изтегли и колко място ще заеме, и ще те попита дали да продължи. Изходът на тази команда **не е поставен тук**, защото не е изпълнена на истински Mint, а на твоя компютър зависи от онова, което вече имаш инсталирано. Какво да търсиш в него: сред новите пакети да са шестте от симулацията отгоре, а в края да няма редове, които започват с `E:`.
+
+**Фиксиране на версия.** Горната команда инсталира най-новата. Ако ти трябва точна версия — например за да съвпада компютърът ти със сървър — ръководството дава рецептата (от документацията):
+
+```bash
+apt list --all-versions docker-ce
+VERSION_STRING=5:29.8.2-1~ubuntu.24.04~noble
+sudo apt install docker-ce=$VERSION_STRING docker-ce-cli=$VERSION_STRING containerd.io docker-buildx-plugin docker-compose-plugin
+```
+
+Първата команда изброява наличните версии, както направи `fig01_04.sh`. Втората записва в променлива версията, която искаш, с пълния ѝ номер, включително епохата. Третата инсталира `docker-ce` и `docker-ce-cli` в тази точна версия: `пакет=версия` е начинът на `apt` да поиска определена версия. 29.8.2 от примера е точно версията, с която беше планиран този курс; не е нужно да я фиксираш, за да го следваш.
+
+**Какво прави инсталацията освен копирането на файлове.** В Debian и Ubuntu услугата на Docker се настройва да стартира сама, сега и при всяко включване на компютъра: стъпките след инсталацията го казват, „в Debian и Ubuntu услугата на Docker стартира по подразбиране при зареждане на системата“ ([Docker, стъпки след инсталацията](https://docs.docker.com/engine/install/linux-postinstall/)). И се създава групата `docker`, празна. Двете неща ще провериш в 1.7 и в 1.8.
+
+### 1.7 Проверка
+
+#### 1.7.1 Какво иска ръководството
+
+Официалното ръководство завършва с две проверки (от документацията):
+
+```bash
+sudo systemctl status docker
+sudo docker run hello-world
+```
+
+`systemctl status docker` пита *systemd*, програмата, която стартира и наблюдава услугите на системата, в какво състояние е услугата `docker`. Ако не работи, ръководството казва да я стартираш със `sudo systemctl start docker`. А `sudo docker run hello-world` създава първия ти контейнер. Обърни внимание на `sudo` и в двете: току-що след инсталирането твоят потребител още не може да говори с демона. Това се поправя в 1.8 и затова проверките в този курс се правят без `sudo`, след това.
+
+#### 1.7.2 Проверките на курса
+
+`fig01_05.sh` събира всичко, което искаш да знаеш за току-що направена инсталация. Пусни го **след** 1.8, без `sudo`:
+
+```bash
+#!/usr/bin/env bash
+# fig01_05.sh — Las comprobaciones al terminar la instalación.
+# Córrelo SIN sudo, después de entrar al grupo docker (sección 1.8).
+set -uo pipefail
+
+echo "== 1. El servicio: ¿corre ahora y arrancará con el equipo?"
+systemctl is-active docker
+systemctl is-enabled docker
+
+echo
+echo "== 2. Los cinco paquetes instalados"
+dpkg-query -W -f='${Package} ${Version}\n' \
+  docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+echo
+echo "== 3. Versiones"
+docker version --format 'Cliente: {{.Client.Version}}  Daemon: {{.Server.Version}}  API: {{.Server.APIVersion}}'
+docker compose version
+docker buildx version | cut -d' ' -f1,2
+
+echo
+echo "== 4. El primer contenedor"
+docker run --rm --name curso-docker-hola hello-world
+
+echo
+echo "== 5. El socket: dueño root, grupo docker"
+ls -l /var/run/docker.sock | awk '{print $1, $3, $4, $NF}'
+
+echo
+echo "== 6. Basura: contenedores curso-docker- que quedaron"
+docker ps -a --filter name=curso-docker- --format '{{.Names}}' | wc -l
+```
+
+Реално изпълнение · виртуална машина:
+
+```text
+$ ./fig01_05.sh
+== 1. El servicio: ¿corre ahora y arrancará con el equipo?
+active
+enabled
+
+== 2. Los cinco paquetes instalados
+containerd.io 2.2.1-1~ubuntu.24.04~noble
+docker-buildx-plugin 0.31.1-1~ubuntu.24.04~noble
+docker-ce 5:29.2.1-1~ubuntu.24.04~noble
+docker-ce-cli 5:29.2.1-1~ubuntu.24.04~noble
+docker-compose-plugin 5.0.2-1~ubuntu.24.04~noble
+
+== 3. Versiones
+Cliente: 29.2.1  Daemon: 29.2.1  API: 1.53
+Docker Compose version v5.0.2
+github.com/docker/buildx v0.31.1
+
+== 4. El primer contenedor
+Unable to find image 'hello-world:latest' locally
+latest: Pulling from library/hello-world
+58dee6a49ef1: Pulling fs layer
+c3bdf82c34d1: Download complete
+58dee6a49ef1: Download complete
+58dee6a49ef1: Pull complete
+Digest: sha256:11a3eb1597e864c51b3f56733cb2e8a90bf0c284bfc05f9444d81c558bc848aa
+Status: Downloaded newer image for hello-world:latest
+
+Hello from Docker!
+This message shows that your installation appears to be working correctly.
+
+To generate this message, Docker took the following steps:
+ 1. The Docker client contacted the Docker daemon.
+ 2. The Docker daemon pulled the "hello-world" image from the Docker Hub.
+    (arm64v8)
+ 3. The Docker daemon created a new container from that image which runs the
+    executable that produces the output you are currently reading.
+ 4. The Docker daemon streamed that output to the Docker client, which sent it
+    to your terminal.
+
+To try something more ambitious, you can run an Ubuntu container with:
+ $ docker run -it ubuntu bash
+
+Share images, automate workflows, and more with a free Docker ID:
+ https://hub.docker.com/
+
+For more examples and ideas, visit:
+ https://docs.docker.com/get-started/
+
+
+== 5. El socket: dueño root, grupo docker
+srw-rw---- root docker /var/run/docker.sock
+
+== 6. Basura: contenedores curso-docker- que quedaron
+0
+```
+
+Какво се променя на твоя компютър: версиите (ако си инсталирал на 21 октомври 2026 г., ще видиш 29.9.2, Compose v5.6.0 и Buildx v0.38.1), идентификаторите на слоевете и *digest*-ът на образа, както и `(arm64v8)`, което на твоя компютър ще казва `(amd64)`. Ако вече си пускал `hello-world` преди, няма да видиш блока с изтеглянето: образът вече е на компютъра ти.
+
+Блок по блок:
+
+1. **`active` и `enabled`.** `is-active` отговаря дали услугата работи **сега**; `is-enabled` — дали ще стартира **сама** следващия път, когато включиш компютъра. Това са различни въпроси и е добре да зададеш и двата: една услуга може да работи, защото си я стартирал ръчно, и да не се върне след рестартиране.
+2. **Петте пакета**, всеки с версията си и суфикса `ubuntu.24.04~noble`, който казва, че идват от официалното хранилище за Noble. `dpkg-query -W` пита за инсталирани пакети във формата, който му зададеш.
+3. **Версиите.** `docker version` съобщава две — тази на клиента и тази на демона, защото са две програми (Урок 0, раздел 0.6). `API: 1.53` е версията на езика, на който си говорят. `docker compose version` и `docker buildx version` потвърждават, че двата *plugin*-а са на мястото си: ако `docker compose` отговори `docker: unknown command: docker compose`, липсва `docker-compose-plugin` (с Docker 29.2.1 клиентът отговаря така на подкоманда, която не познава: `docker noexiste` отпечата `docker: unknown command: docker noexiste`).
+4. **Първият контейнер.** Демонът не намери образа `hello-world` на компютъра ти (`Unable to find image … locally`), изтегли го от Docker Hub, създаде контейнер, пусна го и, тъй като поиска `--rm`, го изтри накрая. Текстът, който контейнерът отпечатва, описва в четири стъпки пътя от картата на Урок 0: клиентът говори с демона, демонът изтегля образа, създава контейнер и ти връща изхода му. `hello-world` е единственият образ в този курс, който се използва без фиксирана версия (`latest`), защото това е единственият таг, който публикува.
+5. ***Сокетът*.** `srw-rw----`: `s` казва, че е *сокет*; `rw-` за собственика, `root`; `rw-` за групата, `docker`; и `---` за всички останали. Тази последна колона с тирета е онова, което не позволява на потребител извън групата да говори с демона (1.8).
+6. **Нула контейнери от курса.** `--rm` си свърши работата. Всички имена в този курс започват с `curso-docker-`, за да можеш да намериш и изтриеш своето, без да докосваш нищо друго; това е навик, който е добре да имаш още от първия контейнер.
+
+### 1.8 Групата `docker`
+
+#### 1.8.1 Грешката с правата
+
+Току-що след инсталирането на Docker, ако въведеш `docker ps` без `sudo`, ще видиш грешката от този раздел. `fig01_06.sh` я предизвиква, без да те изважда от групата: използва потребителя `nobody`, който съществува във всеки Linux и не принадлежи на никоя полезна група:
+
+```bash
+#!/usr/bin/env bash
+# fig01_06.sh — El error de permisos: un usuario que NO está en el grupo docker.
+# Usa al usuario «nobody», que existe en todo Linux y no pertenece a ningún
+# grupo útil, para mostrar el error sin tener que sacarte a ti del grupo.
+set -uo pipefail
+
+echo "== ¿En qué grupos está nobody?"
+id -nG nobody
+
+echo
+echo "== nobody intenta hablarle al daemon"
+sudo -u nobody docker ps
+echo "código de salida: $?"
+
+echo
+echo "== ¿Y tú? ¿Estás en el grupo docker?"
+if id -nG | tr ' ' '\n' | grep -qx docker; then echo "sí"; else echo "no"; fi
+```
+
+Реално изпълнение · виртуална машина:
+
+```text
+$ ./fig01_06.sh
+== ¿En qué grupos está nobody?
+nogroup
+
+== nobody intenta hablarle al daemon
+permission denied while trying to connect to the docker API at unix:///var/run/docker.sock
+código de salida: 1
+
+== ¿Y tú? ¿Estás en el grupo docker?
+sí
+```
+
+Този изход е стабилен. Последният ред ще казва `no`, ако все още не си направил стъпката от 1.8.2, и именно в това състояние ще видиш грешката със собствения си потребител.
+
+`sudo -u nobody` изпълнява командата като потребителя `nobody`. Този потребител е само в групата `nogroup`, така че пред *сокета* `srw-rw---- root docker` попада в третата колона: без никакви права. Съобщението се чете също като онова от Урок 0, с друга причина в края: клиентът **намери** *сокета* в `/var/run/docker.sock` (демонът е там), но няма право да го отвори. Сравни го с `no such file or directory` от Урок 0, което означаваше „на този път няма демон“. Две различни причини, две различни поправки: тук рестартирането на услугата не помага.
+
+#### 1.8.2 Влизане в групата
+
+Има три начина да се отървеш от грешката и е добре да ги познаваш, преди да избереш:
+
+1. **Винаги да използваш `sudo docker`.** Работи и не дава никакви нови права, но е неудобно, а конфигурационните файлове на клиента накрая стават собственост на `root` (ще го видиш в 1.8.3).
+2. **Да влезеш в групата `docker`.** Това прави почти всеки и това прави този курс. От този момент всяка програма, която работи от твое име, може да говори с демона.
+3. **Групата при поискване**, с парола (1.9.3).
+
+Начин 2 е три стъпки (от документацията):
+
+```bash
+sudo groupadd docker
+sudo usermod -aG docker $USER
+newgrp docker
+```
+
+- `groupadd docker` създава групата. Ръководството предупреждава, че в някои дистрибуции пакетът вече я създава при инсталирането; в Ubuntu и в Mint е така и командата ще ти каже `groupadd: group 'docker' already exists`. Това не е истинска грешка: групата вече я е имало.
+- `usermod -aG docker $USER` те добавя в групата. `-a` (*append*) е важно: без него `-G` **заменя** всичките ти групи с `docker` и ще останеш извън `sudo`, наред с други. `$USER` е потребителското ти име.
+- Промяната не важи за вече отворените ти сесии, защото групите на един процес се фиксират при влизане в системата. Ръководството иска да **излезеш и да влезеш отново** (а ако твоят Linux работи във виртуална машина, може би и да я рестартираш). `newgrp docker` е прекият път: отваря нов *shell* с вече приложената група, само в този терминал.
+
+След това `id -nG` трябва да включва думата `docker`, а `docker run hello-world` трябва да работи без `sudo`. Това е моментът да пуснеш `fig01_05.sh`.
+
+#### 1.8.3 Грешката след това: `config.json`
+
+Ако преди да влезеш в групата си пускал команди със `sudo docker`, може да видиш това, когато използваш `docker` без `sudo` (от документацията; `user` е твоят потребител):
+
+```text
+WARNING: Error loading config file: /home/user/.docker/config.json -
+stat /home/user/.docker/config.json: permission denied
+```
+
+Клиентът пази конфигурацията си в папката `.docker` в домашната ти директория. Когато го пусна със `sudo`, тази папка беше създадена със собственик `root` и сега ти не можеш да я четеш. Ръководството дава две поправки: да изтриеш `~/.docker/` (създава се отново сама, но губиш конфигурацията, която е имала), или да си върнеш папката:
+
+```bash
+sudo chown "$USER":"$USER" /home/"$USER"/.docker -R
+sudo chmod g+rwx "$HOME/.docker" -R
+```
+
+Това е добър пример защо `sudo docker` не е толкова безобидно: не дава повече власт от групата, но оставя следи от `root` там, където не им е мястото.
+
+### 1.9 Защо групата `docker` е равносилна на `root`
+
+#### 1.9.1 Предупреждението
+
+Стъпките след инсталацията поставят това предупреждение точно преди командите от 1.8.2: „групата `docker` дава на потребителя привилегии на ниво `root`“ ([Docker, стъпки след инсталацията](https://docs.docker.com/engine/install/linux-postinstall/)). А ръководството за сигурност обяснява защо: демонът се нуждае от `root`, а Docker ти позволява да споделиш папка от хоста с контейнер, „без да ограничава правата на достъп на контейнера“; можеш да стартираш контейнер, в който `/host` е папката `/` на компютъра ти, „и контейнерът може да променя файловата система на хоста ти без никакви ограничения“ ([Docker Engine security](https://docs.docker.com/engine/security/#docker-daemon-attack-surface)).
+
+Едно предупреждение се забравя; една демонстрация — не. Затова този курс не иска от теб да му повярваш.
+
+#### 1.9.2 Да го видиш със собствените си очи
+
+`/etc/shadow` е файлът, в който Linux пази шифрираните пароли на потребителите. Само `root` може да го чете. `fig01_07.sh` опитва да го прочете два пъти: първо като теб, без `sudo`; после, като го поиска от демона на Docker. За да не отпечата нищо тайно, само преброява редовете и показва първото **име** на потребител:
+
+```bash
+#!/usr/bin/env bash
+# fig01_07.sh — Por qué el grupo docker equivale a root.
+# Córrelo SIN sudo, como tu usuario normal (que ya está en el grupo docker).
+# Lee /etc/shadow, el archivo de contraseñas cifradas que solo root puede leer,
+# y solo imprime cuántos renglones tiene y el primer NOMBRE de usuario: nada secreto.
+set -uo pipefail
+IMAGEN=debian:13.7-slim
+
+echo "== 1. Tú, sin sudo, intentas leer /etc/shadow"
+ls -l /etc/shadow | awk '{print $1, $3, $4, $NF}'
+cat /etc/shadow > /dev/null
+echo "código de salida: $?"
+
+echo
+echo "== 2. Lo mismo, pero se lo pides al daemon de Docker"
+docker run --rm --name curso-docker-llave -v /etc:/anfitrion-etc:ro "$IMAGEN" sh -c '
+  id
+  echo "renglones de /etc/shadow que pude leer: $(wc -l < /anfitrion-etc/shadow)"
+  echo "primer usuario de la lista: $(cut -d: -f1 /anfitrion-etc/shadow | head -1)"'
+echo "código de salida: $?"
+```
+
+Реално изпълнение · виртуална машина:
+
+```text
+$ ./fig01_07.sh
+== 1. Tú, sin sudo, intentas leer /etc/shadow
+-rw-r----- root shadow /etc/shadow
+cat: /etc/shadow: Permission denied
+código de salida: 1
+
+== 2. Lo mismo, pero se lo pides al daemon de Docker
+Unable to find image 'debian:13.7-slim' locally
+13.7-slim: Pulling from library/debian
+ddc0c1e36a67: Pulling fs layer
+d449c469d06c: Download complete
+ddc0c1e36a67: Download complete
+ddc0c1e36a67: Pull complete
+Digest: sha256:62bd423aeee912639ca8ee681c2b762cb3e25137e0a92b20be455898a9f034ad
+Status: Downloaded newer image for debian:13.7-slim
+uid=0(root) gid=0(root) groups=0(root)
+renglones de /etc/shadow que pude leer: 26
+primer usuario de la lista: root
+código de salida: 0
+```
+
+На твоя компютър се променят: броят на редовете (по един за всеки потребител на системата ти), идентификаторите при изтеглянето и целият блок с изтеглянето, ако вече си имал образа. Останалото е стабилно.
+
+Прочети двете половини заедно:
+
+1. **Като теб системата ти казва „не“.** `/etc/shadow` е собственост на `root` и на групата `shadow`, а останалите нямат никакви права (`---`). `cat` се проваля с `Permission denied`, както трябва.
+2. **Като го поискаш от демона, ти казва „да“.** `-v /etc:/anfitrion-etc:ro` монтира папката `/etc` на компютъра ти вътре в контейнера, в `/anfitrion-etc`. Вътре процесът е `uid=0(root)` и тъй като пространството от имена на потребителите не се изолира по подразбиране (Урок 0, раздел 0.3), това е **същият** потребител 0 на компютъра ти. Прочита файла без проблем: 26 реда, като започва с този на `root`.
+
+Не използва `sudo`. Не въведе никаква парола. Достатъчно беше да си в групата `docker`. А `:ro` на монтирането (само за четене) не е защита: ти го сложи и нищо не ти пречеше да го махнеш и да монтираш цялото `/` с права за запис. Това означава „равносилна на `root`“: не че групата `docker` има някакво специално право, а че дава достъп до програма, която работи като `root` и прави каквото ѝ поискаш.
+
+Същата логика обяснява и другите две забрани от сцената. Да дадеш права `777` на *сокета* означава да вкараш **всички** потребители и програми на компютъра в групата `docker`, без да ги питаш. А да монтираш *сокета* вътре в контейнер означава да дадеш този ключ на онова, което работи вътре.
+
+#### 1.9.3 Алтернативите
+
+Документацията предлага три пътя за онези, които не искат тази власт да е винаги налична:
+
+- **`sudo docker`** всеки път. Властта е същата, но трябва да я поискаш с парола и това се записва.
+- **Групата при поискване.** Потребителят ти остава **извън** групата `docker`, на групата се слага парола (`sudo gpasswd docker`) и когато ти трябва Docker, отваряш *shell* с `newgrp docker` и въвеждаш тази парола. Ръководството казва за какво служи и за какво не: намалява „фоновия“ достъп до *сокета*, защото го имат само програмите, които пуснеш от този *shell*, но не намалява привилегиите, след като достъпът е даден, и „не е граница на сигурността“ срещу злонамерен код, който вече работи от твое име ([Docker, стъпки след инсталацията](https://docs.docker.com/engine/install/linux-postinstall/#access-the-docker-group-on-demand)).
+- **Режимът *rootless*.** Демонът и контейнерите работят вътре в пространство от имена на потребителите, без привилегии на `root`, за да се смекчат евентуални уязвимости в демона и в средата за изпълнение ([Docker, режим *rootless*](https://docs.docker.com/engine/security/rootless/)). Това е единственият от трите пътя, който променя същността на въпроса. Той има свои изисквания и ограничения и някои подробности, на които учи този курс, биха изглеждали различно в него, затова не е пътят на курса.
+
+Курсът използва групата, на компютър, който е твой и на който ти решаваш какво работи. Правилото, което има значение: **да вкараш някого в групата `docker` означава да му дадеш `root`**. Ако не би дал паролата на `root` на някой човек или програма, не го вкарвай и в групата.
+
+> [!NOTE]
+> 🔧 **Наблюдение от инженерството 1.2**
+> Полезният въпрос не е „опасно ли е това право?“, а „какво мога да направя **чрез** това право?“. Групата `docker` никъде не казва `root`; пътят към `root` минава през посредник, който е такъв. Много проблеми със сигурността имат тази форма: скромно право, което отваря вратата към някого с повече власт.
+
+### 1.10 Обновяване и деинсталиране
+
+**Обновяване.** Тъй като Docker живее в хранилище на `apt`, обновява се като всичко останало: `sudo apt update` и `sudo apt upgrade`, или като повториш командата от 1.6 с новата версия, която искаш ([Docker, инсталиране на Ubuntu](https://docs.docker.com/engine/install/ubuntu/#upgrade-docker-engine)).
+
+**Деинсталиране.** Стъпките са три и всяка премахва нещо различно (от документацията):
+
+```bash
+sudo apt purge docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin docker-ce-rootless-extras
+sudo rm -rf /var/lib/docker
+sudo rm -rf /var/lib/containerd
+sudo rm /etc/apt/sources.list.d/docker.sources
+sudo rm /etc/apt/keyrings/docker.asc
+```
+
+Първата премахва програмите (`purge`, за разлика от `remove`, премахва и конфигурацията им). Обърни внимание, че списъкът включва `docker-ce-rootless-extras`, шестия пакет, който видя в симулацията от 1.5.3. Втората двойка **изтрива всичките ти образи, контейнери и томове**, които първата остави непокътнати: това е необратимо, затова преди да я пуснеш, увери се, че там няма нищо, което искаш да запазиш. Третата двойка премахва източника и ключа, за да спре `apt` да се обръща към хранилището на Docker. Ръководството добавя, че конфигурационните файлове, които си редактирал ръчно, трябва да се изтрият ръчно.
+
+## Грешката, която ще видиш
+
+Този урок има две основни грешки, и двете предизвикани в своите раздели, и една второстепенна, която вече познаваш.
+
+**Грешката на Mint: „does not have a Release file“.** Това е грешката от `fig01_03.sh` (1.5.2):
+
+```text
+Err:2 https://download.docker.com/linux/ubuntu zena Release
+  404  Not Found [IP: 3.161.44.57 443]
+E: The repository 'https://download.docker.com/linux/ubuntu zena Release' does not have a Release file.
+```
+
+Чете се така: `apt` поиска от хранилището на Docker версията `zena` и сървърът отговори, че не съществува (404). Думата, която има значение, е тази между адреса и `Release`: ако там се появи име на Mint (`wilma`, `xia`, `zara`, `zena`), проблемът е в реда `Suites` на `/etc/apt/sources.list.d/docker.sources`. Поправя се, като този файл се презапише с реда от официалното ръководство, който използва `UBUNTU_CODENAME` (1.5.3), и се пусне `sudo apt update` отново. Ако вместо името на Mint се появи `noble` и пак се проваля, проблемът е друг (мрежата или грешно написан URL); а ако се появи името на версия на Ubuntu, която Docker не поддържа, провери списъка в 1.2.1.
+
+**Грешката с правата: „permission denied while trying to connect to the docker API“.** Това е грешката от `fig01_06.sh` (1.8.1):
+
+```text
+permission denied while trying to connect to the docker API at unix:///var/run/docker.sock
+```
+
+Чете се така: демонът **е** там (*сокетът* съществува), но твоят потребител няма право да отвори *сокета*. Поправя се със `sudo usermod -aG docker $USER` и излизане от сесията (1.8.2), **като знаеш какво означава това** (1.9). Какво не се прави: `chmod 666` или `777` върху *сокета*, което го отваря за всички потребители на компютъра. Освен това *сокетът* се създава отново от *systemd* (единицата `docker.socket`) с обичайните му права, `root:docker` и `0660`, при всяко стартиране на компютъра, така че „поправката“ изчезва при следващото рестартиране и изкушението е да я повториш.
+
+**Второстепенната грешка: демонът го няма.** Видя я в Урок 0, предизвикана с тестов път (реално изпълнение от онзи урок):
+
+```text
+failed to connect to the docker API at unix:///tmp/curso-docker-no-hay-daemon.sock; check if the path is correct and if the daemon is running: dial unix /tmp/curso-docker-no-hay-daemon.sock: connect: no such file or directory
+```
+
+На твоя Mint, при спряна услуга, пътят ще е `/var/run/docker.sock`, а останалата част от съобщението — същата. Сега можеш да я диагностицираш от край до край: `systemctl is-active docker` ти казва дали услугата работи; ако не, `sudo systemctl start docker` я стартира, а `sudo journalctl -u docker` ти показва журнала на услугата, за да разбереш защо е спряла. Ако `is-enabled` казва `disabled`, услугата няма да стартира сама при включване на компютъра: `sudo systemctl enable docker` поправя това.
+
+## Навикът за сигурност на урока
+
+**Групата `docker` е равносилна на `root`: дава се съзнателно и само на онзи, на когото би дал `root`.** Този навик предотвратява два конкретни инцидента. Първият е този от сцената: да „поправиш“ грешката с правата, като отвориш *сокета* за всички, при което всяка програма на компютъра — включително някоя, която си изтеглил, без да я провериш — може да поиска от демона да монтира диска ти. Вторият е по-тих: да вкараш в групата, „за да не се мъчи“, друг човек или служебен акаунт, на който му трябваше само да види някакви журнали. И в двата случая вредата не личи, докато някой не я използва.
+
+Заедно с този навик идва и друг, по-малък, който този урок също въвежда: **ключът на едно хранилище важи само за това хранилище** (`Signed-By`) и нищо, което иска от теб `apt-key`, или скрипт, изтеглен и пуснат, без да е прочетен, не влиза на компютъра ти.
+
+## Какво се прави погрешно
+
+**Да инсталираш `docker.io`, „защото е по-лесно“.** Това е пакетът на дистрибуцията ти, а не на Docker: друга версия, друго темпо на обновяване и *plugin*-ите с други имена. Ако го имаш и инсталираш и официалните, влизат в конфликт. Този курс е измерен с официалните.
+
+**Да копираш ръководството за инсталиране на Debian или някое старо ръководство на Mint.** Те използват `VERSION_CODENAME`, което в Mint е името на Mint. Резултатът е грешката от 1.5.2.
+
+**Да напишеш `noble` ръчно, „защото работи“.** Работи днес, но връзва командата с една-единствена версия: ако я дадеш на някого с Mint 21 (`jammy`) или я пуснеш отново в деня, в който твоят Mint смени основата си на Ubuntu, тя записва грешно име. Изразът от ръководството взима стойността от `/etc/os-release` в момента на изпълнението. Внимание: и в двата случая файлът пази вече изчисленото име; ако някой ден смениш версията на Mint, повтаря се командата от 1.5.3, а не се редактира файлът на око.
+
+**`chmod 777 /var/run/docker.sock`.** Дава на целия компютър онова, което групата `docker` дава на членовете си: `root`. И дори не трае, защото *systemd* създава *сокета* отново при стартиране на компютъра.
+
+**Да вкарваш когото и да е в групата `docker`.** Това означава да му дадеш `root` (1.9).
+
+**Да използваш `apt-key add`.** Остарял е (твоят Mint 22 още го има, затова изглежда, че работи) и поставя ключа в ключодържател, който важи за всички хранилища.
+
+**Да пуснеш скрипта от `get.docker.com`, без да го прочетеш.** Самото ръководство иска изтеглените скриптове да се преглеждат, преди да се пуснат, и не го препоръчва за продукция. Скрипт, който се изтегля и пуска със `sudo`, има `root` на компютъра ти, точно както групата `docker`.
+
+**Да забравиш `-a` в `usermod -aG`.** `usermod -G docker` те оставя **само** в групата `docker` и извън `sudo`.
+
+**Да смяташ инсталацията за завършена, без да я провериш.** Това, че `apt` не е дал грешка, не казва, че услугата работи, нито че стартира сама, нито че твоят потребител може да я използва. Проверките от `fig01_05.sh` отнемат две секунди.
+
+## Упражнения
+
+Запиши отговорите и прогнозите си в [дневника](bitacora.md), преди да погледнеш решенията.
+
+### Упражнение 1 — Прочети своя `os-release` (проект)
+
+Пусни `fig01_01.sh` на своя Mint. Преди да го пуснеш, предскажи какво ще кажат `VERSION_CODENAME`, `UBUNTU_CODENAME` и `Suites`. След това отговори: ако колега има LMDE 7, какво биха казали тези три реда на неговия компютър, кое ръководство за инсталиране се отнася за него и какво кодово име отива в неговия `Suites`? Подсказка: пусни `./fig01_01.sh os-release-lmde-7.txt` в `programas/01-instalacion/` и потърси променлива, която Mint няма. Последният блок ще покаже архитектурата на твоя компютър, а не на неговия.
+
+### Упражнение 2 — Диагностицирай, без да пускаш нищо
+
+Колега ти изпраща три съобщения за грешка, по едно на ден. Това са грешките от този урок, както би ги видял той, с името на неговата версия на Mint и пътя до *сокета* на неговия компютър. За всяко кажи каква е причината и коя команда или промяна я поправя:
+
+1. `E: The repository 'https://download.docker.com/linux/ubuntu xia Release' does not have a Release file.`
+2. `permission denied while trying to connect to the docker API at unix:///var/run/docker.sock`
+3. `failed to connect to the docker API at unix:///var/run/docker.sock; check if the path is correct and if the daemon is running: dial unix /var/run/docker.sock: connect: no such file or directory`
+
+### Упражнение 3 — Откъде идва всяко нещо?
+
+Без да инсталираш нищо ново, пусни тези две команди на своя Mint (вече с инсталиран Docker) и отговори на въпросите:
+
+```bash
+apt-cache policy docker-ce docker.io | grep -E '^[a-z]|Installed|Candidate'
+cat /etc/apt/sources.list.d/docker.sources
+```
+
+1. Коя версия на `docker-ce` имаш инсталирана и коя би се инсталирала, ако обновиш?
+2. Имаш ли инсталиран `docker.io`? Предлага ли го някое хранилище?
+3. Какво казва редът `Suites` и защо?
+
+### Упражнение 4 — Ключът на демона
+
+Без да го пускаш, отговори: ако във `fig01_07.sh` смениш `-v /etc:/anfitrion-etc:ro` с `-v /:/anfitrion` (без `:ro`), какво би могъл да направи контейнерът? Назови едно конкретно нещо, което би могъл да промени на компютъра ти. След това обясни с две изречения защо `chmod 777 /var/run/docker.sock` е по-лошо от това да вкараш потребителя си в групата `docker`.
+
+## Решения
+
+### Решение 1
+
+На Mint 22.x: `VERSION_CODENAME` казва името на твоя Mint (`wilma`, `xia`, `zara` или `zena`), `UBUNTU_CODENAME` казва `noble` и `Suites` казва `noble`, защото правилото `${UBUNTU_CODENAME:-$VERSION_CODENAME}` предпочита първата променлива, когато тя съществува. Ако твоят `Suites` е казал нещо друго, провери дали имаш Mint 22, а не по-стара версия: Mint 21 е изграден върху Ubuntu Jammy и би ти казал `jammy`, която също е поддържана версия.
+
+В LMDE 7 `VERSION_CODENAME=gigi`, `UBUNTU_CODENAME` излиза `(no existe)` и затова `Suites: gigi` — име, което Docker няма. Но неговият `os-release` съдържа `DEBIAN_CODENAME=trixie`, променливата, която Mint няма, и именно тя отива в реда `Suites` от ръководството за Debian: `${DEBIAN_CODENAME:-$VERSION_CODENAME}` (1.2.3). Ето изхода от подсказката (реално изпълнение · виртуална машина, затова `arm64`; намира се в `fig01_01.salida-lmde.txt`):
+
+```text
+$ ./fig01_01.sh os-release-lmde-7.txt
+== Lo que dice os-release-lmde-7.txt
+NAME=LMDE
+VERSION=7 (gigi)
+ID=linuxmint  ID_LIKE=debian
+VERSION_CODENAME=gigi
+UBUNTU_CODENAME=(no existe)
+DEBIAN_CODENAME=trixie
+
+== El nombre en clave que va en Suites (la regla de la guía oficial de Ubuntu)
+Suites: gigi
+
+== Tu arquitectura, según dpkg (la de TU equipo: dpkg no lee ARCHIVO)
+arm64
+```
+
+### Решение 2
+
+1. **Кодовото име на Mint в хранилището.** `xia` е Mint 22.1. Редът `Suites` в `/etc/apt/sources.list.d/docker.sources` съдържа името на Mint; файлът се презаписва с реда от официалното ръководство (`${UBUNTU_CODENAME:-$VERSION_CODENAME}`) и се пуска `sudo apt update` (1.5.3).
+2. **Потребителят не е в групата `docker`.** Демонът работи; липсва право за *сокета*. `sudo usermod -aG docker $USER`, излизане и повторно влизане в сесията (или `newgrp docker`), като знаеш, че това е равносилно на това да му дадеш `root` (1.8 и 1.9).
+3. **Демонът не работи.** На този път няма *сокет*. `systemctl is-active docker` го потвърждава; `sudo systemctl start docker` го стартира, `sudo journalctl -u docker` казва защо е спрял, а `sudo systemctl enable docker` го настройва да стартира сам.
+
+Ако си объркал 2 с 3, прочети отново края на всяко съобщение: `permission denied` срещу `no such file or directory`. Причината винаги е в последните думи.
+
+### Решение 3
+
+1. В блока на `docker-ce` `Installed` е версията, която имаш, а `Candidate` — тази, която би се инсталирала със `sudo apt upgrade`. Ако са еднакви, си в крак с обновленията.
+2. Ако си следвал урока, за `docker.io` ще пише `Installed: (none)`. Неговият `Candidate` вероятно показва версия: пакетът съществува в хранилищата на Ubuntu, които твоят Mint използва, макар че не го инсталираш. Това е причината да е добре да знаеш откъде идва всеки пакет.
+3. `Suites: noble`, защото изразът от ръководството взе `UBUNTU_CODENAME` от твоя `/etc/os-release`: хранилището на Docker има папки по версии на Ubuntu, а не по версии на Mint.
+
+### Решение 4
+
+С `/`, монтирано с права за запис, контейнерът, като `root`, би могъл да промени всеки файл на компютъра ти: например да добави нов потребител с администраторски права, като редактира `/etc/passwd` и `/etc/sudoers`, да изтрие `/etc/shadow` или да замени програма от `/usr/bin` с друга. Това е изречението от ръководството за сигурност: контейнерът „може да променя файловата система на хоста ти без никакви ограничения“.
+
+`chmod 777` е по-лошо, защото не дава тази власт само на твоя потребител, а на **всички** потребители и програми на компютъра, без нито един от тях да трябва да е в група или да знае за това. И освен това не трае: *systemd* създава *сокета* отново с правата му при рестартиране на компютъра, така че който го използва, свиква да го повтаря.
+
+## Как разбирам, че съм успял
+
+Отбележи всяка точка само ако е изпълнена на **твоя** компютър:
+
+- [ ] `fig01_01.sh` показва `Suites: noble` (или, в LMDE, знаеш защо не и кое ръководство се отнася за теб).
+- [ ] `cat /etc/apt/sources.list.d/docker.sources` показва формата с шест полета от 1.5.1, със `Suites: noble` (в LMDE — `trixie` и URL адреса на `linux/debian`) и `Signed-By: /etc/apt/keyrings/docker.asc`, а `sudo apt update` не показва нито един ред `E:`.
+- [ ] `systemctl is-active docker` отпечатва `active`, а `systemctl is-enabled docker` отпечатва `enabled`.
+- [ ] `id -nG` включва `docker`, а `docker version` без `sudo` показва версията на клиента **и** тази на демона.
+- [ ] `fig01_05.sh`, без `sudo`, завършва с `Hello from Docker!` в блок 4, `srw-rw---- root docker /var/run/docker.sock` в блок 5 и `0` в блок 6. Какво не се сравнява, защото се променя: версиите, идентификаторите и *digest*-ът на изтеглянето, както и архитектурата в скоби.
+- [ ] `fig01_06.sh` отпечатва `permission denied` за `nobody` и `sí` за теб.
+- [ ] `fig01_07.sh` отпечатва `Permission denied` в блок 1 и `uid=0(root)` в блок 2 и можеш да обясниш на глас защо.
+- [ ] Накрая `docker ps -a --filter name=curso-docker-` не показва нищо.
+- [ ] Записа в дневника си коя версия на Docker си инсталирал и на коя дата.
+
+## Обобщение
+
+Отговори, без да поглеждаш урока:
+
+1. Защо курсът инсталира пакетите от `download.docker.com`, а не `docker.io`?
+2. Какво казва `/etc/os-release` в Mint, което не казва в Ubuntu, и защо това има значение за инсталирането на Docker?
+3. Какво прави изразът `${UBUNTU_CODENAME:-$VERSION_CODENAME}`?
+4. Кои пет пакета инсталира ръководството и на коя част от картата на Урок 0 съответства всеки от тях?
+5. За какво служи полето `Signed-By` и какъв проблем имаше `apt-key`?
+6. Какво означава „does not have a Release file“ при добавяне на хранилището в Mint?
+7. Каква е разликата между `permission denied` и `no such file or directory`, когато говориш с демона?
+8. Защо групата `docker` е равносилна на `root` и какви алтернативи има?
+9. Защо ufw не защитава портовете, които публикува Docker, и какво прави този курс по въпроса?
+
+## Източници
+
+Всички са прегледани на 21 октомври 2026 г.
+
+- [Docker, „Install Docker Engine on Ubuntu“](https://docs.docker.com/engine/install/ubuntu/): поддържаните версии на Ubuntu, бележката за Linux Mint, предупреждението за защитната стена, конфликтните пакети, хранилището с неговия ключ, петте пакета, как се фиксира версия, скриптът за удобство, проверките, обновяването и деинсталирането.
+- [Docker, „Install Docker Engine on Debian“](https://docs.docker.com/engine/install/debian/): редът `Suites` с `VERSION_CODENAME` и бележката за производните дистрибуции (LMDE).
+- [Docker, „Linux post-installation steps for Docker Engine“](https://docs.docker.com/engine/install/linux-postinstall/): групата `docker`, предупреждението, че е равносилна на `root`, грешката с `config.json`, групата при поискване с парола и стартирането на услугата със *systemd*.
+- [Docker Engine security, „Docker daemon attack surface“](https://docs.docker.com/engine/security/#docker-daemon-attack-surface): защо който контролира демона, контролира хоста.
+- [Docker, „Packet filtering and firewalls“](https://docs.docker.com/engine/network/packet-filtering-firewalls/#docker-and-ufw): защо публикуваните портове заобикалят ufw.
+- [Docker, „Rootless mode“](https://docs.docker.com/engine/security/rootless/): какво е режимът без `root`.
+- [Docker Desktop за Linux](https://docs.docker.com/desktop/setup/install/linux/): че Docker Desktop в Linux пуска виртуална машина.
+- [Docker Engine 29, бележки към версиите](https://docs.docker.com/engine/release-notes/29/): версия 29.9.2 и датата ѝ.
+- [Linux Mint, всички версии](https://www.linuxmint.com/download_all.php): версиите на Mint 22, основата им Ubuntu Noble и LMDE 7 върху Debian Trixie.
+- [Хранилище с пакети на Linux Mint](http://packages.linuxmint.com/): пакетът `base-files` `13ubuntu10mint22.3.0`, от който идва `/etc/os-release` на Mint 22.3, използван при изпълненията.
+- [sources.list(5), наръчник на `apt`](https://manpages.debian.org/trixie/apt/sources.list.5.en.html): еднореденият формат и deb822.
+- [apt-key(8), наръчник на `apt` в Ubuntu 24.04](https://manpages.ubuntu.com/manpages/noble/man8/apt-key.8.html): `apt-key` като остарял и до коя версия ще е наличен.
+- [Colima](https://github.com/abiosoft/colima): виртуалната машина на изпълненията.
+
+### Термини от този урок
+
+| | |
+|---|---|
+| **`apt`** | мениджърът на пакети на Mint, Ubuntu и Debian; изтегля и инсталира пакети от хранилища |
+| **deb822** | форматът на файловете `.sources` на `apt`: по едно именувано поле на ред |
+| **`dpkg`** | мениджърът на пакети от ниско ниво, върху който работи `apt` |
+| **група `docker`** | групата в Linux, чиито членове могат да говорят с демона без `sudo`; равносилна е на `root` |
+| **LMDE** | *Linux Mint Debian Edition*, изданието на Mint, изградено върху Debian, а не върху Ubuntu |
+| **ключ (на хранилище)** | публичната част на криптографски ключ, с който `apt` проверява, че пакетите идват от онзи, от когото твърдят |
+| **кодово име** | краткото име на версия на дистрибуция: `noble` за Ubuntu 24.04, `zena` за Mint 22.3 |
+| ***plugin*** | програма, която се добавя към клиента `docker` като подкоманда: `docker compose`, `docker buildx` |
+| **хранилище** | сървър, който публикува пакети с подписан индекс |
+| ***rootless*** | режим, в който демонът и контейнерите работят без привилегии на `root` |
+| ***systemd*** | програмата, която стартира и наблюдава услугите на системата; управлява се със `systemctl` |
+| **ufw** | *Uncomplicated Firewall*, инструментът за защитна стена на Ubuntu |
+
+---
+
+**Предишен:** [Урок 0 — Какво е контейнер и какво НЕ е](00-que-es-un-contenedor.md) · **Следващ:** [Урок 2 — Контейнери в ежедневието](02-contenedores-dia-a-dia.md)

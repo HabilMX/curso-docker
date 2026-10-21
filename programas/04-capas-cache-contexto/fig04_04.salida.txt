@@ -1,0 +1,33 @@
+$ PREFIJO=curso-docker-l04- ./fig04_04.sh 2>&1 | sed 's/curso-docker-l04-/curso-docker-/g'
+
+## La carpeta: el código, un respaldo de 50 MB y un .git falso de 10 MB
+$ for f in respaldo.tar .git cmd internal go.mod .; do du -sh --apparent-size $f; done
+50M	respaldo.tar
+10M	.git
+15K	cmd
+27K	internal
+41	go.mod
+61M	.
+
+## 1. Dockerfile de la Lección 4 (COPY selectivos), con .dockerignore
+$ docker build --progress=plain -t curso-docker-revisor:1.1.0 . > ../construccion.log 2>&1; echo "construcción: código $?"; grep 'transferring context' ../construccion.log | tail -1
+construcción: código 0
+#7 transferring context: 42.80kB done
+
+## 2. Dockerfile de la Lección 3 (COPY . .), con .dockerignore
+$ docker build --progress=plain -t curso-docker-revisor:con-ignore -f Dockerfile.leccion3 . > ../construccion.log 2>&1; echo "construcción: código $?"; grep 'transferring context' ../construccion.log | tail -1
+construcción: código 0
+#7 transferring context: 1.00kB done
+
+## 3. Dockerfile de la Lección 3, SIN .dockerignore
+$ docker build --progress=plain -t curso-docker-revisor:sin-ignore -f Dockerfile.leccion3 . > ../construccion.log 2>&1; echo "construcción: código $?"; grep 'transferring context' ../construccion.log | tail -1
+construcción: código 1
+#6 transferring context: 62.93MB 0.1s done
+#10 0.344 error obtaining VCS status: exit status 128
+#10 0.344 	Use -buildvcs=false to disable VCS stamping.
+#10 ERROR: process "/bin/sh -c go build -o /usr/local/bin/revisor ./cmd/revisor" did not complete successfully: exit code: 1
+------
+ > [4/4] RUN go build -o /usr/local/bin/revisor ./cmd/revisor:
+0.344 error obtaining VCS status: exit status 128
+0.344 	Use -buildvcs=false to disable VCS stamping.
+------

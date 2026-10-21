@@ -1,0 +1,6 @@
+# Lo que nunca viaja al daemon al construir.
+.git
+.env
+*.tar
+Dockerfile*
+.dockerignore

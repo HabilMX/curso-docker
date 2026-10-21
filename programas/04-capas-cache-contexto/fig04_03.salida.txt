@@ -1,0 +1,101 @@
+$ PREFIJO=curso-docker-l04- ./fig04_03.sh 2>&1 | sed 's/curso-docker-l04-/curso-docker-/g'
+
+## 1. En frío: sin caché de capas y con la caché de compilación vacía
+curso-docker-revisor:1.0.0 (Dockerfile.leccion3 --no-cache): 9909 ms
+  paso 1  DONE 0.0s  FROM docker.io/library/golang:1.27.3-trixie@sha256:604106102
+  paso 2  CACHED     WORKDIR /src
+  paso 3  DONE 0.0s  COPY . .
+  paso 4  DONE 7.1s  RUN go build -o /usr/local/bin/revisor ./cmd/revisor
+curso-docker-revisor:1.1.0 (Dockerfile --no-cache): 12207 ms
+  paso 1  DONE 0.0s  FROM docker.io/library/golang:1.27.3-trixie@sha256:604106102
+  paso 2  CACHED     WORKDIR /src
+  paso 3  DONE 0.0s  COPY go.mod ./
+  paso 4  DONE 0.0s  COPY cmd/ cmd/
+  paso 5  DONE 0.0s  COPY internal/ internal/
+  paso 6  DONE 10.5s RUN go build -o /usr/local/bin/revisor ./cmd/revisor
+
+## 2. Otra vez, sin cambiar nada
+curso-docker-revisor:1.0.0 (Dockerfile.leccion3): 1176 ms
+  paso 1  DONE 0.0s  FROM docker.io/library/golang:1.27.3-trixie@sha256:604106102
+  paso 2  CACHED     WORKDIR /src
+  paso 3  CACHED     COPY . .
+  paso 4  CACHED     RUN go build -o /usr/local/bin/revisor ./cmd/revisor
+curso-docker-revisor:1.1.0 (Dockerfile): 628 ms
+  paso 1  DONE 0.0s  FROM docker.io/library/golang:1.27.3-trixie@sha256:604106102
+  paso 2  CACHED     WORKDIR /src
+  paso 3  CACHED     COPY go.mod ./
+  paso 4  CACHED     COPY cmd/ cmd/
+  paso 5  CACHED     COPY internal/ internal/
+  paso 6  CACHED     RUN go build -o /usr/local/bin/revisor ./cmd/revisor
+
+## 3. Cambio un comentario en internal/reporte/tabla.go
+curso-docker-revisor:1.0.0 (Dockerfile.leccion3): 13011 ms
+  paso 1  DONE 0.0s  FROM docker.io/library/golang:1.27.3-trixie@sha256:604106102
+  paso 2  CACHED     WORKDIR /src
+  paso 3  DONE 0.0s  COPY . .
+  paso 4  DONE 10.1s RUN go build -o /usr/local/bin/revisor ./cmd/revisor
+curso-docker-revisor:1.1.0 (Dockerfile): 1847 ms
+  paso 1  DONE 0.0s  FROM docker.io/library/golang:1.27.3-trixie@sha256:604106102
+  paso 2  CACHED     WORKDIR /src
+  paso 3  CACHED     COPY go.mod ./
+  paso 4  CACHED     COPY cmd/ cmd/
+  paso 5  DONE 0.0s  COPY internal/ internal/
+  paso 6  DONE 0.8s  RUN go build -o /usr/local/bin/revisor ./cmd/revisor
+
+## 4. Cambio un archivo que el .dockerignore deja fuera
+curso-docker-revisor:1.1.0 (Dockerfile): 790 ms
+  paso 1  DONE 0.0s  FROM docker.io/library/golang:1.27.3-trixie@sha256:604106102
+  paso 2  CACHED     WORKDIR /src
+  paso 3  CACHED     COPY go.mod ./
+  paso 4  CACHED     COPY cmd/ cmd/
+  paso 5  CACHED     COPY internal/ internal/
+  paso 6  CACHED     RUN go build -o /usr/local/bin/revisor ./cmd/revisor
+
+## 5. Las capas de cada imagen: solo los pasos de la receta
+$ docker history curso-docker-revisor:1.0.0 --format '{{.Size}}\t{{.CreatedBy}}' | head -7 | cut -c1-70
+0B	CMD ["revisor"]
+0B	EXPOSE [8080/tcp]
+0B	USER 10001:10001
+110MB	RUN /bin/sh -c go build -o /usr/local/bin/re…
+115kB	COPY . . # buildkit
+8.19kB	WORKDIR /src
+4.1kB	WORKDIR /go
+$ docker history curso-docker-revisor:1.1.0 --format '{{.Size}}\t{{.CreatedBy}}' | head -9 | cut -c1-70
+0B	CMD ["revisor"]
+0B	EXPOSE [8080/tcp]
+0B	USER 10001:10001
+10MB	RUN /bin/sh -c go build -o /usr/local/bin/re…
+77.8kB	COPY internal/ internal/ # buildkit
+41kB	COPY cmd/ cmd/ # buildkit
+12.3kB	COPY go.mod ./ # buildkit
+8.19kB	WORKDIR /src
+4.1kB	WORKDIR /go
+$ docker image ls --format '{{.Repository}}:{{.Tag}} {{.Size}}' | grep -E '^curso-docker-revisor:1\.[01]\.0 '
+curso-docker-revisor:1.1.0 1.32GB
+curso-docker-revisor:1.0.0 1.45GB
+$ for i in curso-docker-revisor:1.0.0 curso-docker-revisor:1.1.0; do docker image inspect --format "$i {{.Size}}" $i; done
+curso-docker-revisor:1.0.0 337298513
+curso-docker-revisor:1.1.0 314341606
+
+## 6. La caché de compilación vive en el constructor, no en la imagen
+$ docker buildx du --filter 'description~=curso-docker-fig04-go-build'
+ID                           RECLAIMABLE   SIZE      LAST ACCESSED
+xq0we4j0a5g4a98ftg4xaezzc*   true          99.59MB   1 second ago
+$ docker buildx du --verbose --filter 'description~=curso-docker-fig04-go-build' | grep -E '^(Description|Type):'
+Description:  cached mount /root/.cache/go-build from exec /bin/sh -c go build -o /usr/local/bin/revisor ./cmd/revisor with id "/curso-docker-fig04-go-build"
+Type:         exec.cachemount
+$ docker run --rm --name curso-docker-mira --user 0 curso-docker-revisor:1.1.0 sh -c 'du -sh /root/.cache/go-build 2>&1'
+du: cannot access '/root/.cache/go-build': No such file or directory
+[código de salida: 1]
+$ docker run --rm --name curso-docker-mira --user 0 curso-docker-revisor:1.0.0 sh -c 'du -sh /root/.cache/go-build 2>&1'
+95M	/root/.cache/go-build
+
+## 7. La imagen nueva hace lo mismo que la vieja
+$ docker exec curso-docker-revisor curl -s http://127.0.0.1:8080/salud
+{"estado":"vivo","version":"desarrollo"}
+
+## 8. Borro SOLO mi caché de compilación y compruebo que ya no está
+$ docker buildx prune -f --filter type=exec.cachemount --filter 'description~=[^a-z0-9-]curso-docker-fig04-go-build[^a-z0-9-]' | tail -1
+Total:	99.59MB
+$ docker buildx du --filter 'description~=curso-docker-fig04-go-build'
+ID        RECLAIMABLE   SIZE      LAST ACCESSED

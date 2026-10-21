@@ -1,0 +1,37 @@
+$ ./fig08_04.sh
+== 1. La carpeta /etc/apk de la imagen, sin montar nada
+arch
+keys
+protected_paths.d
+repositories
+world
+
+== 2. Un volumen NUEVO montado ahí: el contenedor ve lo mismo...
+arch
+keys
+protected_paths.d
+repositories
+world
+-- ...porque Docker copió el contenido al volumen. Míralo montado en otra ruta:
+arch
+keys
+protected_paths.d
+repositories
+world
+
+== 3. Lo mismo con volume-nocopy: el volumen se queda vacío
+0
+
+== 4. Un bind mount de una carpeta vacía del equipo: tapa lo de la imagen
+0
+-- y en el equipo, la carpeta sigue vacía: no se copió nada en ningún sentido
+0
+
+== 5. -v con una carpeta del equipo que NO existe: Docker la crea... como root
+root:root no-existia
+
+== 6. --mount con una carpeta que no existe: se niega
+docker: Error response from daemon: invalid mount config for type "bind": bind source path does not exist: ./tampoco-existe
+
+Run 'docker run --help' for more information
+[código de salida: 125]

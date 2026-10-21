@@ -1,0 +1,30 @@
+$ ./fig06_06.sh
+== 1. El token por -e: funciona, pero queda a la vista
+-- lo que dice el revisor al arrancar:
+revisor: aviso: el token llegó por REVISOR_TOKEN: cualquiera con docker inspect lo puede leer; usa REVISOR_TOKEN_ARCHIVO
+revisor 1.3.0 escuchando en :8080 (1 servicio(s))
+-- lo que ve cualquiera con docker inspect:
+REVISOR_TOKEN=curso-docker-token-de-mentira-7f3a9c
+
+== 2. El token por archivo, con permisos 600
+600 secretos/revisor_token.txt
+revisor: leyendo el token de REVISOR_TOKEN_ARCHIVO: open /run/secrets/revisor_token: permission denied
+[código de salida: 1]
+
+== 3. El token por archivo, con permisos 644 y montado de solo lectura
+644 secretos/revisor_token.txt
+-- /salud no pide token:
+{"estado":"vivo","version":"1.3.0"}
+
+-- /api/estados sin token:
+{"error":"falta el token o no es válido"}
+ [401]
+-- /api/estados con el token:
+SERVICIO  ESTADO    TIEMPO  DETALLE
+propio    OK           <t>  200
+
+== 4. Lo que ve docker inspect ahora: la RUTA del secreto, no el secreto
+REVISOR_SERVICIOS=propio http://127.0.0.1:8080/salud
+REVISOR_TOKEN_ARCHIVO=/run/secrets/revisor_token
+REVISOR_PUERTO=8080
+/run/secrets/revisor_token (escribible: false)

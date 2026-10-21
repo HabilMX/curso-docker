@@ -1,0 +1,19 @@
+$ ./fig01_07.sh
+== 1. Tú, sin sudo, intentas leer /etc/shadow
+-rw-r----- root shadow /etc/shadow
+cat: /etc/shadow: Permission denied
+código de salida: 1
+
+== 2. Lo mismo, pero se lo pides al daemon de Docker
+Unable to find image 'debian:13.7-slim' locally
+13.7-slim: Pulling from library/debian
+ddc0c1e36a67: Pulling fs layer
+d449c469d06c: Download complete
+ddc0c1e36a67: Download complete
+ddc0c1e36a67: Pull complete
+Digest: sha256:62bd423aeee912639ca8ee681c2b762cb3e25137e0a92b20be455898a9f034ad
+Status: Downloaded newer image for debian:13.7-slim
+uid=0(root) gid=0(root) groups=0(root)
+renglones de /etc/shadow que pude leer: 26
+primer usuario de la lista: root
+código de salida: 0

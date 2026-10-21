@@ -1,0 +1,21 @@
+$ ./fig06_03.sh
+== 1. Una letra de menos: REVISOR_SERVICIO en vez de REVISOR_SERVICIOS
+revisor: falta REVISOR_SERVICIOS (ejemplo: REVISOR_SERVICIOS="prueba http://curso-docker-prueba:9000/ 2s")
+[código de salida: 1]
+
+== 2. La configuración por -e: un solo servicio
+SERVICIO  ESTADO    TIEMPO  DETALLE
+propio    OK           <t>  200
+
+== 3. Otra configuración, desde un archivo con --env-file
+# Configuración de un ambiente. Nada de esto es secreto.
+REVISOR_SERVICIOS=propio http://127.0.0.1:8080/salud, inexistente http://127.0.0.1:9/ 1s
+SERVICIO     ESTADO    TIEMPO  DETALLE
+inexistente  FALLA         <t>  no responde: Get "http://127.0.0.1:9/": dial tcp 127.0.0.1:9: connect: connection refused
+propio       OK            <t>  200
+
+== 4. Lo que recibió el contenedor: lo de la imagen más lo de la corrida
+REVISOR_SERVICIOS=propio http://127.0.0.1:8080/salud, inexistente http://127.0.0.1:9/ 1s
+REVISOR_PUERTO=8080
+== 5. ¿Las dos corridas usaron la misma imagen?
+sí: el mismo identificador de imagen en las dos

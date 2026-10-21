@@ -1,0 +1,43 @@
+$ ./fig01_04.sh
+Types: deb
+URIs: https://download.docker.com/linux/ubuntu
+Suites: noble
+Components: stable
+Architectures: amd64
+Signed-By: /etc/apt/keyrings/docker.asc
+
+== apt update
+
+WARNING: apt does not have a stable CLI interface. Use with caution in scripts.
+
+Hit:1 http://archive.ubuntu.com/ubuntu noble InRelease
+Hit:2 https://download.docker.com/linux/ubuntu noble InRelease
+Hit:3 http://archive.ubuntu.com/ubuntu noble-updates InRelease
+Hit:4 http://security.ubuntu.com/ubuntu noble-security InRelease
+Hit:5 http://archive.ubuntu.com/ubuntu noble-backports InRelease
+Reading package lists...
+Building dependency tree...
+Reading state information...
+3 packages can be upgraded. Run 'apt list --upgradable' to see them.
+
+== ¿De dónde saldría docker-ce, y en qué versión?
+docker-ce:
+  Installed: (none)
+  Candidate: 5:29.9.2-1~ubuntu.24.04~noble
+  Version table:
+     5:29.9.2-1~ubuntu.24.04~noble 500
+        500 https://download.docker.com/linux/ubuntu noble/stable amd64 Packages
+
+== Las versiones más recientes que ofrece el repositorio
+docker-ce/noble 5:29.9.2-1~ubuntu.24.04~noble amd64
+docker-ce/noble 5:29.9.1-1~ubuntu.24.04~noble amd64
+docker-ce/noble 5:29.9.0-1~ubuntu.24.04~noble amd64
+
+== Simulación: los paquetes de Docker que instalaría el comando de la guía
+containerd.io 2.4.2-3~ubuntu.24.04~noble
+docker-ce-cli 5:29.9.2-1~ubuntu.24.04~noble
+docker-ce 5:29.9.2-1~ubuntu.24.04~noble
+docker-buildx-plugin 0.38.1-1~ubuntu.24.04~noble
+docker-ce-rootless-extras 5:29.9.2-1~ubuntu.24.04~noble
+docker-compose-plugin 5.6.0-1~ubuntu.24.04~noble
+paquetes en total, contando dependencias: 96

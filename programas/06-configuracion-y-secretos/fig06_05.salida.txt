@@ -1,0 +1,69 @@
+$ ./fig06_05.sh
+== 1. Construir pasando el token de módulos (de mentira) por ARG
+construida
+
+== 2. El RUN borró /root/.netrc: dentro de la imagen ya no está
+.bashrc
+.cache
+.config
+.profile
+
+== 3. Pero el historial guardó el valor del ARG, en dos renglones
+RUN |1 TOKEN_MODULOS=curso-docker-modulos-de-mentira-41be /bin/sh -c echo "machine ejemplo.invalid password ${TOKEN_MODULOS}" > /root/.netrc  && CGO_ENABLED=0 go build -o /usr/local/bin/revisor ./cmd/revisor  && rm /root/.netrc # buildkit
+ARG TOKEN_MODULOS=curso-docker-modulos-de-mentira-41be
+
+== 4. Y la configuración de la imagen trae el token de ejecución
+REVISOR_TOKEN=curso-docker-token-de-mentira-en-env
+== 5. Cualquier contenedor de esa imagen lo recibe, sin pedirlo
+curso-docker-token-de-mentira-en-env
+
+== 6. docker build --check lo habría dicho antes de construir
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile.malo
+#1 transferring dockerfile: 892B done
+#1 DONE 0.0s
+
+#2 resolve image config for docker-image://docker.io/docker/dockerfile:1
+#2 DONE 0.2s
+
+#3 docker-image://docker.io/docker/dockerfile:1@sha256:4edf897a3ffa55b89f906fc8cc78afdb3f1834cc9c7083565e611a8a7d5fe99e
+#3 resolve docker.io/docker/dockerfile:1@sha256:4edf897a3ffa55b89f906fc8cc78afdb3f1834cc9c7083565e611a8a7d5fe99e 0.1s done
+#3 CACHED
+
+#4 [internal] load metadata for docker.io/library/golang:1.27.3-trixie@sha256:604106102d33b1084e37ca08adf98ac0813624ae8595bd0d7f3965ecebded09c
+#4 DONE 0.0s
+
+#5 [internal] load .dockerignore
+#5 transferring context: 155B done
+#5 DONE 0.0s
+Check complete, 2 warnings have been found!
+
+WARNING: SecretsUsedInArgOrEnv - https://docs.docker.com/go/dockerfile/rule/secrets-used-in-arg-or-env/
+Do not use ARG or ENV instructions for sensitive data (ARG "TOKEN_MODULOS")
+Dockerfile.malo:11
+--------------------
+   9 |     # Mal 1: un secreto de construcción por ARG. Queda en el historial de la imagen,
+  10 |     # aunque el RUN borre el archivo al final.
+  11 | >>> ARG TOKEN_MODULOS
+  12 |     RUN echo "machine ejemplo.invalid password ${TOKEN_MODULOS}" > /root/.netrc \
+  13 |      && CGO_ENABLED=0 go build -o /usr/local/bin/revisor ./cmd/revisor \
+--------------------
+
+WARNING: SecretsUsedInArgOrEnv - https://docs.docker.com/go/dockerfile/rule/secrets-used-in-arg-or-env/
+Do not use ARG or ENV instructions for sensitive data (ENV "REVISOR_TOKEN")
+Dockerfile.malo:16
+--------------------
+  14 |      && rm /root/.netrc
+  15 |     # Mal 2: el token de ejecución en ENV. Queda en la configuración de la imagen.
+  16 | >>> ENV REVISOR_TOKEN=curso-docker-token-de-mentira-en-env
+  17 |     USER 10001:10001
+  18 |     CMD ["revisor"]
+--------------------
+[código de salida: 1]
+
+== 7. Un ARG se anota en CADA RUN que viene después, aunque no lo use
+RUN |2 TOKEN_MODULOS=curso-docker-modulos-de-mentira-41be VERSION=1.3.0 /bin/sh -c echo "paso 2: tampoco" # buildkit
+ARG VERSION=1.3.0
+RUN |1 TOKEN_MODULOS=curso-docker-modulos-de-mentira-41be /bin/sh -c echo "paso 1: no uso ningún argumento" # buildkit
+ARG TOKEN_MODULOS=curso-docker-modulos-de-mentira-41be

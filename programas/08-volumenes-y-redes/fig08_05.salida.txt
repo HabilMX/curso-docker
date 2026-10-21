@@ -1,0 +1,20 @@
+$ ./fig08_05.sh
+== 1. Una carpeta tuya en el equipo
+501:1000 775 reportes
+tu usuario: 501:1000
+
+== 2. Montada en /datos con un bind mount; el revisor corre como 65532
+{"error":"no pude guardar el reporte: open /datos/.reporte-<n>.tmp: permission denied"}
+ [500]
+
+== 3. El arreglo sin root: correr el contenedor con TU usuario
+/api/estados: [200]
+-- el reporte, visto desde el equipo, sin docker ni sudo:
+501:1000 600 reportes/reporte.json
+[{"servicio":"propio","ok":true,"codigo" …
+-- lo que anotó Docker:
+User=501:1000 | bind -> /datos (escribible: true)
+
+== 4. El mismo bind mount, de solo lectura
+{"error":"no pude guardar el reporte: open /datos/.reporte-<n>.tmp: read-only file system"}
+ [500]

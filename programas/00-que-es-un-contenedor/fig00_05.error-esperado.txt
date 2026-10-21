@@ -1,0 +1,5 @@
+voy a comer memoria...
+código de salida: 137
+
+== Lo que Docker anotó
+OOMKilled=true  ExitCode=137

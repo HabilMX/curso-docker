@@ -1,0 +1,9 @@
+TIPO    ANFITRION            CONTENEDOR           ¿IGUAL?
+cgroup  [4026531835]         [4026532382]         no, aislado
+ipc     [4026531839]         [4026532379]         no, aislado
+mnt     [4026531841]         [4026532377]         no, aislado
+net     [4026531840]         [4026532383]         no, aislado
+pid     [4026531836]         [4026532380]         no, aislado
+time    [4026531834]         [4026531834]         sí, compartido
+user    [4026531837]         [4026531837]         sí, compartido
+uts     [4026531838]         [4026532378]         no, aislado

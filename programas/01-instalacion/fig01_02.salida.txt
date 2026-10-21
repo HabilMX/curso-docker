@@ -1,0 +1,28 @@
+$ ./fig01_02.sh
+== ¿Cuáles de los paquetes en conflicto tienes instalados?
+dpkg: no packages found matching docker.io
+dpkg: no packages found matching docker-compose
+dpkg: no packages found matching docker-compose-v2
+dpkg: no packages found matching docker-doc
+dpkg: no packages found matching docker-buildx
+dpkg: no packages found matching podman-docker
+dpkg: no packages found matching containerd
+dpkg: no packages found matching runc
+
+== El comando de la guía oficial (quita los que encontró)
+dpkg: no packages found matching docker.io
+dpkg: no packages found matching docker-compose
+dpkg: no packages found matching docker-compose-v2
+dpkg: no packages found matching docker-doc
+dpkg: no packages found matching docker-buildx
+dpkg: no packages found matching podman-docker
+dpkg: no packages found matching containerd
+dpkg: no packages found matching runc
+
+WARNING: apt does not have a stable CLI interface. Use with caution in scripts.
+
+Reading package lists...
+Building dependency tree...
+Reading state information...
+0 upgraded, 0 newly installed, 0 to remove and 3 not upgraded.
+código de salida: 0

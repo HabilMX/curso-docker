@@ -1,0 +1,24 @@
+== 1. Construir y leer la revisión de salud que trae la imagen
+{"Test":["CMD","/revisor","healthcheck"],"Interval":10000000000,"Timeout":3000000000,"StartPeriod":5000000000,"Retries":3}
+StopSignal=SIGTERM
+
+== 2. El error: vigilarlo con curl, como en los tutoriales
+Up 4 seconds (unhealthy)
+pasó a unhealthy en 5 s
+-1 "OCI runtime exec failed: exec failed: unable to start container process: exec: \"/bin/sh\": stat /bin/sh: no such file or directory"
+-- y sin embargo, el servicio contesta:
+sano
+
+== 3. Con la revisión de la imagen: el propio binario se pregunta
+Up 1 second (health: starting)
+Up 6 seconds (healthy)
+pasó a healthy en 5 s
+0 "sano\n"
+Status=running Health=healthy FailingStreak=0
+
+== 4. docker stop: el revisor es el proceso 1 y atiende SIGTERM
+docker stop tardó 657 ms
+ExitCode=0
+revisor 1.4.0 escuchando en :8080 (1 servicio(s))
+revisor: recibí terminated, apagando
+revisor: apagado limpio

@@ -1,0 +1,21 @@
+
+## Construye sin error... y no arranca
+$ docker build -q -t curso-docker-revisor:dinamico -f Dockerfile.dinamico . >/dev/null; echo "construcción: código $?"
+construcción: código 0
+$ docker run --rm --name curso-docker-dinamico curso-docker-revisor:dinamico version
+exec /revisor: no such file or directory
+[código de salida: 255]
+
+## Los dos binarios, vistos desde la etapa «binario» (que sí tiene herramientas)
+$ docker run --rm --name curso-docker-mirar curso-docker-revisor:binario-dinamico sh -c 'ldd /out/revisor; readelf -l /out/revisor | grep -i interpreter'
+	linux-vdso.so.1 (0x0000fd7da7955000)
+	libc.so.6 => /lib/aarch64-linux-gnu/libc.so.6 (0x0000fd7da7750000)
+	/lib/ld-linux-aarch64.so.1 (0x0000fd7da7910000)
+      [Requesting program interpreter: /lib/ld-linux-aarch64.so.1]
+$ docker run --rm --name curso-docker-mirar curso-docker-revisor:binario-estatico sh -c 'ldd /out/revisor; readelf -l /out/revisor | grep -i interpreter || echo "(sin intérprete)"'
+	not a dynamic executable
+(sin intérprete)
+
+## ¿Está ese intérprete en la imagen final?
+$ docker export curso-docker-mirar | tar -t | grep -E 'ld-linux|libc\.so' || echo '(no está)'
+(no está)

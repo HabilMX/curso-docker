@@ -1,0 +1,31 @@
+== 1. Arrancar en segundo plano
+c516467655b6
+
+== 2. Lo que está corriendo
+NAMES                 IMAGE                       STATUS                            PORTS
+curso-docker-prueba   curso-docker-prueba:1.0.0   Up 2 seconds (health: starting)   127.0.0.1:9000->9000/tcp
+
+== 3. Consultarlo en sus tres modos
+sano
+modo: caido
+caido
+código HTTP: 503
+modo: lento
+lento
+código HTTP: 200 en 3.081298 s
+modo: sano
+modo: sano
+
+== 4. Su bitácora completa
+servicio-prueba escuchando en :9000 en modo sano
+servicio-prueba: GET / en modo sano
+servicio-prueba: GET / en modo sano
+servicio-prueba: modo cambiado a caido
+servicio-prueba: GET / en modo caido
+servicio-prueba: modo cambiado a lento
+servicio-prueba: GET / en modo lento
+servicio-prueba: modo cambiado a sano
+
+== 5. Solo los dos últimos renglones
+servicio-prueba: GET / en modo lento
+servicio-prueba: modo cambiado a sano

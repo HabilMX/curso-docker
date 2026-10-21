@@ -1,0 +1,10 @@
+# fig04_02.dockerignore
+# Lo que nunca viaja al daemon al construir.
+.git
+.env
+*.tar
+*.md
+Dockerfile*
+.dockerignore
+compose.yaml
+secretos/

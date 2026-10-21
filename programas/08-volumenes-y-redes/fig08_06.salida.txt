@@ -1,0 +1,22 @@
+$ ./fig08_06.sh
+== 1. Solo lectura, con un volumen en /datos y un tmpfs en /cache
+-- dónde está montado cada uno, de qué tipo y con qué opciones:
+/cache tmpfs rw,nosuid,nodev,noexec,relatime,size=1024k,inode64
+/datos ext4 rw,relatime,discard,errors=remount-ro,commit=30
+1777 /cache
+
+== 2. Escribir en los dos, y en la raíz
+/cache:
+b.txt
+
+/datos:
+a.txt
+sh: can't create /c.txt: Read-only file system
+[código de salida: 1]
+
+== 3. El tmpfs tiene tope: 2 MB no caben en 1 MB
+dd: error writing '/cache/grande': No space left on device
+
+== 4. Reiniciar el contenedor
+a.txt
+-- /cache tiene 0 archivos

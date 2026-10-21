@@ -1,0 +1,10 @@
+== Las dos versiones: la del cliente y la del daemon
+cliente: 29.2.1 (linux/arm64)
+daemon:  29.2.1 (linux/arm64)
+
+== Por dónde habla el cliente con el daemon
+unix:///var/run/docker.sock
+
+== El cliente apuntando a un daemon que no existe
+failed to connect to the docker API at unix:///tmp/curso-docker-no-hay-daemon.sock; check if the path is correct and if the daemon is running: dial unix /tmp/curso-docker-no-hay-daemon.sock: connect: no such file or directory
+código de salida: 1

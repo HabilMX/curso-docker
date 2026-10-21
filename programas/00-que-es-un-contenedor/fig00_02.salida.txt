@@ -1,0 +1,11 @@
+== El anfitrión
+distribución: Ubuntu 24.04.4 LTS
+núcleo:       6.8.0-100-generic
+
+== Un contenedor de alpine:3.24.2
+distribución: Alpine Linux v3.24
+núcleo:       6.8.0-100-generic
+
+== Un contenedor de debian:13.7-slim
+distribución: Debian GNU/Linux 13 (trixie)
+núcleo:       6.8.0-100-generic

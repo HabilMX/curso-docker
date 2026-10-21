@@ -1,0 +1,31 @@
+$ ./fig08_07.sh
+== 1. Los dos en la red por omisión (bridge): por nombre, no
+SERVICIO  ESTADO    TIEMPO  DETALLE
+prueba    FALLA        <t>  no responde: Get "http://curso-docker-prueba-fig08:9000/": dial tcp: lookup curso-docker-prueba-fig08 on <DNS del anfitrión>:53: no such host
+-- la red de cada uno:
+/curso-docker-revisor-fig08: bridge
+/curso-docker-prueba-fig08: bridge
+-- el DNS que reciben los contenedores de esa red es el del anfitrión:
+nameserver <DNS del anfitrión>
+-- por IP, en cambio, sí llega:
+IP del servicio de prueba: <IP>
+sano
+
+== 2. Una red definida por el usuario
+curso-docker-red-fig08 driver=bridge interna=false
+SERVICIO  ESTADO    TIEMPO  DETALLE
+prueba    OK           <t>  200
+-- en esta red, el DNS es el que Docker pone dentro de cada contenedor:
+nameserver 127.0.0.11
+Server:		127.0.0.11
+Address:	127.0.0.11:53
+Name:	curso-docker-prueba-fig08
+Address: <IP>
+-- quién está conectado a la red:
+curso-docker-prueba-fig08
+curso-docker-revisor-fig08
+
+== 3. Romper el servicio de prueba desde otro contenedor de la misma red
+modo: caido
+SERVICIO  ESTADO    TIEMPO  DETALLE
+prueba    FALLA         <t>  codigo 503

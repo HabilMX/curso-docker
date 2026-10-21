@@ -1,0 +1,22 @@
+
+## La base de compilación: la etiqueta y el digest que hoy le corresponde
+$ docker buildx imagetools inspect golang:1.27.3-trixie | sed -n '1,3p'
+Name:      docker.io/library/golang:1.27.3-trixie
+MediaType: application/vnd.oci.image.index.v1+json
+Digest:    sha256:604106102d33b1084e37ca08adf98ac0813624ae8595bd0d7f3965ecebded09c
+$ docker buildx imagetools inspect golang:1.27.3-trixie | grep -E 'Platform: +linux/(amd64|arm64)'
+  Platform:    linux/amd64
+  Platform:    linux/arm64/v8
+$ docker image inspect --format '{{index .RepoDigests 0}}' golang:1.27.3-trixie
+golang@sha256:604106102d33b1084e37ca08adf98ac0813624ae8595bd0d7f3965ecebded09c
+
+## La base final: distroless no publica versiones, solo nombres
+$ docker buildx imagetools inspect gcr.io/distroless/static-debian13:nonroot | sed -n '1,3p'
+Name:      gcr.io/distroless/static-debian13:nonroot
+MediaType: application/vnd.oci.image.index.v1+json
+Digest:    sha256:516757106de35205efb70b91ba03f6f1298424a0678c603255cf2852a7000087
+$ docker buildx imagetools inspect gcr.io/distroless/static-debian13:nonroot | grep -B2 -E 'Platform: +linux/(amd64|arm64)' | grep -E 'Name|Platform'
+  Name:      gcr.io/distroless/static-debian13:nonroot@sha256:4682a3837fcb5c5100770c29c8174c41118a886edf209e75b5f815cf5d9a0d3a
+  Platform:  linux/amd64
+  Name:      gcr.io/distroless/static-debian13:nonroot@sha256:6964c30f0122730c54f70f8f51a777490f85d077d25da672830c43968c14993e
+  Platform:  linux/arm64/v8

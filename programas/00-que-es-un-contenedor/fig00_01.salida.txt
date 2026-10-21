@@ -1,0 +1,15 @@
+== 1. Desde DENTRO del contenedor: todos sus procesos
+PID   USER     COMMAND
+    1 root     sleep 300
+    7 root     ps -o pid,user,args
+
+== 2. Desde FUERA: el mismo proceso, visto por Docker
+PID en el anfitrión: 836426
+
+== 3. Desde FUERA: el mismo proceso, visto por el sistema operativo
+    PID    PPID USER     COMMAND
+ 836426  836402 root     sleep 300
+
+== 4. Quién es su padre en el anfitrión
+    PID USER     COMMAND
+ 836402 root     containerd-shim

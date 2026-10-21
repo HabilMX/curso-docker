@@ -1,0 +1,5 @@
+corrida 1: 136 ms
+corrida 2: 154 ms
+corrida 3: 431 ms
+corrida 4: 347 ms
+corrida 5: 507 ms

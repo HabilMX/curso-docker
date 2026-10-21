@@ -1,0 +1,28 @@
+== 1. --read-only, y el revisor guardando su reporte en /tmp
+{"error":"no pude guardar el reporte: open /tmp/.reporte-<n>.tmp: read-only file system"}
+ [500]
+-- /salud no escribe nada, así que sigue contestando:
+{"estado":"vivo","version":"1.4.0"}
+ [200]
+
+== 2. El arreglo: un tmpfs pequeño solo en /tmp
+[200]
+/tmp rw,noexec,nosuid,size=1m
+
+== 3. Todo junto: el revisor endurecido
+Up 5 seconds (healthy)
+-- lo que Docker anotó:
+ReadonlyRootfs=true CapDrop=[ALL] SecurityOpt=[no-new-privileges] Init=true Restart=unless-stopped
+-- los procesos:
+PID                 PPID                USER                COMMAND
+<pid> <ppid>             65532               /sbin/docker-init -- /revisor
+<pid> <ppid>             65532               /revisor
+-- lo que el núcleo aplica al revisor (el hijo de docker-init):
+CapEff:	0000000000000000
+CapBnd:	0000000000000000
+NoNewPrivs:	1
+-- docker stop:
+tardó 206 ms; ExitCode=0
+revisor 1.4.0 escuchando en :8080 (1 servicio(s))
+revisor: recibí terminated, apagando
+revisor: apagado limpio

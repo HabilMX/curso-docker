@@ -1,0 +1,10 @@
+$ ./fig01_06.sh
+== ¿En qué grupos está nobody?
+nogroup
+
+== nobody intenta hablarle al daemon
+permission denied while trying to connect to the docker API at unix:///var/run/docker.sock
+código de salida: 1
+
+== ¿Y tú? ¿Estás en el grupo docker?
+sí

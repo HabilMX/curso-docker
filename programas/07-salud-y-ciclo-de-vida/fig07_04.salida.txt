@@ -1,0 +1,24 @@
+== 1. Arranca sano, con --restart always
+Up 5 seconds (healthy)
+
+== 2. Modo caído: el proceso sigue vivo, pero responde 503
+modo: caido
+pasó a unhealthy en 10 s
+Up 15 seconds (unhealthy)
+running / unhealthy / racha=2 / reinicios=0
+1 no sano: GET / respondió 503
+
+== 3. Diez segundos después, sigue unhealthy y nadie lo reinició
+running / unhealthy / racha=4 / reinicios=0
+
+== 4. De vuelta a sano, sin reiniciar nada
+modo: sano
+volvió a healthy en 5 s
+running / healthy / racha=0 / reinicios=0
+
+== 5. Modo lento: contesta 200, pero tarda 3 s y la revisión espera 2
+modo: lento
+running / unhealthy / racha=2 / reinicios=0
+1 no sano: Get "http://127.0.0.1:9000/": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+-- y sin embargo, contesta 200:
+200 en 3.012887s

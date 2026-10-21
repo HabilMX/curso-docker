@@ -1,0 +1,20 @@
+== La imagen antes de empezar
+id=sha256:294b683cb724
+
+== Escribo un archivo en el contenedor uno
+hola desde uno
+
+== ¿Lo ve el contenedor dos?
+cat: can't open '/tmp/nota.txt': No such file or directory
+(el contenedor dos no tiene ese archivo)
+
+== Lo que cambió en cada contenedor respecto de su imagen (docker diff)
+-- uno:
+C /tmp
+A /tmp/nota.txt
+-- dos:
+(nada)
+
+== Borro el contenedor uno y miro la imagen otra vez
+id=sha256:294b683cb724
+cat: can't open '/tmp/nota.txt': No such file or directory

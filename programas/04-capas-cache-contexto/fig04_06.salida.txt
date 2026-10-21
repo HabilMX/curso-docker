@@ -1,0 +1,2 @@
+$ ./fig04_06.sh
+Check complete, no warnings found.

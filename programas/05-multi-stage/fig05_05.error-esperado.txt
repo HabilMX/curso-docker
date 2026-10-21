@@ -1,0 +1,25 @@
+
+## Con el Dockerfile de la lección
+$ docker build --progress=plain -t curso-docker-revisor:rota . 2>&1 | grep -E 'rota_test|^#[0-9]+ [0-9.]+ FAIL|^ERROR'; (exit ${PIPESTATUS[0]})
+#14 1.127     rota_test.go:5: esta prueba falla a propósito
+#14 1.127 FAIL
+#14 1.127 FAIL	github.com/habil/revisor/cmd/revisor	0.008s
+#14 1.128 FAIL
+1.127     rota_test.go:5: esta prueba falla a propósito
+ERROR: failed to build: failed to solve: process "/bin/sh -c go test ./..." did not complete successfully: exit code: 1
+[código de salida: 1]
+$ docker image ls curso-docker-revisor:rota --format '{{.Repository}}:{{.Tag}} {{.Size}}'
+
+## Con la variante: binario sale de compilacion
+$ diff Dockerfile Dockerfile.salta-pruebas
+17c17
+< FROM pruebas AS binario
+---
+> FROM compilacion AS binario
+[código de salida: 1]
+$ docker build --progress=plain -t curso-docker-revisor:rota -f Dockerfile.salta-pruebas . 2>&1 | grep -E 'rota_test|FAIL|^ERROR|\[(pruebas|binario) '; echo "construcción: código ${PIPESTATUS[0]}"
+#14 [binario 1/1] RUN --mount=type=cache,id=curso-docker-go-build,target=/root/.cache/go-build     CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/revisor ./cmd/revisor
+#14 [binario 1/1] RUN --mount=type=cache,id=curso-docker-go-build,target=/root/.cache/go-build     CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/revisor ./cmd/revisor
+construcción: código 0
+$ docker image ls curso-docker-revisor:rota --format '{{.Repository}}:{{.Tag}} {{.Size}}'
+curso-docker-revisor:rota 16.1MB

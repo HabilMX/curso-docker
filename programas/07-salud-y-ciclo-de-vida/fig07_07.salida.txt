@@ -1,0 +1,28 @@
+== 1. root, con las capacidades que Docker deja por omisión
+CapEff:	00000000a80425fb
+chown: hecho
+
+== 2. El mismo root, con --cap-drop ALL
+CapEff:	0000000000000000
+chown: changing ownership of '/tmp/a': Operation not permitted
+[código de salida: 1]
+
+== 3. --cap-drop ALL --cap-add CHOWN: solo la que hace falta
+CapEff:	0000000000000001
+chown: hecho
+
+== 4. Un programa setuid de root, ejecutado por el usuario 10001
+-rwsr-xr-x root
+uid=10001 gid=10001 groups=10001
+uid=10001 gid=10001 euid=0(root) groups=10001
+NoNewPrivs:	0
+
+== 5. Lo mismo con --security-opt no-new-privileges
+-rwsr-xr-x root
+uid=10001 gid=10001 groups=10001
+uid=10001 gid=10001 groups=10001
+NoNewPrivs:	1
+
+== 6. ¿Y los puertos bajos? Un usuario sin capacidades escucha en el 80
+0
+escuchando en el 80

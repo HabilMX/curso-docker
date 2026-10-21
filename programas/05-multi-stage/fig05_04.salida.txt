@@ -1,0 +1,18 @@
+
+## Solo hasta la etapa de pruebas
+$ docker build --target pruebas --no-cache-filter pruebas --progress=plain -t curso-docker-revisor:pruebas . 2>&1 | grep -E '^#[0-9]+ \[(compilacion|pruebas)|^#[0-9]+ [0-9.]+ (ok|FAIL|---)' | grep -v -e DONE -e CACHED | awk '!visto[$0]++'
+#6 [compilacion 1/5] FROM docker.io/library/golang:1.27.3-trixie@sha256:604106102d33b1084e37ca08adf98ac0813624ae8595bd0d7f3965ecebded09c
+#8 [compilacion 3/5] COPY go.mod ./
+#9 [compilacion 4/5] COPY cmd/ cmd/
+#10 [compilacion 2/5] WORKDIR /src
+#11 [compilacion 5/5] COPY internal/ internal/
+#12 [pruebas 1/1] RUN --mount=type=cache,id=curso-docker-go-build,target=/root/.cache/go-build     go test ./...
+#12 15.92 ok  	github.com/habil/revisor/cmd/revisor	0.008s
+#12 15.92 ok  	github.com/habil/revisor/internal/config	0.005s
+#12 15.92 ok  	github.com/habil/revisor/internal/reporte	0.004s
+#12 16.06 ok  	github.com/habil/revisor/internal/revisar	0.141s
+#12 16.06 ok  	github.com/habil/revisor/internal/servicio	0.003s
+
+## La imagen intermedia: sirve para probar, no para entregar
+$ docker image ls curso-docker-revisor:pruebas --format '{{.Repository}}:{{.Tag}} {{.Size}}'
+curso-docker-revisor:pruebas 1.31GB

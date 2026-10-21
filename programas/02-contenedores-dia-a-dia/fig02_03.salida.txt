@@ -1,0 +1,15 @@
+== 1. Pedir un shell
+OCI runtime exec failed: exec failed: unable to start container process: exec: "sh": executable file not found in $PATH
+código de salida: 127
+
+== 2. Ejecutar un programa que la imagen SÍ trae
+sano
+código de salida: 0
+
+== 3. Lo mismo, con el servicio en modo caído
+no sano: GET / respondió 503
+código de salida: 1
+
+== 4. exec en un contenedor detenido
+Error response from daemon: container 78614f9ea0da425237a13924f63235bf6a1e45629efd4000d3764b5c54e23dcb is not running
+código de salida: 1

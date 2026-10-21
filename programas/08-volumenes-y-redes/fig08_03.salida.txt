@@ -1,0 +1,37 @@
+$ ./fig08_03.sh
+== 1. Construir la 1.5.0 y mirar /datos dentro de la imagen
+tamaño: 16.2MB
+REVISOR_PUERTO=8080
+REVISOR_REPORTE=/datos/reporte.json
+drwxr-xr-x 65532/65532 datos/
+
+== 2. Un volumen nuevo, montado en /datos: hereda el dueño de la imagen
+/api/estados: [200]
+drwxr-xr-x    2 65532    65532         4096 Oct 21 13:10 /datos
+total 4
+-rw-------    1 65532    65532           92 Oct 21 13:10 reporte.json
+
+== 3. Un volumen en uso no se deja borrar
+Error response from daemon: remove curso-docker-reportes-fig08: volume is in use - [<id>]
+[código de salida: 1]
+
+== 4. Borrar el contenedor: el volumen se queda, y el reporte con él
+contenedores con ese nombre: 0
+volumen: curso-docker-reportes-fig08 (local)
+[
+  {
+    "servicio": "propio",
+    "ok": true,
+    "codigo": 200,
+    "tiempo_ms": 1
+  }
+]
+
+== 5. Un contenedor nuevo con el mismo volumen sigue donde iba el otro
+-rw------- 65532 65532 reporte.json
+/api/estados: [200]
+volume curso-docker-reportes-fig08 -> /datos (escribible: true)
+
+== 6. La 1.5.0 endurecida SIN volumen en /datos: la raíz es de solo lectura
+{"error":"no pude guardar el reporte: open /datos/.reporte-<n>.tmp: read-only file system"}
+ [500]

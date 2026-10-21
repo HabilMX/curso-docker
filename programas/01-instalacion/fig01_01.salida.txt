@@ -1,0 +1,14 @@
+$ ./fig01_01.sh
+== Lo que dice /etc/os-release
+NAME=Linux Mint
+VERSION=22.3 (Zena)
+ID=linuxmint  ID_LIKE=ubuntu debian
+VERSION_CODENAME=zena
+UBUNTU_CODENAME=noble
+DEBIAN_CODENAME=(no existe)
+
+== El nombre en clave que va en Suites (la regla de la guía oficial de Ubuntu)
+Suites: noble
+
+== Tu arquitectura, según dpkg (la de TU equipo: dpkg no lee ARCHIVO)
+amd64

@@ -1,0 +1,30 @@
+== 1. sleep es el proceso 1 y no instaló manejador para SIGTERM
+PID                 PPID                COMMAND
+<pid> <ppid>             sleep 300
+SigCgt:	0000000000000000
+docker stop tardó 11315 ms; ExitCode=137
+
+== 2. El mismo sleep, con un plazo de 2 segundos (-t 2)
+docker stop -t 2 tardó 2707 ms; ExitCode=137
+
+== 3. Fuera del contenedor, el mismo sleep sí muere con SIGTERM
+sleep en el equipo murió con código 143
+
+== 4. Con --init: un init diminuto es el proceso 1 y le pasa la señal a sleep
+PID                 PPID                COMMAND
+<pid> <ppid>             /sbin/docker-init -- sleep 300
+<pid> <ppid>             sleep 300
+docker stop tardó 251 ms; ExitCode=143
+
+== 5. Zombis: un hijo huérfano termina y nadie lo recoge
+-- docker top:
+PID                 STAT                COMMAND
+<pid>             Ss                  sleep 300
+-- ps en el equipo, hijos del proceso 1 del contenedor:
+STAT COMMAND
+Z    [sleep] <defunct>
+
+== 6. Lo mismo con --init: el init recoge al huérfano
+-- ps en el equipo, hijos del proceso 1 del contenedor (ahora, docker-init):
+STAT COMMAND
+S    sleep 300

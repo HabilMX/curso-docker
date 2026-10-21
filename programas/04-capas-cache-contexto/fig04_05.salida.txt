@@ -1,0 +1,33 @@
+$ PREFIJO=curso-docker-l04- ./fig04_05.sh 2>&1 | sed 's/curso-docker-l04-/curso-docker-/g'
+
+## a) Solo cambia la fecha de un archivo (touch), no su contenido
+  paso 1  DONE 0.0s  FROM docker.io/library/golang:1.27.3-trixie@sha256:604106102
+  paso 2  CACHED     WORKDIR /src
+  paso 3  CACHED     COPY go.mod ./
+  paso 4  CACHED     COPY cmd/ cmd/
+  paso 5  CACHED     COPY internal/ internal/
+  paso 6  CACHED     RUN go build -o /usr/local/bin/revisor ./cmd/revisor
+
+## b) Un comentario nuevo en cmd/revisor/main.go
+  paso 1  DONE 0.0s  FROM docker.io/library/golang:1.27.3-trixie@sha256:604106102
+  paso 2  CACHED     WORKDIR /src
+  paso 3  CACHED     COPY go.mod ./
+  paso 4  DONE 0.0s  COPY cmd/ cmd/
+  paso 5  DONE 0.0s  COPY internal/ internal/
+  paso 6  DONE 0.4s  RUN go build -o /usr/local/bin/revisor ./cmd/revisor
+
+## c) Un comentario nuevo en go.mod
+  paso 1  DONE 0.0s  FROM docker.io/library/golang:1.27.3-trixie@sha256:604106102
+  paso 2  CACHED     WORKDIR /src
+  paso 3  DONE 0.0s  COPY go.mod ./
+  paso 4  DONE 0.0s  COPY cmd/ cmd/
+  paso 5  DONE 0.0s  COPY internal/ internal/
+  paso 6  DONE 0.3s  RUN go build -o /usr/local/bin/revisor ./cmd/revisor
+
+## d) Un comentario nuevo en el Dockerfile
+  paso 1  DONE 0.0s  FROM docker.io/library/golang:1.27.3-trixie@sha256:604106102
+  paso 2  CACHED     WORKDIR /src
+  paso 3  CACHED     COPY go.mod ./
+  paso 4  CACHED     COPY cmd/ cmd/
+  paso 5  CACHED     COPY internal/ internal/
+  paso 6  CACHED     RUN go build -o /usr/local/bin/revisor ./cmd/revisor

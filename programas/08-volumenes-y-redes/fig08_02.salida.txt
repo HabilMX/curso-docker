@@ -1,0 +1,19 @@
+$ ./fig08_02.sh
+== 1. ¿La imagen de la Lección 7 trae una carpeta /datos?
+0
+
+== 2. Un volumen con nombre, nuevo y vacío
+curso-docker-reportes-fig08
+Driver=local Mountpoint=/var/lib/docker/volumes/curso-docker-reportes-fig08/_data
+
+== 3. El revisor de la Lección 7, endurecido, con el volumen en /datos
+{"error":"no pude guardar el reporte: open /datos/.reporte-<n>.tmp: permission denied"}
+ [500]
+-- /salud no escribe nada, así que sigue contestando:
+{"estado":"vivo","version":"1.4.0"}
+ [200]
+
+== 4. ¿De quién es /datos? Lo mira un contenedor ayudante, de solo lectura
+drwxr-xr-x    2 0        0             4096 Oct 21 09:58 /datos
+-- y el revisor corre como:
+65532:65532

@@ -1,0 +1,7 @@
+# fig03_03.dockerignore
+# Lo que nunca viaja al daemon al construir.
+.git
+.env
+*.tar
+Dockerfile*
+.dockerignore

@@ -1,0 +1,19 @@
+== 1. on-failure:3 con un revisor sin configuración
+Status=exited ExitCode=1 RestartCount=3
+-- lo que escribió en sus cuatro vidas:
+      4 revisor: falta REVISOR_SERVICIOS (ejemplo: REVISOR_SERVICIOS="prueba http://curso-docker-prueba:9000/ 2s")
+-- cuánto esperó Docker entre un arranque y el siguiente:
+arranque 2: 181 ms después del anterior
+arranque 3: 294 ms después del anterior
+arranque 4: 490 ms después del anterior
+
+== 2. Sin política (no, la de omisión): muere y se queda muerto
+Status=exited ExitCode=1 RestartCount=0
+
+== 3. --restart always con el revisor bien configurado
+-- el núcleo mata al proceso (como haría el asesino de memoria):
+Status=running ExitCode=0 RestartCount=1
+-- lo detienes tú, con docker stop:
+Status=exited ExitCode=0 RestartCount=1
+-- lo vuelves a arrancar tú, y lo matas con docker kill:
+Status=exited ExitCode=137 RestartCount=0

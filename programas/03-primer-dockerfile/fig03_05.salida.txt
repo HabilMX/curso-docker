@@ -1,0 +1,36 @@
+$ ./fig03_05.sh
+
+## Construir y medir
+$ docker build -q -t curso-docker-l03-revisor:1.0.0 . >/dev/null && docker image ls curso-docker-l03-revisor:1.0.0 --format '{{.Repository}}:{{.Tag}} {{.Size}}'
+curso-docker-l03-revisor:1.0.0 1.45GB
+
+## El error: arrancar sin configuración
+$ docker run --name curso-docker-l03-revisor curso-docker-l03-revisor:1.0.0
+revisor: falta REVISOR_SERVICIOS (ejemplo: REVISOR_SERVICIOS="prueba http://curso-docker-prueba:9000/ 2s")
+[código de salida: 1]
+$ docker ps -a --filter name=curso-docker-l03-revisor --format '{{.Names}} {{.Status}}'
+curso-docker-l03-revisor Exited (1) Less than a second ago
+
+## Correrlo bien
+$ docker run -d --name curso-docker-l03-revisor -p 127.0.0.1:18030:8080 -e REVISOR_SERVICIOS='propio http://127.0.0.1:8080/salud' curso-docker-l03-revisor:1.0.0 >/dev/null
+$ curl -s http://127.0.0.1:18030/salud
+{"estado":"vivo","version":"desarrollo"}
+$ curl -s 'http://127.0.0.1:18030/api/estados?formato=tabla' | sed -E 's/[0-9.]+(ms|µs)/<tiempo>/'
+SERVICIO  ESTADO    TIEMPO  DETALLE
+propio    OK            0s  200
+$ docker exec curso-docker-l03-revisor id
+uid=10001 gid=10001 groups=10001
+$ docker top curso-docker-l03-revisor -o pid,user,args
+PID                 USER                COMMAND
+1387809             10001               revisor
+
+## docker stop con forma exec
+tardó 299 ms
+$ docker logs curso-docker-l03-revisor
+revisor desarrollo escuchando en :8080 (1 servicio(s))
+revisor: GET /salud 200 0s
+revisor: GET /salud 200 0s
+revisor: GET /salud 200 0s
+revisor: GET /api/estados 200 1ms
+revisor: recibí terminated, apagando
+revisor: apagado limpio

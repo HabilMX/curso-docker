@@ -1,0 +1,17 @@
+== Ejercicio 2: modo caído, revisión cada 2 s, 5 fallas, --health-start-period 0s
+pasó a unhealthy a los 13400 ms de arrancar
+racha=5 StartPeriod=5s
+
+== Ejercicio 2: modo caído, revisión cada 2 s, 5 fallas, --health-start-period 1ms
+pasó a unhealthy a los 10900 ms de arrancar
+racha=5 StartPeriod=1ms
+
+== Ejercicio 4: el servicio de prueba con las opciones endurecidas
+Up 5 seconds (healthy)
+PID                 USER                COMMAND
+<pid>             65532               /sbin/docker-init -- /servicio-prueba
+<pid>             65532               /servicio-prueba
+docker stop tardó 234 ms; ExitCode=0
+servicio-prueba escuchando en :9000 en modo sano
+servicio-prueba: GET / en modo sano
+servicio-prueba: recibí terminated, apagando

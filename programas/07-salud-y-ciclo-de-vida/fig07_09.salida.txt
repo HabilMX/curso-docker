@@ -1,0 +1,17 @@
+== --stop-signal SIGINT sin --init
+docker stop tardó 102 ms
+ExitCode=0 StopSignal=SIGINT
+revisor 1.4.0 escuchando en :8080 (1 servicio(s))
+revisor: recibí interrupt, apagando
+revisor: apagado limpio
+
+== --stop-signal SIGHUP sin --init
+docker stop tardó 72 ms
+ExitCode=129 StopSignal=SIGHUP
+revisor 1.4.0 escuchando en :8080 (1 servicio(s))
+
+== --stop-signal SIGHUP --init
+docker stop tardó 87 ms
+ExitCode=129 StopSignal=SIGHUP
+revisor 1.4.0 escuchando en :8080 (1 servicio(s))
+

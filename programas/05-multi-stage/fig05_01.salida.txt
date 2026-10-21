@@ -1,0 +1,27 @@
+
+## La imagen de la Lección 4
+$ docker build -q -t curso-docker-revisor:1.1.0 . >/dev/null && docker image ls curso-docker-revisor:1.1.0 --format '{{.Repository}}:{{.Tag}} {{.Size}}'
+curso-docker-revisor:1.1.0 1.32GB
+
+## Lo único que el revisor necesita para correr
+$ docker run --rm --name curso-docker-mirar curso-docker-revisor:1.1.0 ls -lh /usr/local/bin/revisor
+-rwxr-xr-x 1 root root 9.5M Oct 21 08:46 /usr/local/bin/revisor
+
+## Lo demás que viaja con él
+$ docker run --rm --name curso-docker-mirar curso-docker-revisor:1.1.0 sh -c 'for p in sh bash apt-get gcc go git curl; do printf "%-8s %s\n" $p "$(command -v $p || echo no-esta)"; done'
+sh       /usr/bin/sh
+bash     /usr/bin/bash
+apt-get  /usr/bin/apt-get
+gcc      /usr/bin/gcc
+go       /usr/local/go/bin/go
+git      /usr/bin/git
+curl     /usr/bin/curl
+$ docker run --rm --name curso-docker-mirar curso-docker-revisor:1.1.0 du -sh /usr/local/go /usr/lib /usr/bin /usr/share
+277M	/usr/local/go
+276M	/usr/lib
+120M	/usr/bin
+140M	/usr/share
+$ docker run --rm --name curso-docker-mirar curso-docker-revisor:1.1.0 sh -c 'dpkg-query -W | wc -l'
+208
+$ docker run --rm --name curso-docker-mirar curso-docker-revisor:1.1.0 id
+uid=10001 gid=10001 groups=10001

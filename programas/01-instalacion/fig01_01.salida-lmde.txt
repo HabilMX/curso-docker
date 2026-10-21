@@ -1,0 +1,14 @@
+$ ./fig01_01.sh os-release-lmde-7.txt
+== Lo que dice os-release-lmde-7.txt
+NAME=LMDE
+VERSION=7 (gigi)
+ID=linuxmint  ID_LIKE=debian
+VERSION_CODENAME=gigi
+UBUNTU_CODENAME=(no existe)
+DEBIAN_CODENAME=trixie
+
+== El nombre en clave que va en Suites (la regla de la guía oficial de Ubuntu)
+Suites: gigi
+
+== Tu arquitectura, según dpkg (la de TU equipo: dpkg no lee ARCHIVO)
+arm64

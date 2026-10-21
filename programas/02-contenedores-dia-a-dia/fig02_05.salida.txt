@@ -1,0 +1,11 @@
+== 1. Lo que dice docker port
+-- curso-docker-prueba:
+9000/tcp -> 127.0.0.1:9000
+-- curso-docker-abierto:
+9000/tcp -> 0.0.0.0:9001
+9000/tcp -> [::]:9001
+
+== 2. Lo que dice el sistema operativo: dónde escucha el equipo
+0.0.0.0:9001
+127.0.0.1:9000
+[::]:9001

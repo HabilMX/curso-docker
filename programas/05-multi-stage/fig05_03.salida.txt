@@ -1,0 +1,56 @@
+
+## Construir: qué pasos de qué etapa corrieron
+$ docker build --progress=plain -t curso-docker-revisor:1.2.0 . 2>&1 | grep -oE '^#[0-9]+ \[(compilacion|pruebas|binario|final) [0-9]/[0-9]\] .{0,60}' | awk '!visto[$0]++'
+#7 [final 1/2] FROM gcr.io/distroless/static-debian13:nonroot@sha256:516757
+#8 [compilacion 1/5] FROM docker.io/library/golang:1.27.3-trixie@sha256:604106102
+#10 [compilacion 3/5] COPY go.mod ./
+#11 [compilacion 4/5] COPY cmd/ cmd/
+#12 [compilacion 5/5] COPY internal/ internal/
+#13 [pruebas 1/1] RUN --mount=type=cache,id=curso-docker-go-build,target=/
+#14 [binario 1/1] RUN --mount=type=cache,id=curso-docker-go-build,target=/
+#15 [compilacion 2/5] WORKDIR /src
+#16 [final 2/2] COPY --from=binario /out/revisor /revisor
+
+## Antes y después
+$ docker image ls --filter reference='curso-docker-revisor:1.[12].0' --format '{{.Repository}}:{{.Tag}} {{.Size}}'
+curso-docker-revisor:1.1.0 1.32GB
+curso-docker-revisor:1.2.0 16.1MB
+
+## Las capas de la imagen nueva
+$ docker history curso-docker-revisor:1.2.0 --format '{{.Size}}\t{{.CreatedBy}}' | cut -c1-90
+0B	ENTRYPOINT ["/revisor"]
+0B	EXPOSE [8080/tcp]
+0B	USER 65532:65532
+6.69MB	COPY /out/revisor /revisor # buildkit
+319kB	bazel build //common:cacerts_debian13_arm64_…
+16.4kB	bazel build //common:os_release_debian13
+12.3kB	bazel build //static:nsswitch
+8.19kB	bazel build //common:tmp
+12.3kB	bazel build //common:group
+16.4kB	bazel build //common:home
+12.3kB	bazel build //common:passwd
+4.1kB	bazel build //common:rootfs
+160kB	bazel build @trixie//media-types/arm64:data_…
+2.15MB	bazel build @trixie//tzdata-legacy/arm64:dat…
+2.24MB	bazel build @trixie//tzdata/arm64:data_statu…
+86kB	bazel build @trixie//netbase/arm64:data_stat…
+741kB	bazel build @trixie//base-files/arm64:data_s…
+
+## De dónde salen los 16.1 MB
+$ docker history curso-docker-revisor:1.2.0 --format '{{.Size}}' --human=false | awk '{s+=$1} END {print "suma de las capas desempacadas:", s, "bytes"}'
+suma de las capas desempacadas: 12468224 bytes
+$ docker image inspect curso-docker-revisor:1.2.0 --format 'capas comprimidas (las que se descargan): {{.Size}} bytes'
+capas comprimidas (las que se descargan): 3679492 bytes
+
+## Todos los archivos de la imagen nueva
+$ docker export curso-docker-mirar | tar -t | grep -v '/$' | wc -l
+1301
+$ docker export curso-docker-mirar | tar -t | cut -d/ -f1 | sort -u | tr '\n' ' '; echo
+.dockerenv bin boot dev etc home lib proc revisor root run sbin sys tmp usr var 
+$ docker export curso-docker-mirar | tar -tv | grep -E '(^| |/)(sh|bash|dash|ash|busybox)( |$)|/?(revisor|passwd)$' || echo '(nada más)'
+-rw-r--r-- 0/0             149 1969-12-31 18:00 etc/passwd
+-rwxr-xr-x 0/0         6684832 2026-10-21 01:55 revisor
+$ docker export curso-docker-mirar | tar -xO etc/passwd
+root:x:0:0:root:/root:/sbin/nologin
+nobody:x:65534:65534:nobody:/nonexistent:/sbin/nologin
+nonroot:x:65532:65532:nonroot:/home/nonroot:/sbin/nologin

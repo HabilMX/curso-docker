@@ -1,0 +1,12 @@
+$ ./fig03_02.sh
+== 1. Lo que la imagen base declara como usuario (vacío = root)
+User=""
+
+== 2. Quién soy dentro, sin decir nada
+uid=0(root) gid=0(root) groups=0(root)
+
+== 3. Quién soy dentro, con el usuario 10001:10001
+uid=10001 gid=10001 groups=10001
+
+== 4. ¿Existe ese usuario en /etc/passwd de la imagen?
+no está
