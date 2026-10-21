@@ -1,0 +1,63 @@
+name: Verificar el curso
+
+# En cada cambio se construye la imagen del revisor con el Dockerfile del último
+# estado del curso (programas/NN-*/estado/), igual que lo arma el alumno:
+# programas/revisor/ más el Dockerfile y el .dockerignore de ese estado. Solo se
+# construye: no se publica en ningún registro. Esta corrida es pública:
+# cualquiera puede abrirla y ver el resultado de cada paso.
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: El medidor de profundidad sabe fallar (control positivo)
+        run: herramientas/autoprueba-medir-profundidad.sh
+
+      - name: La profundidad se mide (piso de 3,000 palabras por lección, mediana de 4,000)
+        run: herramientas/medir-profundidad.sh
+
+      - name: Decir con qué se va a construir
+        run: |
+          docker version
+          docker buildx version
+
+      - name: Armar el proyecto con el estado final del curso
+        run: |
+          set -euo pipefail
+          final="$(find programas -mindepth 3 -maxdepth 3 -path '*/estado/Dockerfile' | sort | tail -1)"
+          if [ -z "$final" ]; then
+            echo "No se encontró ningún programas/NN-*/estado/Dockerfile: este paso no verificó nada."
+            exit 1
+          fi
+          estado="$(dirname "$final")"
+          echo "Estado final del curso: $estado"
+          mkdir -p "$RUNNER_TEMP/proyecto"
+          cp -R programas/revisor "$RUNNER_TEMP/proyecto/revisor"
+          cp "$estado/Dockerfile" "$estado/.dockerignore" "$RUNNER_TEMP/proyecto/revisor/"
+          ls -A "$RUNNER_TEMP/proyecto/revisor"
+
+      - name: Revisar el Dockerfile con las comprobaciones de BuildKit (docker build --check)
+        run: |
+          cd "$RUNNER_TEMP/proyecto/revisor"
+          docker build --check .
+
+      - name: Construir la imagen (corre go test adentro), sin publicarla
+        run: |
+          cd "$RUNNER_TEMP/proyecto/revisor"
+          docker build --progress=plain --build-arg VERSION=ci -t curso-docker-revisor:ci .
+          docker image inspect curso-docker-revisor:ci \
+            --format 'usuario={{.Config.User}} puertos={{json .Config.ExposedPorts}} salud={{json .Config.Healthcheck.Test}}'
+
+      - name: Nota sobre la revisión previa a publicar
+        run: |
+          echo "La revisión de material no publicable (rutas internas, nombres reservados,"
+          echo "direcciones de la infraestructura) se corre ANTES de publicar, con la lista"
+          echo "de patrones que vive en el repositorio de trabajo y no se publica."
