@@ -1,0 +1,46 @@
+$ ./fig09_08.sh
+== 1. Cambiar un servicio: prueba-caido pasa a modo sano
+$ diff compose.final.yaml compose.yaml
+79c79
+<       PRUEBA_MODO: caido
+---
+>       PRUEBA_MODO: sano
+[código de salida: 1]
+$ docker compose up -d 2>&1 | eventos | grep -vE 'Creating|Starting|Stopping|Removing|Waiting|Healthy'
+Container curso-docker-fig09-prueba-lento-1 Running
+Container curso-docker-fig09-prueba-sano-1 Running
+Container curso-docker-fig09-prueba-caido-1 Recreate
+Container curso-docker-fig09-prueba-caido-1 Recreated
+Container curso-docker-fig09-revisor-1 Running
+Container curso-docker-fig09-prueba-caido-1 Started
+$ tabla
+SERVICIO  ESTADO    TIEMPO  DETALLE
+caido     OK            <t>  200
+lento     LENTO     <t>  200
+sano      OK            <t>  200
+
+== 2. down sin --volumes: el reporte sigue ahí, en su volumen
+$ docker compose down 2>&1 | eventos | grep -E '^(Volume|Network) .* Removed'
+Network curso-docker-fig09_interna Removed
+Network curso-docker-fig09_publica Removed
+$ docker volume ls --filter label=com.docker.compose.project=curso-docker-fig09 --format '{{.Name}}'
+curso-docker-fig09_reportes
+$ docker run --rm -v curso-docker-fig09_reportes:/datos:ro alpine:3.24.2 ls -ln /datos | sed -E 's/[A-Z][a-z]{2} [ 0-9]{2} [0-9:]{5}/<fecha>/'
+total 4
+-rw-------    1 65532    65532          269 <fecha> reporte.json
+
+== 3. Apagado ordenado
+docker compose stop revisor tardó 203 ms
+$ docker inspect --format 'ExitCode={{.State.ExitCode}}' curso-docker-fig09-revisor-1
+ExitCode=0
+$ docker compose logs --no-log-prefix revisor | tail -2
+revisor: recibí terminated, apagando
+revisor: apagado limpio
+
+== 4. down --volumes: ahora sí, también el reporte
+$ docker compose down --volumes 2>&1 | eventos | grep -E '^(Volume|Network) .* Removed'
+Volume curso-docker-fig09_reportes Removed
+Network curso-docker-fig09_publica Removed
+Network curso-docker-fig09_interna Removed
+$ docker volume ls --filter label=com.docker.compose.project=curso-docker-fig09 --format '{{.Name}}' | wc -l
+0

@@ -713,7 +713,7 @@ Na Lição 3 viu-se que uma tag como `1.27.3-trixie` é mais específica que `la
 
 #### 5.7.2 O que é um *digest*
 
-Um ***digest*** é a impressão digital do conteúdo de uma imagem: é calculado passando seus bytes por uma função de hash, SHA-256, e se escreve `sha256:` seguido de 64 caracteres hexadecimais. A especificação de imagens da OCI o define como um «identificador de conteúdo» que «identifica o conteúdo de forma única», calculado com uma função de hash resistente a colisões ([OCI, descritores](https://github.com/opencontainers/image-spec/blob/main/descriptor.md)). A consequência prática é a que importa: **se um único byte da imagem muda, o *digest* muda**. Um *digest* não pode ser movido para outra imagem, porque ele é a imagem.
+Um ***digest*** é o identificador do conteúdo de uma imagem: é calculado passando seus bytes por uma função de hash, SHA-256, e se escreve `sha256:` seguido de 64 caracteres hexadecimais. A especificação de imagens da OCI o define como um «identificador de conteúdo» que «identifica o conteúdo de forma única», calculado com uma função de hash resistente a colisões ([OCI, descritores](https://github.com/opencontainers/image-spec/blob/main/descriptor.md)). A consequência prática é a que importa: **se um único byte da imagem muda, o *digest* muda**. Um *digest* não pode ser movido para outra imagem, porque ele é a imagem.
 
 `fig05_09.sh` pergunta ao registry que *digest* as duas bases do Dockerfile têm hoje, sem construir nem criar nada:
 
@@ -1133,7 +1133,7 @@ Todas consultadas em 21 de outubro de 2026.
 | **binário estático** | executável que traz dentro tudo de que precisa; não depende de bibliotecas do sistema |
 | **carregador dinâmico** | programa (`ld-linux…`) que inicia um binário dinâmico e carrega suas bibliotecas |
 | ***cgo*** | mecanismo com que um programa Go chama código em C; é desativado com `CGO_ENABLED=0` |
-| ***digest*** | impressão digital SHA-256 do conteúdo de uma imagem ou de um índice; se um byte muda, ela muda |
+| ***digest*** | hash SHA-256 do conteúdo de uma imagem ou de um índice; se um byte muda, ele muda |
 | ***distroless*** | família de imagens base mínimas, sem *shell* nem gerenciador de pacotes |
 | **estágio** (*stage*) | cada parte de um Dockerfile que começa com um `FROM`; só o último é a imagem entregue |
 | **estágio-alvo** (*target*) | o estágio até o qual se constrói com `--target` |

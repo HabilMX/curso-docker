@@ -1,0 +1,53 @@
+# fig09_01.compose.yaml — Lección 9, primer paso: el estado final de la
+# Lección 8 (sección 8.10.3), escrito en un archivo en vez de en seis comandos.
+# Un solo servicio de prueba, sin token. Va en tu carpeta revisor/ como compose.yaml.
+#
+# Sin «version:» a propósito: la especificación de Compose ya no la usa.
+name: curso-docker
+
+services:
+  revisor:
+    build:
+      context: .
+      args:
+        VERSION: "1.5.0"
+    image: curso-docker-revisor:1.5.0
+    environment:
+      REVISOR_SERVICIOS: "prueba http://prueba:9000/ 2s"
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - reportes:/datos
+    networks:
+      - publica
+      - interna
+    depends_on:
+      - prueba
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    init: true
+    mem_limit: 64m
+    cpus: 0.5
+    pids_limit: 50
+
+  prueba:
+    build: ../servicio-prueba
+    image: curso-docker-prueba:1.0.0
+    networks:
+      - interna
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    init: true
+    mem_limit: 64m
+    cpus: 0.5
+    pids_limit: 50
+
+networks:
+  publica: {}
+  interna:
+    internal: true
+
+volumes:
+  reportes: {}

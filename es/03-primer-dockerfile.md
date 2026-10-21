@@ -799,10 +799,14 @@ Trabaja en tu carpeta `~/curso-docker/revisor` (la del bloque «En tu carpeta» 
 
 ### Ejercicio 3 — El cronómetro en tu equipo
 
-Corre `fig03_05.sh` y `fig03_07.sh` en tu Mint (después de la Lección 1 y con la imagen de Go descargada). Anota en tu bitácora, en la línea que la Lección 3 trae para eso, los dos tiempos de `docker stop`. Antes de correrlos, predice:
+Corre `fig03_05.sh` y `fig03_07.sh` en tu Mint (después de la Lección 1 y con la imagen de Go descargada). Anota en tu bitácora, en la línea que la Lección 3 trae para eso, los dos tiempos de `docker stop`.
+
+Un aviso antes de correrlos: `fig03_05.sh` construye y, al salir, borra una imagen llamada `curso-docker-revisor:1.0.0`, el mismo nombre que la tuya de 3.6.1. Para que no se la lleve, córrelo con otro prefijo, que es para lo que existe la variable: `PREFIJO=curso-docker-ej3- ./fig03_05.sh`. En tu salida vas a leer `curso-docker-ej3-revisor` donde la lección dice `curso-docker-revisor`; sigue empezando con `curso-docker-`, así que la limpieza del curso lo alcanza. Si ya lo corriste sin el prefijo y tu imagen desapareció, vuelve a `~/curso-docker/revisor` y reconstrúyela con `docker build -q -t curso-docker-revisor:1.0.0 .`: tarda segundos, porque todo sale de la caché.
+
+Antes de correrlos, predice:
 
 1. ¿Cuál de los dos tiempos va a cambiar más de una corrida a otra, y cuál va a quedar casi igual?
-2. ¿Qué número va a salir en `ExitCode` en la forma *shell*? ¿Y qué número esperarías en la forma *exec*, sabiendo que el `revisor` está escrito para terminar con 0 después de un apagado limpio? Compruébalo agregando, después del `docker stop` de `fig03_05.sh`, un `docker inspect --format 'ExitCode={{.State.ExitCode}}' curso-docker-revisor`.
+2. ¿Qué número va a salir en `ExitCode` en la forma *shell*? ¿Y qué número esperarías en la forma *exec*, sabiendo que el `revisor` está escrito para terminar con 0 después de un apagado limpio? Compruébalo agregando, después del `docker stop` de `fig03_05.sh`, un `docker inspect --format 'ExitCode={{.State.ExitCode}}' "${PREFIJO}revisor"` (con el prefijo de arriba, el contenedor se llama `curso-docker-ej3-revisor`).
 
 ### Ejercicio 4 — Arregla el Dockerfile ajeno
 

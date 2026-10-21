@@ -1,0 +1,75 @@
+$ ./fig09_05.sh
+== 1. Validar
+$ docker compose config --quiet && echo 'compose.yaml válido'
+compose.yaml válido
+$ docker compose config --services
+prueba-caido
+prueba-lento
+prueba-sano
+revisor
+$ docker compose config | sed -n '/^  prueba-lento:/,/^  prueba-sano:/p' | grep -E '^    (image|pull_policy|read_only|mem_limit|networks):|PRUEBA_MODO'
+      PRUEBA_MODO: lento
+    image: curso-docker-prueba:fig09
+    mem_limit: "33554432"
+    networks:
+    pull_policy: never
+    read_only: true
+
+== 2. Levantar todo desde cero
+$ docker compose up -d --build 2>&1 | eventos | grep -vE 'Building|Creating|Starting'
+Image curso-docker-revisor:fig09 Built
+Image curso-docker-prueba:fig09 Built
+Network curso-docker-fig09_publica Created
+Network curso-docker-fig09_interna Created
+Volume curso-docker-fig09_reportes Created
+Container curso-docker-fig09-prueba-caido-1 Created
+Container curso-docker-fig09-prueba-sano-1 Created
+Container curso-docker-fig09-prueba-lento-1 Created
+Container curso-docker-fig09-revisor-1 Created
+Container curso-docker-fig09-prueba-caido-1 Started
+Container curso-docker-fig09-prueba-sano-1 Started
+Container curso-docker-fig09-prueba-lento-1 Started
+Container curso-docker-fig09-prueba-sano-1 Waiting
+Container curso-docker-fig09-prueba-sano-1 Healthy
+Container curso-docker-fig09-revisor-1 Started
+$ docker compose ps --format '{{.Name}} | {{.Status}} | {{.Ports}}' | sed -E 's/Up [0-9]+ (seconds|minutes)/Up N/'
+curso-docker-fig09-prueba-caido-1 | Up N (unhealthy) | 9000/tcp
+curso-docker-fig09-prueba-lento-1 | Up N (health: starting) | 9000/tcp
+curso-docker-fig09-prueba-sano-1 | Up N (healthy) | 9000/tcp
+curso-docker-fig09-revisor-1 | Up N (healthy) | 127.0.0.1:8080->8080/tcp
+
+== 3. El reporte: sin token, 401; con token, la tabla
+$ curl -s -w ' [%{http_code}]\n' http://127.0.0.1:8080/api/estados
+{"error":"falta el token o no es válido"}
+ [401]
+$ tabla
+SERVICIO  ESTADO    TIEMPO  DETALLE
+caido     FALLA        <t>  codigo 503
+lento     LENTO     <t>  200
+sano      OK            <t>  200
+
+== 4. Lo que creó Compose, todo con el nombre del proyecto
+$ docker network ls --filter label=com.docker.compose.project=curso-docker-fig09 --format '{{.Name}} interna={{.Internal}}' | sort
+curso-docker-fig09_interna interna=true
+curso-docker-fig09_publica interna=false
+$ docker volume ls --filter label=com.docker.compose.project=curso-docker-fig09 --format '{{.Name}}'
+curso-docker-fig09_reportes
+$ docker inspect --format 'ReadonlyRootfs={{.HostConfig.ReadonlyRootfs}} CapDrop={{.HostConfig.CapDrop}} Init={{.HostConfig.Init}} Memory={{.HostConfig.Memory}} User={{.Config.User}} Restart={{.HostConfig.RestartPolicy.Name}}' curso-docker-fig09-revisor-1
+ReadonlyRootfs=true CapDrop=[ALL] Init=true Memory=67108864 User=65532:65532 Restart=unless-stopped
+
+== 5. El token no está a la vista
+$ docker inspect curso-docker-fig09-revisor-1 | grep -c "$TOKEN"
+0
+[código de salida: 1]
+$ docker compose config | grep -c "$TOKEN"
+0
+[código de salida: 1]
+$ docker inspect --format '{{range .Config.Env}}{{println .}}{{end}}' curso-docker-fig09-revisor-1 | grep REVISOR_
+REVISOR_TOKEN_ARCHIVO=/run/secrets/revisor_token
+REVISOR_SERVICIOS=sano http://prueba-sano:9000/ 2s, lento http://prueba-lento:9000/ 5s, caido http://prueba-caido:9000/ 2s
+REVISOR_PUERTO=8080
+REVISOR_REPORTE=/datos/reporte.json
+$ docker inspect --format '{{range .Mounts}}{{.Type}} {{.Destination}} ro={{not .RW}}{{println}}{{end}}' curso-docker-fig09-revisor-1
+bind /run/secrets/revisor_token ro=true
+volume /datos ro=false
+

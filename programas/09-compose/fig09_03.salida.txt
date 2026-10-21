@@ -1,0 +1,24 @@
+$ ./fig09_03.sh
+== 1. Sin el volumen en /datos
+$ diff compose.bueno.yaml compose.yaml
+19,20d18
+<     volumes:
+<       - reportes:/datos
+[código de salida: 1]
+$ docker compose up -d --build 2>&1 | eventos | grep -E 'revisor-1 (Started|Healthy)'
+Container curso-docker-fig09-revisor-1 Started
+$ docker compose ps revisor --format '{{.Name}} | {{.Status}}' | sed -E 's/Up [0-9]+ (seconds|minutes)/Up N/'
+curso-docker-fig09-revisor-1 | Up N (healthy)
+$ curl -s -w ' [%{http_code}]\n' http://127.0.0.1:8080/api/estados | sed -E 's/reporte-[0-9]+/reporte-<n>/'
+{"error":"no pude guardar el reporte: open /datos/.reporte-<n>.tmp: read-only file system"}
+ [500]
+
+== 2. Con el volumen: Compose recrea SOLO el revisor
+$ docker compose up -d 2>&1 | eventos | grep -vE 'Creating|Starting|Stopping|Removing'
+Volume curso-docker-fig09_reportes Created
+Container curso-docker-fig09-prueba-1 Running
+Container curso-docker-fig09-revisor-1 Recreate
+Container curso-docker-fig09-revisor-1 Recreated
+Container curso-docker-fig09-revisor-1 Started
+$ curl -s -o /dev/null -w '[%{http_code}]\n' http://127.0.0.1:8080/api/estados
+[200]

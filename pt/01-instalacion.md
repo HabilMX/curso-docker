@@ -183,7 +183,7 @@ No Ubuntu, os dois codinomes coincidem. No Mint, não. Toda a diferença de inst
 
 O Linux Mint tem uma segunda edição, o **LMDE** (*Linux Mint Debian Edition*), que não é feito sobre o Ubuntu, e sim sobre o Debian. A página de downloads do Mint lista o LMDE 7, «Gigi», com base «Debian Trixie» ([Linux Mint, todas as versões](https://www.linuxmint.com/download_all.php)). Com LMDE, esta lição serve em tudo menos no repositório: é preciso seguir o [guia oficial para Debian](https://docs.docker.com/engine/install/debian/), que usa `https://download.docker.com/linux/debian` (também para a chave: `…/linux/debian/gpg`).
 
-Na linha `Suites`, o guia do Debian usa `$VERSION_CODENAME`, que no LMDE 7 vale `gigi`, um nome que o Docker não tem: é o mesmo erro de 1.5.2 em versão Debian. O guia só diz que em uma distribuição derivada pode ser preciso substituir o codinome pelo da versão do Debian correspondente. Não é preciso escrevê-lo à mão: o LMDE traz em seu `/etc/os-release` uma variável feita para isso, `DEBIAN_CODENAME`, assim como o Mint traz `UBUNTU_CODENAME`. É o que diz o `os-release` do pacote oficial `base-files` do LMDE 7 (versão `13.8+lmde1`, do [repositório do Linux Mint](http://packages.linuxmint.com/); a cópia está em `programas/01-instalacion/os-release-lmde-7.txt`). A linha fica assim:
+Na linha `Suites`, o guia do Debian usa `$VERSION_CODENAME`, que no LMDE 7 vale `gigi`, um nome que o Docker não tem: é o mesmo erro de 1.5.2 em versão Debian. O guia só diz que em uma distribuição derivada pode ser preciso substituir o codinome pelo da versão do Debian correspondente. Não é preciso escrevê-lo manualmente: o LMDE traz em seu `/etc/os-release` uma variável feita para isso, `DEBIAN_CODENAME`, assim como o Mint traz `UBUNTU_CODENAME`. É o que diz o `os-release` do pacote oficial `base-files` do LMDE 7 (versão `13.8+lmde1`, do [repositório do Linux Mint](http://packages.linuxmint.com/); a cópia está em `programas/01-instalacion/os-release-lmde-7.txt`). A linha fica assim:
 
 ```text
 Suites: $(. /etc/os-release && echo "${DEBIAN_CODENAME:-$VERSION_CODENAME}")
@@ -887,7 +887,7 @@ Junto com esse hábito vem outro, menor, que esta lição também instala: **a c
 
 **Copiar o guia de instalação do Debian, ou um guia antigo, no Mint.** Eles usam `VERSION_CODENAME`, que no Mint é o nome do Mint. O resultado é o erro de 1.5.2.
 
-**Escrever `noble` à mão «porque funciona».** Funciona hoje, mas amarra o comando a uma única versão: passado a alguém com Mint 21 (`jammy`), ou rodado de novo no dia em que o Mint mudar de base do Ubuntu, ele escreve um nome errado. A expressão do guia tira o valor de `/etc/os-release` no momento em que é executada. Atenção: nos dois casos o arquivo guarda o nome já resolvido; se um dia a versão do Mint mudar, o que se repete é o comando de 1.5.3, e não se edita o arquivo no olho.
+**Escrever `noble` manualmente «porque funciona».** Funciona hoje, mas amarra o comando a uma única versão: passado a alguém com Mint 21 (`jammy`), ou rodado de novo no dia em que o Mint mudar de base do Ubuntu, ele escreve um nome errado. A expressão do guia tira o valor de `/etc/os-release` no momento em que é executada. Atenção: nos dois casos o arquivo guarda o nome já resolvido; se um dia a versão do Mint mudar, o que se repete é o comando de 1.5.3, e não se edita o arquivo no olho.
 
 **`chmod 777 /var/run/docker.sock`.** Dá à máquina inteira o que o grupo `docker` dá a seus membros: `root`. E nem sequer dura, porque o *systemd* recria o *socket* ao iniciar a máquina.
 

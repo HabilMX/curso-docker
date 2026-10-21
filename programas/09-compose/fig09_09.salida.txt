@@ -1,0 +1,10 @@
+$ ./fig09_09.sh
+$ docker version --format 'Cliente: {{.Client.Version}}  Daemon: {{.Server.Version}}'
+Cliente: 29.2.1  Daemon: 29.2.1
+$ docker compose version
+Docker Compose version v5.0.2
+$ docker init
+docker: unknown command: docker init
+
+Run 'docker --help' for more information
+[código de salida: 1]

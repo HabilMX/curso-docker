@@ -1,0 +1,59 @@
+$ ./fig09_10.sh
+== Ejercicio 1. Un servicio en una red que no está declarada arriba
+$ docker compose config --quiet
+service "prueba-lento" refers to undefined network otra: invalid compose project
+[código de salida: 1]
+
+== Ejercicio 2.1. lento: de 5s a 4s en REVISOR_SERVICIOS
+$ cambios
+Container curso-docker-fig09-prueba-lento-1 Running
+Container curso-docker-fig09-prueba-caido-1 Running
+Container curso-docker-fig09-prueba-sano-1 Running
+Container curso-docker-fig09-revisor-1 Recreated
+Container curso-docker-fig09-revisor-1 Started
+
+== Ejercicio 2.2. mem_limit: de 32m a 24m en el ancla x-prueba
+$ docker compose config | grep mem_limit
+    mem_limit: "25165824"
+    mem_limit: "25165824"
+    mem_limit: "25165824"
+    mem_limit: "67108864"
+  mem_limit: 24m
+$ cambios
+Container curso-docker-fig09-prueba-caido-1 Recreated
+Container curso-docker-fig09-prueba-sano-1 Recreated
+Container curso-docker-fig09-prueba-lento-1 Recreated
+Container curso-docker-fig09-revisor-1 Running
+Container curso-docker-fig09-prueba-sano-1 Started
+Container curso-docker-fig09-prueba-lento-1 Started
+Container curso-docker-fig09-prueba-caido-1 Started
+
+== Ejercicio 2.3. Sin cambiar el archivo: chmod 600 al token
+$ cambios
+Container curso-docker-fig09-prueba-caido-1 Running
+Container curso-docker-fig09-prueba-lento-1 Running
+Container curso-docker-fig09-prueba-sano-1 Running
+Container curso-docker-fig09-revisor-1 Running
+$ tabla | head -2
+SERVICIO  ESTADO    TIEMPO  DETALLE
+caido     FALLA        <t>  codigo 503
+$ docker compose restart revisor 2>&1 | eventos | grep -v Restarting
+Container curso-docker-fig09-revisor-1 Started
+$ docker inspect --format 'Status={{.State.Status}} ExitCode={{.State.ExitCode}}' curso-docker-fig09-revisor-1
+Status=restarting ExitCode=1
+$ docker compose up -d --force-recreate revisor 2>&1 | eventos | grep -E 'revisor-1 Started'
+Container curso-docker-fig09-revisor-1 Started
+revisor: healthy
+
+== Ejercicio 3. El revisor sin volumen en /datos, con los cuatro servicios
+$ docker compose ps --format '{{.Service}} | {{.Status}}' | sed -E 's/Up [0-9]+ (seconds|minutes)/Up N/'
+prueba-caido | Up N (unhealthy)
+prueba-lento | Up N (unhealthy)
+prueba-sano | Up N (healthy)
+revisor | Up N (healthy)
+$ curl -s -H "Authorization: Bearer $TOKEN" http://127.0.0.1:8080/api/estados | sed -E 's/reporte-[0-9]+/reporte-<n>/'
+{"error":"no pude guardar el reporte: open /datos/.reporte-<n>.tmp: read-only file system"}
+$ docker compose config | sed -n '/^  revisor:/,/^  [a-z]/p' | grep -A4 volumes
+[código de salida: 1]
+$ docker inspect --format '{{range .Mounts}}{{.Destination}} {{end}}' curso-docker-fig09-revisor-1
+/run/secrets/revisor_token 

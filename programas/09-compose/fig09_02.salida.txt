@@ -1,0 +1,83 @@
+$ ./fig09_02.sh
+== 1. ¿Es válido? ¿Qué servicios y volúmenes declara?
+$ docker compose config --quiet && echo 'compose.yaml válido'
+compose.yaml válido
+$ docker compose config --services
+prueba
+revisor
+$ docker compose config --volumes
+reportes
+
+== 2. Lo que Compose entendió: la forma larga de lo que escribiste corto
+$ docker compose config | sed -n '/^  revisor:/,/^  prueba:/p' | grep -E -A5 '^    (ports|volumes|depends_on):'
+    depends_on:
+      prueba:
+        condition: service_started
+        required: true
+    environment:
+      REVISOR_SERVICIOS: prueba http://prueba:9000/ 2s
+--
+    ports:
+      - mode: ingress
+        host_ip: 127.0.0.1
+        target: 8080
+        published: "8080"
+        protocol: tcp
+--
+    volumes:
+      - type: volume
+        source: reportes
+        target: /datos
+        volume: {}
+networks:
+$ docker compose config | grep -E '^  [a-z]+:$|^    (cpus|mem_limit|pids_limit|read_only|internal|init):'
+  prueba:
+    cpus: 0.5
+    init: true
+    mem_limit: "67108864"
+    pids_limit: 50
+    read_only: true
+  revisor:
+    cpus: 0.5
+    init: true
+    mem_limit: "67108864"
+    pids_limit: 50
+    read_only: true
+  interna:
+    internal: true
+  publica:
+  reportes:
+
+== 3. Levantarlo todo
+$ docker compose up -d --build 2>&1 | eventos | grep -vE 'Building|Creating|Starting'
+Image curso-docker-prueba:fig09 Built
+Image curso-docker-revisor:fig09 Built
+Network curso-docker-fig09_interna Created
+Network curso-docker-fig09_publica Created
+Volume curso-docker-fig09_reportes Created
+Container curso-docker-fig09-prueba-1 Created
+Container curso-docker-fig09-revisor-1 Created
+Container curso-docker-fig09-prueba-1 Started
+Container curso-docker-fig09-revisor-1 Started
+$ docker compose ps --format '{{.Name}} | {{.Status}} | {{.Ports}}' | sed -E 's/Up [0-9]+ (seconds|minutes)/Up N/'
+curso-docker-fig09-prueba-1 | Up N (healthy) | 9000/tcp
+curso-docker-fig09-revisor-1 | Up N (healthy) | 127.0.0.1:8080->8080/tcp
+$ curl -s 'http://127.0.0.1:8080/api/estados?formato=tabla' | sed -E 's/ [0-9.]+(ms|µs|s) / <t> /'
+SERVICIO  ESTADO    TIEMPO  DETALLE
+prueba    OK           <t>  200
+
+== 4. Pedir «up» otra vez, sin cambiar nada
+$ docker compose up -d 2>&1 | eventos
+Container curso-docker-fig09-prueba-1 Running
+Container curso-docker-fig09-revisor-1 Running
+
+== 5. Apagar: down borra contenedores y redes; el volumen se queda
+$ docker compose down 2>&1 | eventos | grep -vE 'Stopping|Removing'
+Container curso-docker-fig09-revisor-1 Stopped
+Container curso-docker-fig09-revisor-1 Removed
+Container curso-docker-fig09-prueba-1 Stopped
+Container curso-docker-fig09-prueba-1 Removed
+Network curso-docker-fig09_interna Removed
+Network curso-docker-fig09_publica Removed
+$ docker volume ls --filter label=com.docker.compose.project=curso-docker-fig09 --format '{{.Name}}'
+curso-docker-fig09_reportes

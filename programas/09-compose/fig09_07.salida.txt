@@ -1,0 +1,61 @@
+$ ./fig09_07.sh
+== 1. Las tres copias del servicio de prueba con «build»
+$ diff compose.final.yaml compose.yaml
+15a16
+>   build: ../servicio-prueba
+67d67
+<     build: ../servicio-prueba
+[código de salida: 1]
+-- intento 1
+$ docker compose build >build.log 2>&1; echo "build salió con $?"; grep -h '^target' build.log || true
+build salió con 1
+target prueba-sano: failed to solve: image "docker.io/library/curso-docker-prueba:fig09": already exists
+-- intento 2
+$ docker compose build >build.log 2>&1; echo "build salió con $?"; grep -h '^target' build.log || true
+build salió con 0
+-- intento 3
+$ docker compose build >build.log 2>&1; echo "build salió con $?"; grep -h '^target' build.log || true
+build salió con 1
+target prueba-sano: failed to solve: image "docker.io/library/curso-docker-prueba:fig09": already exists
+-- intento 4
+$ docker compose build >build.log 2>&1; echo "build salió con $?"; grep -h '^target' build.log || true
+build salió con 1
+target prueba-lento: failed to solve: image "docker.io/library/curso-docker-prueba:fig09": already exists
+-- intento 5
+$ docker compose build >build.log 2>&1; echo "build salió con $?"; grep -h '^target' build.log || true
+build salió con 0
+
+== 2. Sin «pull_policy: never», con la imagen de prueba todavía sin construir
+$ diff compose.final.yaml compose.yaml
+17d16
+<   pull_policy: never
+[código de salida: 1]
+$ docker compose up -d --build 2>&1 | eventos | grep -E '^Image .*prueba'
+Image curso-docker-prueba:fig09 Pulling
+Image curso-docker-prueba:fig09 Pulling
+Image curso-docker-prueba:fig09 Error pull access denied for curso-docker-prueba, repository does not exist or may require 'docker login'
+Image curso-docker-prueba:fig09 Error pull access denied for curso-docker-prueba, repository does not exist or may require 'docker login'
+Image curso-docker-prueba:fig09 Building
+Image curso-docker-prueba:fig09 Built
+
+== 3. --wait espera a que TODOS estén sanos, y prueba-caido no lo va a estar
+$ docker compose up -d --wait --wait-timeout 60 2>&1 | tail -1
+container curso-docker-fig09-prueba-caido-1 is unhealthy
+[código de salida: 1]
+(tardó 11 s)
+$ docker compose up -d --wait --wait-timeout 60 revisor 2>&1 | tail -1
+container curso-docker-fig09-prueba-caido-1 is unhealthy
+[código de salida: 1]
+$ docker compose ps --format '{{.Service}} | {{.Status}}' | sed -E 's/Up [0-9]+ (seconds|minutes)/Up N/'
+prueba-caido | Up N (unhealthy)
+prueba-lento | Up N (health: starting)
+prueba-sano | Up N (healthy)
+revisor | Up N (healthy)
+
+== 4. Lo que sí funciona: up -d y esperar la salud del revisor
+revisor: healthy
+$ tabla
+SERVICIO  ESTADO    TIEMPO  DETALLE
+caido     FALLA        <t>  codigo 503
+lento     LENTO     <t>  200
+sano      OK           <t>  200

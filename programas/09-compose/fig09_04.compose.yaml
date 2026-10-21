@@ -1,0 +1,91 @@
+# fig09_04.compose.yaml — el compose.yaml final de la Lección 9. Va en tu carpeta
+# revisor/ como compose.yaml (es el mismo que guarda estado/compose.yaml).
+#
+# Lección 9 — el sistema completo: el revisor y tres copias del servicio de
+# prueba (sana, lenta y caída), con todo lo que se endureció en las lecciones 2 a 8.
+#
+# Sin «version:» a propósito: la especificación de Compose ya no la usa.
+name: curso-docker
+
+# Lo común a las tres copias del servicio de prueba, escrito una sola vez.
+# Compose ignora los campos que empiezan con «x-»; sirven para anclas de YAML.
+# Solo prueba-sano lleva «build»: si las tres construyeran la misma etiqueta a la
+# vez, chocarían («image ... already exists»). Las otras dos usan la imagen que
+# construye la primera y nunca la buscan en internet (pull_policy: never).
+x-prueba: &prueba
+  image: curso-docker-prueba:1.0.0
+  pull_policy: never
+  networks: [interna]
+  read_only: true
+  cap_drop: [ALL]
+  security_opt: ["no-new-privileges:true"]
+  init: true
+  mem_limit: 32m
+  cpus: 0.25
+  pids_limit: 20
+
+services:
+  revisor:
+    build:
+      context: .
+      args:
+        VERSION: "1.5.0"
+    image: curso-docker-revisor:1.5.0
+    environment:
+      REVISOR_SERVICIOS: >-
+        sano http://prueba-sano:9000/ 2s,
+        lento http://prueba-lento:9000/ 5s,
+        caido http://prueba-caido:9000/ 2s
+      REVISOR_TOKEN_ARCHIVO: /run/secrets/revisor_token
+    secrets:
+      - revisor_token
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - reportes:/datos
+    networks:
+      - publica
+      - interna
+    depends_on:
+      prueba-sano:
+        condition: service_healthy
+      prueba-lento:
+        condition: service_started
+      prueba-caido:
+        condition: service_started
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    init: true
+    mem_limit: 64m
+    cpus: 0.5
+    pids_limit: 50
+    restart: unless-stopped
+
+  prueba-sano:
+    <<: *prueba
+    build: ../servicio-prueba
+    environment:
+      PRUEBA_MODO: sano
+
+  prueba-lento:
+    <<: *prueba
+    environment:
+      PRUEBA_MODO: lento
+
+  prueba-caido:
+    <<: *prueba
+    environment:
+      PRUEBA_MODO: caido
+
+networks:
+  publica: {}
+  interna:
+    internal: true
+
+volumes:
+  reportes: {}
+
+secrets:
+  revisor_token:
+    file: ./secretos/revisor_token.txt
