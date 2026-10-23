@@ -13,7 +13,7 @@ FROM compilacion AS pruebas
 RUN --mount=type=cache,id=curso-docker-go-build,target=/root/.cache/go-build \
     go test ./...
 
-# --- Etapa 3: el binario, estático (CGO_ENABLED=0), sale DESPUÉS de las pruebas ---
+# --- Etapa 3: el binario, SIN CGO_ENABLED=0 (el binario sale dinámico), sale DESPUÉS de las pruebas ---
 FROM pruebas AS binario
 RUN --mount=type=cache,id=curso-docker-go-build,target=/root/.cache/go-build \
     go build -trimpath -ldflags="-s -w" -o /out/revisor ./cmd/revisor

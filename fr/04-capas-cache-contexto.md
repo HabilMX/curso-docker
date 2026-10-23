@@ -1,6 +1,6 @@
 # Leçon 4 — Couches, cache et contexte
 
-Il est 11 h 20 du matin et, à midi, il y a une démonstration avec l'équipe qui va utiliser le `revisor`. Il reste un détail : le tableau du rapport affiche une colonne décalée d'un espace. C'est une modification d'une ligne. Tu la fais, tu construis l'image et tu attends. Treize secondes. Tu testes, ce n'est pas encore ça, tu corriges à nouveau. Treize de plus. Et encore treize. Au cinquième tour, tu te rends compte que tu as passé plus de temps à regarder le terminal compiler qu'à réfléchir au problème, et que chaque construction compile **tout** le programme depuis zéro, alors que tu n'as touché qu'un seul fichier. Pendant ce temps, ta collègue, qui travaille sur sa propre copie du projet, demande pourquoi sa construction indique avoir « envoyé » 62 Mo alors que le code du `revisor` pèse quelques kilo-octets. Dans sa copie, quelqu'un a supprimé le `.dockerignore`, et le dossier contient une sauvegarde et l'historique de Git. Les deux questions ont la même réponse, et elle ne se trouve pas dans le code du `revisor` : elle se trouve dans l'ordre de quatre lignes du Dockerfile et dans un fichier qui s'appelle `.dockerignore`. À la fin de cette leçon, cette même modification d'une ligne se reconstruit en moins de deux secondes.
+Il est 11 h 20 du matin et, à 12 h, il y a une démonstration avec l'équipe qui va utiliser le `revisor`. Il reste un détail : le tableau du rapport affiche une colonne décalée d'un espace. C'est une modification d'une ligne. Tu la fais, tu construis l'image et tu attends. Treize secondes. Tu testes, ce n'est pas encore ça, tu corriges à nouveau. Treize de plus. Et encore treize. Au cinquième tour, tu te rends compte que tu as passé plus de temps à regarder le terminal compiler qu'à réfléchir au problème, et que chaque construction compile **tout** le programme depuis zéro, alors que tu n'as touché qu'un seul fichier. Pendant ce temps, ta collègue, qui travaille sur sa propre copie du projet, demande pourquoi sa construction indique avoir « envoyé » 62 Mo alors que le code du `revisor` pèse quelques kilo-octets. Dans sa copie, quelqu'un a supprimé le `.dockerignore`, et le dossier contient une sauvegarde et l'historique de Git. Les deux questions ont la même réponse, et elle ne se trouve pas dans le code du `revisor` : elle se trouve dans l'ordre de quatre lignes du Dockerfile et dans un fichier qui s'appelle `.dockerignore`. À la fin de cette leçon, cette même modification d'une ligne se reconstruit en moins de deux secondes.
 
 **Durée :** 2 × 45 min
 
@@ -125,7 +125,7 @@ curso-docker-revisor:1.0.0 (Dockerfile.leccion3): 13011 ms
   paso 4  DONE 10.1s RUN go build -o /usr/local/bin/revisor ./cmd/revisor
 ```
 
-`CACHED` veut dire « sorti du cache » ; `DONE` avec une durée, « réellement exécuté ». Le `WORKDIR` est sorti du cache ; le `COPY` et la compilation ont été refaits. L'étape 1, le `FROM`, indique toujours `DONE 0.0s` : le constructeur confirme qu'il dispose de l'image de base, déjà téléchargée, et ne fait rien de plus.
+`CACHED` veut dire « sorti du cache » ; `DONE` avec une durée, « réellement exécuté ». Le `WORKDIR` est sorti du cache ; le `COPY` et la compilation ont été refaits. Dans cette exécution, l'étape 1, le `FROM`, indique `DONE 0.0s` : le constructeur confirme qu'il dispose déjà de l'image de base et ne fait rien de plus. Si l'image n'était pas téléchargée (une machine fraîchement installée, ou après l'avoir supprimée), cette étape durerait le temps du téléchargement et tu le verrais dans sa durée.
 
 ### 4.3 L'ordre compte
 
@@ -266,7 +266,7 @@ curso-docker-revisor:1.1.0 314341606
 
 Le `RUN` est passé de 110 Mo à **10 Mo** : désormais, la couche ne contient que l'exécutable. Les trois couches de code totalisent la même chose que le `COPY . .` d'avant, réparti. Voilà le chiffre solide : **la couche a perdu 100 Mo**, sans rien retirer dont le `revisor` ait besoin.
 
-Les deux autres lignes comptent la taille de l'image de deux façons, et il vaut mieux ne pas les confondre. `docker image inspect` donne la taille du **contenu**, compressé tel qu'il est stocké et transféré : 337,3 Mo contre 314,3 Mo, soit 23 Mo de moins. `docker image ls` donne 1,45 Go contre 1,32 Go, environ 130 Mo de moins. La différence entre les deux façons vient du magasin d'images de Docker Engine 29 qui, selon sa documentation, stocke les images « au format compressé et non compressé » ([Docker, « containerd image store »](https://docs.docker.com/engine/storage/containerd/)). Les 130 Mo concordent avec cette explication : environ 100 Mo de la couche non compressée plus environ 23 Mo compressés, avec l'arrondi des gigaoctets. Cette somme est un calcul de notre part, pas une règle de la documentation ; ce qui est sûr, c'est la couche de `docker history`. C'est un gain que tu ne cherchais pas, et il est arrivé en faisant bien ce que tu cherchais.
+Les deux autres lignes comptent la taille de l'image de deux façons, et il vaut mieux ne pas les confondre. `docker image inspect` donne la taille du **contenu**, compressé tel qu'il est stocké et transféré : 337,3 Mo contre 314,3 Mo, soit 23 Mo de moins. `docker image ls` donne 1,45 Go contre 1,32 Go, environ 130 Mo de moins. La différence entre les deux façons vient du magasin d'images de Docker Engine 29 qui, selon sa documentation, stocke les images « au format compressé et non compressé » ([Docker, « containerd image store »](https://docs.docker.com/engine/storage/containerd/)). La documentation ne donne aucune formule pour la façon dont se compose le nombre affiché par `docker image ls`, et nous n'allons pas en inventer une avec une somme qui y ressemblerait par hasard. Ce que nous pouvons affirmer, c'est ce qui a été mesuré : les deux nombres baissent, dans le sens qui correspond à une couche de 100 Mo en moins, et la mesure fiable, celle qui ne dépend pas de la façon dont chaque commande compte, est la couche de `docker history`. C'est un gain que tu ne cherchais pas, et il est arrivé en faisant bien ce que tu cherchais.
 
 > [!NOTE]
 > 🔧 **Observation de génie logiciel 4.2**
@@ -312,7 +312,7 @@ Le `prune` indique ce qu'il a libéré (`Total: 99.59MB`, le même cache que dan
 
 Quand tu construis dans un terminal, BuildKit dessine un affichage qui se redessine et se colore. C'est bien pour regarder, mais on ne peut ni l'enregistrer ni y chercher. L'option `--progress` détermine le format. Selon la référence de `docker buildx build`, la valeur par défaut est `auto`, qui utilise le mode `tty` (l'interactif, « avec couleur et redessin ») si la sortie est un terminal, et `plain` sinon ; `plain` « affiche la progression de la construction en texte brut » ([`docker buildx build`, `--progress`](https://docs.docker.com/reference/cli/docker/buildx/build/#progress)). Sur un serveur de construction, où il n'y a pas de terminal, tu vois toujours `plain` ; il vaut donc mieux savoir le lire.
 
-Le texte brut a cette forme : chaque étape est un numéro précédé de `#`. Apparaît d'abord la ligne qui la nomme, comme `#10 [5/6] COPY internal/ internal/`, puis les lignes de ce qu'elle a fait, toutes avec le même numéro. Une étape se termine normalement par l'une de deux lignes : `#10 CACHED`, si elle est sortie du cache, ou `#10 DONE 0.5s`, si elle a été exécutée, avec sa durée. Si elle échoue, elle se termine par `#10 ERROR: …`, comme tu le verras en 4.6.2. Les étapes `[internal]` sont celles que le constructeur fait de lui-même : lire le Dockerfile, le `.dockerignore`, le contexte.
+Le texte brut a cette forme : chaque étape est un numéro précédé de `#`. Apparaît d'abord la ligne qui la nomme, comme `#10 [5/6] COPY internal/ internal/`, puis les lignes de ce qu'elle a fait, toutes avec le même numéro. Une étape se termine normalement par l'une de deux lignes : `#10 CACHED`, si elle est sortie du cache, ou `#10 DONE 0.5s`, si elle a été exécutée, avec sa durée. Si elle échoue, elle se termine par `#10 ERROR: …`, comme tu le verras en 4.6.2. Les étapes `[internal]` sont celles que le constructeur fait de lui-même : lire le Dockerfile, le `.dockerignore`, le contexte. Remarque aussi que les étapes numérotées vont jusqu'à `[6/6]` alors que le nouveau Dockerfile compte neuf instructions : `FROM`, `WORKDIR`, les trois `COPY` et le `RUN` sont les six étapes que BuildKit numérote, parce que ce sont celles qui produisent une couche de fichiers. `USER`, `EXPOSE` et `CMD` se contentent d'inscrire des données dans la configuration de l'image (4.1), n'ont pas d'étape propre et n'apparaissent donc pas comme `[7/9]`. Elles n'ont pas été sautées : elles sont dans le résultat, comme le montre `docker history` avec ses 0 B.
 
 #### 4.5.2 Le script de la mesure
 
@@ -491,7 +491,7 @@ curso-docker-revisor:1.1.0 (Dockerfile): 790 ms
   paso 6  CACHED     RUN go build -o /usr/local/bin/revisor ./cmd/revisor
 ```
 
-On a ajouté un `NOTAS.md` au dossier et tout est sorti du cache. Le fichier n'est même pas arrivé au constructeur : le `.dockerignore` l'a laissé de côté (4.6). Ce qui ne voyage pas ne peut rien invalider.
+On a ajouté un `NOTAS.md` au dossier et tout est sorti du cache. Deux barrières agissent ici à la fois : le `.dockerignore` l'a laissé de côté (4.6), si bien que le fichier n'est même pas arrivé au constructeur, et en outre aucun `COPY` sélectif du nouveau Dockerfile ne le demande. Ce qui ne voyage pas, ou qu'on ne demande pas, ne peut rien invalider.
 
 > [!NOTE]
 > 🔧 **Observation de génie logiciel 4.3**
@@ -674,7 +674,7 @@ $ ./fig04_06.sh
 Check complete, no warnings found.
 ```
 
-Cette sortie est stable. Le `tail -1` ne garde que le verdict ; sans lui, tu verrais les mêmes étapes `[internal]` que dans la Leçon 3. Le `RUN --mount` ne gêne pas la vérification : c'est une syntaxe en vigueur du Dockerfile, et la ligne `# syntax=docker/dockerfile:1` du début garantit que le constructeur la comprend.
+Cette sortie est stable. Le `tail -1` ne garde que le verdict ; sans lui, tu verrais les mêmes étapes `[internal]` que dans la Leçon 3. Le `RUN --mount` ne gêne pas la vérification : c'est une syntaxe en vigueur du Dockerfile, et la ligne `# syntax=docker/dockerfile:1` du début indique à BuildKit quelle version de la syntaxe du Dockerfile utiliser pour la lire. Cela suppose que BuildKit soit actif, ce qui est le cas normal dans Docker Engine 29 ; avec l'ancien constructeur (*legacy builder*), qui n'utilise pas BuildKit, le `RUN --mount` n'est pas compris. Les vérifications de `--check` existent depuis la version 1.8 de la syntaxe du Dockerfile et demandent Buildx 0.15 ou une version ultérieure ([Docker, « Build checks »](https://docs.docker.com/build/checks/)) ; avec des outils plus anciens, la commande ne les reconnaît pas.
 
 ### 4.8 Ce que tu verras dans d'autres projets
 
@@ -744,7 +744,7 @@ Copie `programas/revisor/` dans un dossier à toi et mets-y le `.dockerignore` d
 
 ### Exercice 3 — Corrige l'ordre
 
-Un collègue a écrit ce Dockerfile pour le `revisor`. Il fonctionne, mais chaque modification du code refait tout :
+Un collègue a voulu réorganiser le Dockerfile du `revisor` pour tirer parti du cache, et l'a laissé ainsi. Il a des problèmes d'ordre, et l'un d'eux est grave :
 
 ```dockerfile
 # syntax=docker/dockerfile:1
@@ -824,7 +824,7 @@ Remarque qu'avec le Dockerfile de la leçon, celui des `COPY` sélectifs, `datos
 
 ### Solution 3
 
-1. **Elle échoue.** `go build` a besoin du `go.mod` pour savoir quel module il compile, et dans ce Dockerfile le `go.mod` arrive **après** le `RUN`. Compiler sans `go.mod` donne cette erreur, mesurée à l'intérieur de l'image `golang:1.27.3-trixie` avec un paquet `main` minimal dans `cmd/revisor` : `go: go.mod file not found in current directory or any parent directory; see 'go help modules'`. Dans la construction, tu la verras avec le format d'un `RUN` qui échoue, comme en 4.6.2.
+1. **Elle échoue.** `go build` a besoin du `go.mod` pour savoir quel module il compile, et dans ce Dockerfile le `go.mod` arrive **après** le `RUN`. Compiler sans `go.mod` donne cette erreur, mesurée à l'intérieur de l'image `golang:1.27.3-trixie` avec un paquet `main` minimal dans `cmd/revisor` : `go: go.mod file not found in current directory or any parent directory; see 'go help modules'`. Dans la construction, tu la verras avec le format d'un `RUN` qui échoue, comme en 4.6.2. Ce message est produit par `fig04_07.sh`, qui compile le même paquet minimal sans `go.mod` dans l'image de Go et laisse sa sortie à côté, dans `fig04_07.salida.txt`.
 2. Les problèmes : `go.mod` vient après le `RUN` (erreur) et devrait venir en premier (cache) ; `internal/` vient avant `cmd/`, à l'inverse de l'ordre de la leçon (moins grave, mais celui qui change le plus doit être en dessous) ; et le `RUN` n'a pas de montage de cache, si bien que chaque modification compile depuis zéro. La version corrigée est `fig04_01.Dockerfile`.
 3. Avec la version corrigée, après la modification de `tabla.go`, le tableau indique `CACHED` pour `WORKDIR`, `COPY go.mod ./` et `COPY cmd/ cmd/`, et `DONE` pour `COPY internal/ internal/` et pour le `RUN`, comme en 4.3.3.
 

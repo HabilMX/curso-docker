@@ -12,7 +12,7 @@ Il est 18 h 40 un vendredi, et la fenêtre de mise à jour du serveur se ferme �
 
 **Ce que cette leçon ne fait pas.** Elle ne rend pas l'image petite : celle qui sort d'ici pèse plus d'un gigaoctet, et c'est très bien ainsi pour l'instant, car la voir grosse est la meilleure façon de comprendre ensuite pourquoi il vaut la peine de la réduire (le plan du cours garde cela pour la [Leçon 5](05-multi-stage.md)). Elle n'ordonne pas non plus le Dockerfile pour que la reconstruction soit rapide et n'explique pas les couches une à une : c'est le sujet de la [Leçon 4](04-capas-cache-contexto.md). Elle ne connecte pas le `revisor` à d'autres conteneurs (c'est pourquoi, dans cette leçon, le `revisor` se surveille lui-même) et ne lui ajoute ni contrôle de santé (health check) ni secrets. Une seule étape, une seule image, tout en vue.
 
-**À propos des exécutions.** Toutes les sorties sont réelles et ont été obtenues le 21 octobre 2026 sur un Mac avec [Colima](https://github.com/abiosoft/colima), qui démarre une machine virtuelle avec Ubuntu 24.04.4, la même base que Linux Mint 22, le système de référence du cours. Les cinq scripts ont été exécutés ce jour-là depuis le client du Mac (Docker 29.8.2) contre le daemon de cette machine virtuelle (Docker 29.2.1, Buildx v0.31.1). Cette même machine était utilisée au même moment par d'autres exécutions ; pour éviter les collisions, les scripts ont donc été lancés avec un autre préfixe de noms et un autre port : ils comportent les variables `PREFIJO` (par défaut `curso-docker-`) et `PUERTO` (par défaut `8080`), et ont été exécutés avec `PREFIJO=curso-docker-l03-` et `PUERTO=18030`. Dans les sorties de `fig03_05` et `fig03_07`, où apparaissent des noms et un port, la leçon montre les valeurs par défaut, qui sont celles que tu verras : `curso-docker-revisor` au lieu de `curso-docker-l03-revisor` et `8080` au lieu de `18030` ; c'est la seule modification, et les fichiers `.salida.txt` conservent l'exécution telle quelle. Les sorties de `fig03_02`, `fig03_04` et `fig03_08` ne montrent ni noms ni port et sont reproduites sans retouche. Deux autres points concernant le Mac : le `date` de macOS ne donne pas les millisecondes, si bien que la fonction d'aide `t` des scripts recourt à `python3` quand c'est nécessaire (sur Mint, ce n'est pas nécessaire) ; et la première ligne de `docker build --check` indique `building with "colima" instance`, car c'est le nom du contexte Docker sur le Mac ; sur ton Mint, elle indiquera `"default"`. Le cours a été planifié avec Docker Engine 29.8.2, et la version la plus récente publiée ce jour-là était la 29.9.2, du 20 octobre 2026 ([notes de version](https://docs.docker.com/engine/release-notes/29/)) ; rien dans cette leçon ne change entre ces versions. Ce qui change **effectivement** sur ton Mint, et c'est signalé là où cela apparaît : les numéros de processus (PID), les durées de construction et d'arrêt (celles de cette leçon incluent en plus l'aller-retour entre le Mac et sa machine virtuelle, elles devraient donc être un peu plus courtes sur ton Mint), et, si ton ordinateur est un Intel ou un AMD, l'architecture (`amd64` au lieu d'`arm64`), qui n'est pas affichée ici mais qui détermine quelle variante de l'image de Go est téléchargée. Les programmes se trouvent dans [`programas/03-primer-dockerfile/`](../programas/03-primer-dockerfile), chacun avec sa sortie à côté ; `estado/` conserve le `Dockerfile` et le `.dockerignore` tels qu'ils sont à la fin de la leçon.
+**À propos des exécutions.** Toutes les sorties sont réelles et ont été obtenues le 21 octobre 2026 sur un Mac avec [Colima](https://github.com/abiosoft/colima), qui démarre une machine virtuelle avec Ubuntu 24.04.4, la même base que Linux Mint 22, le système de référence du cours. Les scripts ont été exécutés **à l'intérieur de cette machine virtuelle**, avec Docker 29.2.1 et Buildx v0.31.1 (la première ligne de `docker build --check` indique `building with "default" instance`, comme elle le fera sur ton Mint). Cette même machine était utilisée au même moment par d'autres exécutions, et elle était très chargée ; pour éviter les collisions, les scripts ont donc été lancés avec un autre préfixe de noms et un autre port : ils comportent les variables `PREFIJO` (par défaut `curso-docker-`) et `PUERTO` (par défaut `8080`), et ont été exécutés avec `PREFIJO=curso-docker-l03-` et `PUERTO=18030`. Dans les sorties où apparaissent des noms et un port, la leçon montre les valeurs par défaut, qui sont celles que tu verras : `curso-docker-revisor` au lieu de `curso-docker-l03-revisor` et `8080` au lieu de `18030` (et la largeur des tableaux, qui dépend du nom le plus long, a été laissée telle qu'elle est sortie) ; c'est la seule modification, et les fichiers `.salida.txt` conservent l'exécution telle quelle. Ce que les variables ne changent pas, parce que cela se passe à l'intérieur du conteneur, sort tel quel : le `8080` du port interne. Les programmes sont au nombre de huit : les scripts `fig03_02`, `fig03_04`, `fig03_05`, `fig03_07` et `fig03_08` habituels, plus `fig03_09` (le dossier « Dans ton dossier » de 3.6.1, monté dans un dossier temporaire et avec le tag `1.0.0-carpeta`, pour ne pas toucher au tien), `fig03_12` (les deux Dockerfile défectueux des exercices, `fig03_10.Dockerfile` et `fig03_11.Dockerfile`) et `fig03_13` (jusqu'où va un motif de `.dockerignore`). La fonction d'aide `t` des scripts recourt à `python3` quand le `date` du système ne donne pas les millisecondes, comme celui de macOS ; sur Mint et dans la machine virtuelle, ce n'est pas nécessaire. Les durées de cette leçon (construction, arrêt) ont été obtenues avec la machine chargée, donc sur ton Mint elles devraient être plus courtes ou semblables ; les 10 secondes de la forme *shell* ne dépendent pas de la charge. Le cours a été planifié avec Docker Engine 29.8.2, et la version la plus récente publiée ce jour-là était la 29.9.2, du 20 octobre 2026 ([notes de version](https://docs.docker.com/engine/release-notes/29/)) ; rien dans cette leçon ne change entre ces versions. Ce qui change **effectivement** sur ton Mint, et c'est signalé là où cela apparaît : les numéros de processus (PID), les durées, et, si ton ordinateur est un Intel ou un AMD, l'architecture (`amd64` au lieu d'`arm64`), qui n'est pas affichée ici mais qui détermine quelle variante de l'image de Go est téléchargée. Les programmes se trouvent dans [`programas/03-primer-dockerfile/`](../programas/03-primer-dockerfile), chacun avec sa sortie à côté ; `estado/` conserve le `Dockerfile` et le `.dockerignore` tels qu'ils sont à la fin de la leçon.
 
 ## À la fin, tu seras capable de
 
@@ -27,20 +27,20 @@ Il est 18 h 40 un vendredi, et la fenêtre de mise à jour du serveur se ferme �
 
 Dans la Leçon 2, tu as travaillé avec une image qu'on t'a donnée toute faite. Elle fonctionne, mais elle cache un piège : si tu ne sais pas comment elle a été assemblée, tu ne sais pas ce qu'elle contient ni comment elle va se comporter. Tourne-t-elle en tant que `root` ? Embarque-t-elle tes fichiers de configuration ? S'arrête-t-elle quand tu le lui demandes, ou attend-elle qu'on la tue ? Ces trois questions ne trouvent pas leur réponse en regardant le conteneur tourner ; elles la trouvent en lisant sa **recette**.
 
-La recette d'une image s'appelle un **Dockerfile**. C'est un fichier texte contenant des instructions, une par ligne, que Docker lit de haut en bas pour fabriquer l'image. La documentation le définit ainsi : Docker construit des images en lisant les instructions d'un Dockerfile, « un fichier texte qui contient les instructions pour construire le code source » ([référence du Dockerfile](https://docs.docker.com/reference/dockerfile/)). Ce qui compte pour toi, c'est que la recette est **reproductible** : la même recette avec le même code donne la même image, aujourd'hui, le vendredi à 18 h 40 et sur l'ordinateur de ton collègue. Ce que tu as appelé dans la Leçon 0 « on ne répare pas une image en entrant dans le conteneur » trouve ici son autre moitié : une image se répare **en modifiant sa recette et en la reconstruisant**.
+La recette d'une image s'appelle un **Dockerfile**. C'est un fichier texte contenant des instructions, une par ligne, que Docker lit de haut en bas pour fabriquer l'image. La documentation le définit ainsi : Docker construit des images en lisant les instructions d'un Dockerfile, « un fichier texte qui contient les instructions pour construire le code source » ([Docker, « Dockerfile overview »](https://docs.docker.com/build/concepts/dockerfile/)) ; et sa référence le décrit comme un document texte contenant toutes les commandes qu'un utilisateur pourrait exécuter en ligne de commande pour assembler une image ([référence du Dockerfile](https://docs.docker.com/reference/dockerfile/)). Ce qui compte pour toi, c'est que la recette est **répétable** : elle décrit le même processus sur ton ordinateur, sur celui de ton collègue et sur le serveur, et c'est pourquoi une image se répare en modifiant sa recette et en la reconstruisant, non en entrant dans le conteneur. (Pour que deux constructions donnent une image *identique*, il faut en outre fixer la base par son empreinte, comme tu le feras dans la Leçon 5 ; avec un tag, la base peut changer sous tes pieds, comme tu le verras en 3.3.1.) Ce que tu as appelé dans la Leçon 0 « une image ne se répare pas en entrant dans le conteneur » trouve ici son autre moitié : une image se répare **en modifiant sa recette et en la reconstruisant**.
 
-Et chaque ligne de cette recette est une décision. La scène du début n'a pas été causée par une erreur de programmation : elle a été causée par le fait d'écrire `CMD revisor` au lieu de `CMD ["revisor"]`. Les deux se ressemblent presque. Voici la différence que tu vas mesurer à la section 3.6, avec la même image et le même programme :
+Et chaque ligne de cette recette est une décision. La scène du début n'a pas été causée par une erreur de programmation : elle a été causée par le fait d'écrire `CMD revisor` au lieu de `CMD ["revisor"]`. Les deux se ressemblent presque. Voici la différence que tu vas mesurer à la section 3.7, avec la même image et le même programme :
 
 ```text
 ## docker stop con forma exec
-tardó 299 ms
+tardó 562 ms
 
 ## docker stop con forma shell
-tardó 10485 ms
+tardó 10365 ms
 ExitCode=137
 ```
 
-Quelques dixièmes de seconde contre dix secondes et un cadavre. Ce sont les chiffres de l'exécution de cette leçon ; lors d'une autre exécution, réalisée à l'intérieur de la machine virtuelle et sans l'aller-retour depuis le Mac, on a obtenu 161 ms contre 10 112 ms (10,1 s), avec le même `ExitCode=137`. Les millisecondes changent ; les dix secondes et le 137, non. La leçon comporte sept parties :
+Quelques dixièmes de seconde contre dix secondes et un cadavre. Ce sont les chiffres de l'exécution de cette leçon. Les millisecondes changent (cette machine était très chargée) ; les dix secondes et le 137, non. La leçon comporte sept parties :
 
 1. **Ce que signifie construire** (3.1) : la recette, le contexte et qui fait le travail.
 2. **Le Dockerfile du `revisor`, ligne par ligne** (3.2).
@@ -98,7 +98,7 @@ Douze lignes, dont sept sont des instructions. Voyons-les une à une.
 
 **`# syntax=docker/dockerfile:1`.** On dirait un commentaire, et pour presque tout le fichier c'en est un, mais en première ligne c'est une **directive** : elle indique à BuildKit quelle version de la syntaxe du Dockerfile utiliser. La référence l'explique ainsi : elle sert à « déclarer la version de la syntaxe du Dockerfile à utiliser pour la construction », et permet d'utiliser de nouvelles fonctionnalités sans mettre Docker à jour ([référence du Dockerfile, *syntax*](https://docs.docker.com/reference/dockerfile/#syntax)). Le `1` signifie « la version 1 la plus récente ». C'est pourquoi, dans les sorties de construction, tu verras Docker résoudre d'abord `docker.io/docker/dockerfile:1` : il va chercher l'interpréteur de la recette avant de la lire. Tous les Dockerfile du cours commencent par cette ligne.
 
-**`FROM golang:1.27.3-trixie`.** Toute image part d'une autre. `FROM` indique quelle est l'**image de base** : ici, l'image officielle de Go en version 1.27.3, construite sur Debian 13, dont le nom de code est *trixie*. Le `revisor` est écrit en Go et, pour le compiler, il faut le compilateur Go ; cette image le fournit, avec tout un Debian. Docker Hub répertorie ce tag parmi les tags en vigueur de l'image de Go, et précise que des noms comme *bookworm* ou *trixie* sont les noms de code des versions de Debian sur lesquelles elle est construite ([golang sur Docker Hub](https://hub.docker.com/_/golang)).
+**`FROM golang:1.27.3-trixie`.** Toute image part d'une autre (la seule exception est l'image vide `scratch`, dont tu n'auras pas besoin dans ce cours). `FROM` indique quelle est l'**image de base** : ici, l'image officielle de Go en version 1.27.3, construite sur Debian 13, dont le nom de code est *trixie*. Le `revisor` est écrit en Go et, pour le compiler, il faut le compilateur Go ; cette image le fournit, avec tout un Debian. Docker Hub répertorie ce tag parmi les tags en vigueur de l'image de Go, et précise que des noms comme *bookworm* ou *trixie* sont les noms de code des versions de Debian sur lesquelles elle est construite ([golang sur Docker Hub](https://hub.docker.com/_/golang)).
 
 **`WORKDIR /src`.** Fixe le dossier de travail à l'intérieur de l'image : tout ce qui suit (`COPY`, `RUN`, `CMD`) se passe là. Si le dossier n'existe pas, Docker le crée ([référence, `WORKDIR`](https://docs.docker.com/reference/dockerfile/#workdir)). C'est préférable à écrire `RUN cd /src`, qui ne sert à rien : chaque `RUN` repart de zéro et le `cd` est perdu à la fin de cette ligne.
 
@@ -134,7 +134,7 @@ Lis la troisième colonne avec attention : les trois dernières instructions n'a
 
 #### 3.3.1 Les parties d'un nom
 
-Lorsque tu construis, tu donnes un nom à l'image avec `-t`. Le nom complet d'une image a cette forme, selon la documentation de `docker image tag` : `[HÔTE[:PORT]/]ESPACE/DÉPÔT[:TAG]` ([`docker image tag`](https://docs.docker.com/reference/cli/docker/image/tag/)). Pour une image qui ne vit que sur ton ordinateur, deux parties suffisent :
+Lorsque tu construis, tu donnes un nom à l'image avec `-t`. Le nom complet d'une image a cette forme, selon la documentation de `docker image tag` : `[HÔTE[:PORT]/]ESPACE/DÉPÔT[:TAG]` ([`docker image tag`](https://docs.docker.com/reference/cli/docker/image/tag/)). Dans la pratique, presque tout peut être omis : `golang:1.27.3-trixie` n'écrit ni le registre ni l'espace, parce que Docker complète avec `docker.io/library/` (l'espace `library` est celui des images officielles ; tu as déjà vu ce nom complet dans la Leçon 2, dans `naming to docker.io/library/…`). Pour une image qui ne vit que sur ton ordinateur, deux parties suffisent :
 
 - le **dépôt**, qui dit ce que c'est : `curso-docker-revisor` ;
 - le **tag**, après les deux-points, qui dit de quelle version il s'agit : `1.0.0`.
@@ -145,12 +145,12 @@ Les tags sont en outre des **alias qui bougent**. Regarde la ligne de l'image de
 
 #### 3.3.2 Pourquoi `curso-docker-revisor` et pas `revisor`
 
-Le plan du cours, dans le tableau des leçons, indique que dans cette leçon tu construis `revisor:1.0.0`. Ici, l'image s'appelle `curso-docker-revisor:1.0.0`. La différence est voulue, et c'est une leçon en soi : **le préfixe du cours**.
+Le plan du cours, dans son tableau des leçons, indique déjà que tu construis ici `curso-docker-revisor:1.x.0` et non `revisor`. Ce préfixe mérite qu'on s'y arrête, car c'est une leçon en soi : **le préfixe du cours**.
 
 Depuis la Leçon 0, tout ce que le cours crée sur ton ordinateur commence par `curso-docker-` : les conteneurs, les réseaux, les volumes et, désormais, les images. Ce préfixe fait trois choses pour toi :
 
 1. **Il évite les collisions.** `revisor` est un nom que n'importe qui utiliserait. Si une image `revisor:1.0.0` d'un autre projet existe déjà sur ton ordinateur (d'un autre cours de Hábil, par exemple), ton `docker build -t revisor:1.0.0` lui prend son nom sans demander : l'ancienne image se retrouve sans tag et la nouvelle prend sa place. Ce n'est pas hypothétique : sur la machine où cette leçon a été exécutée, il existait déjà une image nommée `revisor:1.0.0`, d'un autre projet, qui n'a rien à voir avec ce Dockerfile. Avec le préfixe, les deux cohabitent.
-2. **Il permet de nettoyer uniquement ce qui t'appartient.** Les filtres de Docker travaillent par nom. `docker ps -a --filter name=curso-docker-` ne liste que les conteneurs du cours, et `docker image ls 'curso-docker-*'` que ses images. Supprimer « tout ce qui concerne le cours » devient une commande sûre, qui ne touche ni aux bases de données ni aux images d'autres projets présents sur le même ordinateur.
+2. **Il permet de nettoyer uniquement ce qui t'appartient.** Les filtres de Docker travaillent par nom. `docker ps -a --filter name=curso-docker-` ne liste que les conteneurs du cours, et `docker image ls --filter reference='curso-docker-*'` que ses images (la forme que décrit la [référence de `docker image ls`](https://docs.docker.com/reference/cli/docker/image/ls/) pour les jokers). Supprimer « tout ce qui concerne le cours » devient une commande sûre, qui ne touche ni aux bases de données ni aux images d'autres projets présents sur le même ordinateur.
 3. **Il dit d'où cela vient.** Dans six mois, quand tu feras le ménage et que tu tomberas sur `curso-docker-revisor:1.0.0`, tu sauras ce que c'est sans enquêter.
 
 La règle de versions du `revisor` dans ce cours est simple : chaque fois qu'une leçon modifie l'image, la version augmente. Celle-ci est la `1.0.0` : la première qui fonctionne entièrement. Quand le Dockerfile changera, on ne réutilisera pas le tag ; on en créera un autre.
@@ -190,6 +190,20 @@ echo
 echo "== 4. ¿Existe ese usuario en /etc/passwd de la imagen?"
 docker run --rm --name "${PREFIJO}quien" "$IMAGEN" \
   sh -c 'grep -q ":10001:" /etc/passwd && echo "sí está" || echo "no está"'
+
+echo
+echo "== 5. ¿Puede ese usuario abrir un puerto bajo? (primer puerto sin privilegios)"
+docker run --rm --name "${PREFIJO}quien" --user 10001:10001 "$IMAGEN" \
+  cat /proc/sys/net/ipv4/ip_unprivileged_port_start
+
+echo
+echo "== 6. Lo mismo con la red del anfitrión (--network host)"
+docker run --rm --name "${PREFIJO}quien" --network host --user 10001:10001 "$IMAGEN" \
+  cat /proc/sys/net/ipv4/ip_unprivileged_port_start
+
+echo
+echo "== 7. Y el valor del propio anfitrión (sin contenedor)"
+cat /proc/sys/net/ipv4/ip_unprivileged_port_start
 ```
 
 ```text
@@ -205,6 +219,15 @@ uid=10001 gid=10001 groups=10001
 
 == 4. ¿Existe ese usuario en /etc/passwd de la imagen?
 no está
+
+== 5. ¿Puede ese usuario abrir un puerto bajo? (primer puerto sin privilegios)
+0
+
+== 6. Lo mismo con la red del anfitrión (--network host)
+0
+
+== 7. Y el valor del propio anfitrión (sin contenedor)
+0
 ```
 
 Cette sortie est stable. La première fois, `docker pull` télécharge l'image de Go, qui pèse des centaines de mégaoctets ; sois patient. `--user` fait à l'exécution la même chose que `USER` dans le Dockerfile, et sert ici à tester l'utilisateur sans rien construire.
@@ -213,11 +236,11 @@ Lis-la de haut en bas. L'image de base déclare un utilisateur vide, et vide sig
 
 #### 3.4.2 Un numéro suffit
 
-C'est correct, et c'est voulu. Pour le noyau, un utilisateur est un numéro ; le nom est une commodité qui vit dans `/etc/passwd`. La référence de `USER` accepte un nom ou un numéro, sous la forme `USER <UID>[:<GID>]` ([référence, `USER`](https://docs.docker.com/reference/dockerfile/#user)), et écrire les deux numéros présente deux avantages. Le premier : il n'est pas nécessaire de créer l'utilisateur dans l'image. Le second : le groupe est fixé ; si tu donnes un utilisateur sans groupe et que cet utilisateur n'a pas de groupe principal, la référence avertit que le processus tourne avec le groupe de `root`. Avec `10001:10001`, aucune surprise.
+C'est correct, et c'est voulu. Pour le noyau, un utilisateur est un numéro ; le nom est une commodité qui vit dans `/etc/passwd`. La référence de `USER` accepte un nom ou un numéro, sous la forme `USER <UID>[:<GID>]` ([référence, `USER`](https://docs.docker.com/reference/dockerfile/#user)), et écrire les deux numéros présente deux avantages. Le premier : il n'est pas nécessaire de créer l'utilisateur dans l'image. Cela suffit au `revisor`, qui ne demande ni son nom ni son dossier personnel ; un programme qui le ferait constaterait que son dossier personnel est `/`, où il ne peut pas écrire (c'est ce que tu verras dans la Solution 1). Dans ces cas-là, on crée l'utilisateur dans l'image, ou l'on utilise une base qui le fournit déjà, comme le `nonroot` de la Leçon 5. Le second : le groupe est fixé ; si tu donnes un utilisateur sans groupe et que cet utilisateur n'a pas de groupe principal, la référence avertit que le processus tourne avec le groupe de `root`. Avec `10001:10001`, aucune surprise.
 
 Pourquoi 10001 ? Parce qu'il est éloigné des numéros qu'utilisent les distributions pour leurs propres utilisateurs et pour les personnes de l'équipe (sur Mint, ton utilisateur est généralement le 1000). Un numéro élevé et dédié réduit le risque que le processus du conteneur coïncide avec un utilisateur réel de l'hôte.
 
-Le guide des bonnes pratiques le demande sans détour : « si un service peut tourner sans privilèges, utilise `USER` pour passer à un utilisateur autre que `root` » ([bonnes pratiques, `USER`](https://docs.docker.com/build/building/best-practices/#user)). Le `revisor` n'a besoin de rien de `root` : il écoute sur le 8080, un port élevé, et n'écrit pas dans des dossiers système. (Les ports inférieurs à 1024 sont ceux qui, sous Linux, exigent une capacité spéciale ; à l'intérieur d'un conteneur Docker, même cela ne s'applique pas : `docker run --rm --user 10001:10001 golang:1.27.3-trixie cat /proc/sys/net/ipv4/ip_unprivileged_port_start` a affiché `0` sur la machine de cette leçon, ce qui veut dire que n'importe quel port peut être ouvert sans privilèges.) Ainsi, dès le premier Dockerfile, il tourne en tant que 10001. Le plan du cours le formule ainsi : la sécurité n'est pas une leçon, c'est une habitude.
+Le guide des bonnes pratiques le demande sans détour : « si un service peut tourner sans privilèges, utilise `USER` pour passer à un utilisateur autre que `root` » ([bonnes pratiques, `USER`](https://docs.docker.com/build/building/best-practices/#user)). Le `revisor` n'a besoin de rien de `root` : il écoute sur le 8080, un port élevé, et n'écrit pas dans des dossiers système. (Les ports inférieurs à 1024 sont ceux qui, sous Linux, exigent `root` ou une capacité spéciale ; le premier qui n'en exige pas se trouve dans `net.ipv4.ip_unprivileged_port_start`, qui vaut 1024 par défaut et qui est une valeur **propre à chaque espace de noms réseau** ([documentation du noyau](https://docs.kernel.org/networking/ip-sysctl.html)). À l'intérieur d'un conteneur Docker avec son propre réseau, cette valeur est à 0 : le bloc 5 de `fig03_02.sh` l'a mesurée et a donné `0`, ce qui veut dire que n'importe quel port peut être ouvert sans privilèges. Mais ce n'est pas une loi : avec `--network host`, le conteneur partage le réseau de l'hôte et voit **la valeur de l'hôte**. Sur la machine de cette leçon, cette valeur est aussi à 0 (la machine virtuelle la fixe ainsi), si bien que les blocs 5, 6 et 7 donnent `0` et ne distinguent pas les cas ; sur un Mint fraîchement installé, tu devrais voir `0` au bloc 5 et `1024` aux blocs 6 et 7. Cette différence n'a pas été mesurée ici.) Ainsi, dès le premier Dockerfile, il tourne en tant que 10001. Le plan du cours le formule ainsi : la sécurité n'est pas une leçon, c'est une habitude.
 
 ### 3.5 Le contexte et `.dockerignore`
 
@@ -285,7 +308,8 @@ Voici le fichier. Il s'appelle exactement `.dockerignore`, avec le point, et se 
 
 ```text
 # fig03_03.dockerignore
-# Lo que nunca viaja al daemon al construir.
+# Lo que no entra a la imagen. (El Dockerfile y este archivo sí viajan al
+# constructor porque los necesita, pero COPY no los mete en la imagen.)
 .git
 .env
 *.tar
@@ -297,8 +321,57 @@ Chaque ligne est un motif, semblable aux jokers du *shell* ; les lignes commenç
 
 - **`.git`** : l'historique complet du projet. Il peut peser beaucoup plus que le code et peut conserver des secrets que quelqu'un a effacés du code mais pas de l'historique.
 - **`.env`** : l'endroit où les gens gardent des mots de passe pour tester sur leur ordinateur. C'est précisément le fichier de la figure.
-- **`*.tar`** : des sauvegardes et des fichiers exportés qui restent dans le dossier sans que personne s'en souvienne.
+- **`*.tar`** : des sauvegardes et des fichiers exportés qui restent dans le dossier sans que personne s'en souvienne. Attention à la portée : ce motif n'atteint que les `.tar` de la racine du contexte ; un `.tar` dans un sous-dossier continue de voyager. Cela a été vérifié avec `fig03_13.sh` (plus bas). Pour les exclure à tous les niveaux, le motif est `**/*.tar`.
 - **`Dockerfile*` et `.dockerignore`** : la recette n'a aucune raison de se trouver dans l'assiette. Mais alors, comment Docker construit-il si tu exclus le Dockerfile ? La documentation répond : ces deux fichiers « sont tout de même envoyés au constructeur, car il en a besoin pour construire » ; ce que le motif empêche, c'est que `COPY` les mette dans l'image. L'astérisque de `Dockerfile*` couvre aussi le `Dockerfile.forma-shell` de 3.7.
+
+`fig03_13.sh` le mesure avec un `.tar` à la racine et un autre dans `respaldos/`, et liste ceux qui sont arrivés dans l'image :
+
+```bash
+#!/usr/bin/env bash
+# fig03_13.sh — Dónde alcanza un patrón de .dockerignore: «*.tar» contra «**/*.tar».
+# Construye una imagen mínima con un .tar en la raíz y otro en una subcarpeta, y
+# lista los .tar que llegaron adentro. Borra lo que crea.
+set -euo pipefail
+PREFIJO="${PREFIJO:-curso-docker-}"
+TRABAJO="$(mktemp -d)"
+IMAGEN="${PREFIJO}ctx:1.0.0-tar"
+trap 'docker rmi -f "$IMAGEN" >/dev/null 2>&1 || true; rm -rf "$TRABAJO"' EXIT
+cd "$TRABAJO"
+mkdir respaldos
+touch raiz.tar respaldos/enero.tar
+printf 'FROM golang:1.27.3-trixie\nCOPY . /ctx\n' > Dockerfile
+
+muestra() {
+  printf '$ %s\n' "$*"
+  local rc=0
+  eval "$@" 2>&1 || rc=$?
+  [ "$rc" -ne 0 ] && echo "[código de salida: $rc]"
+  return 0
+}
+
+echo '*.tar' > .dockerignore
+echo "## .dockerignore con: *.tar"
+docker build -q -t "$IMAGEN" . >/dev/null
+muestra "docker run --rm --name ${PREFIJO}mira $IMAGEN find /ctx -name '*.tar'"
+
+echo
+echo '**/*.tar' > .dockerignore
+echo "## .dockerignore con: **/*.tar"
+docker build -q -t "$IMAGEN" . >/dev/null
+muestra "docker run --rm --name ${PREFIJO}mira $IMAGEN find /ctx -name '*.tar'"
+```
+
+```text
+$ ./fig03_13.sh
+## .dockerignore con: *.tar
+$ docker run --rm --name curso-docker-mira curso-docker-ctx:1.0.0-tar find /ctx -name '*.tar'
+/ctx/respaldos/enero.tar
+
+## .dockerignore con: **/*.tar
+$ docker run --rm --name curso-docker-mira curso-docker-ctx:1.0.0-tar find /ctx -name '*.tar'
+```
+
+Avec `*.tar`, celui de la racine est resté dehors et `respaldos/enero.tar` est entré dans l'image ; avec `**/*.tar`, aucun. Cette sortie est stable.
 
 Un détail de lecture : une ligne qui commence par `!` crée une exception (« ceci, oui, même si un motif précédent l'exclut »), et quand plusieurs motifs correspondent à un fichier, c'est le dernier qui l'emporte. Tu n'en as pas besoin aujourd'hui, mais tu le verras dans des projets tiers.
 
@@ -321,6 +394,7 @@ set -euo pipefail
 # con otra corrida en el mismo equipo (PREFIJO=... PUERTO=... ./figNN.sh).
 PREFIJO="${PREFIJO:-curso-docker-}"
 PUERTO="${PUERTO:-8080}"
+LIMITES="--memory 64m --cpus 0.5 --pids-limit 50"   # los tres límites de la Lección 2
 AQUI="$(cd "$(dirname "$0")" && pwd)"
 TRABAJO="$(mktemp -d)"
 
@@ -354,12 +428,12 @@ titulo "Construir y medir"
 muestra "docker build -q -t ${PREFIJO}revisor:1.0.0 . >/dev/null && docker image ls ${PREFIJO}revisor:1.0.0 --format '{{.Repository}}:{{.Tag}} {{.Size}}'"
 
 titulo "El error: arrancar sin configuración"
-muestra "docker run --name ${PREFIJO}revisor ${PREFIJO}revisor:1.0.0"
+muestra "docker run --name ${PREFIJO}revisor ${LIMITES} ${PREFIJO}revisor:1.0.0"
 muestra "docker ps -a --filter name=${PREFIJO}revisor --format '{{.Names}} {{.Status}}'"
 docker rm ${PREFIJO}revisor >/dev/null
 
 titulo "Correrlo bien"
-muestra "docker run -d --name ${PREFIJO}revisor -p 127.0.0.1:${PUERTO}:8080 -e REVISOR_SERVICIOS='propio http://127.0.0.1:8080/salud' ${PREFIJO}revisor:1.0.0 >/dev/null"
+muestra "docker run -d --name ${PREFIJO}revisor -p 127.0.0.1:${PUERTO}:8080 ${LIMITES} -e REVISOR_SERVICIOS='propio http://127.0.0.1:8080/salud' ${PREFIJO}revisor:1.0.0 >/dev/null"
 esperar_http "http://127.0.0.1:${PUERTO}/salud"
 muestra "curl -s http://127.0.0.1:${PUERTO}/salud"
 muestra "curl -s 'http://127.0.0.1:${PUERTO}/api/estados?formato=tabla' | sed -E 's/[0-9.]+(ms|µs)/<tiempo>/'"
@@ -387,8 +461,8 @@ curso-docker-revisor:1.0.0 1.45GB
 Les scripts du cours travaillent dans des dossiers temporaires et **suppriment ce qu'ils créent** en sortant : ils servent à observer et à mesurer, pas à te laisser quoi que ce soit. Ton projet, en revanche, doit rester, car la Leçon 4 part de lui. Depuis la racine du dépôt du cours, prépare ton dossier et construis l'image que tu vas conserver :
 
 ```bash
-mkdir -p ~/curso-docker
-cp -R programas/revisor ~/curso-docker/revisor
+mkdir -p ~/curso-docker/revisor
+cp -R programas/revisor/. ~/curso-docker/revisor/
 cp programas/03-primer-dockerfile/estado/Dockerfile \
    programas/03-primer-dockerfile/estado/.dockerignore ~/curso-docker/revisor/
 cd ~/curso-docker/revisor
@@ -400,61 +474,100 @@ docker image ls curso-docker-revisor --format '{{.Repository}}:{{.Tag}} {{.Size}
 ```text
 $ ls -A
 .dockerignore
-cmd
 Dockerfile
+cmd
 go.mod
 internal
 $ docker build -q -t curso-docker-revisor:1.0.0 .
-sha256:f1b8e9646140…
+sha256:1eb7de835928…
 $ docker image ls curso-docker-revisor --format '{{.Repository}}:{{.Tag}} {{.Size}}'
 curso-docker-revisor:1.0.0 1.45GB
 ```
 
-L'identifiant qu'affiche `docker build -q` est l'empreinte de l'image et change sur chaque ordinateur ; il a été tronqué ici. Cette exécution a utilisé le préfixe d'exécution décrit dans « À propos des exécutions » pour le tag, et elle est présentée avec le nom par défaut ; l'ordre dans lequel `ls -A` liste les fichiers peut varier selon la langue de ton système. Désormais, quand la leçon dira « dans le dossier du `revisor` », il s'agira de `~/curso-docker/revisor`, et **cette** `curso-docker-revisor:1.0.0` est celle qui reste sur ton ordinateur à la fin. Tu peux taper telles quelles, à cet endroit, les commandes de 3.6.2 et 3.6.3.
+Le `sha256:…` qu'affiche `docker build -q` est l'identifiant de l'image sur ton ordinateur et change à chaque construction ; il a été tronqué ici. (L'empreinte qui sert à fixer une base, celle de 3.3.1, est celle que publie le registre ; la Leçon 5 l'utilise.) Cette sortie est celle de `fig03_09.sh`, qui exécute ces mêmes commandes dans un dossier temporaire et avec le tag `curso-docker-revisor:1.0.0-carpeta` (et le préfixe d'exécution de « À propos des exécutions »), pour ne pas toucher au tien ; elle est présentée ici avec le tag que tu vas utiliser, et elle est enregistrée telle quelle dans `fig03_09.salida.txt`. L'ordre dans lequel `ls -A` liste les fichiers peut varier selon la langue de ton système. Le `cp -R programas/revisor/. …` copie le *contenu* du dossier, si bien que le répéter n'imbrique pas un `revisor/revisor`. Voici `fig03_09.sh`, au cas où tu voudrais voir comment l'exécution a été montée :
+
+```bash
+#!/usr/bin/env bash
+# fig03_09.sh — «En tu carpeta»: armar la carpeta del revisor y construir la imagen
+# que se queda. Aquí se hace en una carpeta temporal y con la etiqueta 1.0.0-carpeta,
+# para no tocar tu ~/curso-docker ni tu curso-docker-revisor:1.0.0. Borra lo que crea.
+set -euo pipefail
+# Nombres por omisión: los del curso. Se pueden cambiar para no chocar con otra
+# corrida en el mismo equipo (PREFIJO=... ./fig03_09.sh).
+PREFIJO="${PREFIJO:-curso-docker-}"
+AQUI="$(cd "$(dirname "$0")" && pwd)"
+TRABAJO="$(mktemp -d)"
+IMAGEN="${PREFIJO}revisor:1.0.0-carpeta"
+trap 'docker rmi -f "$IMAGEN" >/dev/null 2>&1 || true; rm -rf "$TRABAJO"' EXIT
+
+# muestra: imprime el comando con «$ » y lo ejecuta (salida y error juntos)
+muestra() {
+  printf '$ %s\n' "$*"
+  local rc=0
+  eval "$@" 2>&1 || rc=$?
+  [ "$rc" -ne 0 ] && echo "[código de salida: $rc]"
+  return 0
+}
+
+# Los comandos del bloque de la lección, desde la raíz del repositorio del curso;
+# la carpeta ~/curso-docker es aquí una carpeta temporal.
+cd "$AQUI/../.."
+mkdir -p "$TRABAJO/curso-docker/revisor"
+cp -R programas/revisor/. "$TRABAJO/curso-docker/revisor/"
+cp programas/03-primer-dockerfile/estado/Dockerfile \
+   programas/03-primer-dockerfile/estado/.dockerignore "$TRABAJO/curso-docker/revisor/"
+cd "$TRABAJO/curso-docker/revisor"
+
+muestra "ls -A"
+muestra "docker build -q -t $IMAGEN ."
+muestra "docker image ls ${PREFIJO}revisor --format '{{.Repository}}:{{.Tag}} {{.Size}}'"
+```
+
+Désormais, quand la leçon dira « dans le dossier du `revisor` », il s'agira de `~/curso-docker/revisor`, et **cette** `curso-docker-revisor:1.0.0` est celle qui reste sur ton ordinateur à la fin. Tu peux taper telles quelles, à cet endroit, les commandes de 3.6.2 et 3.6.3, avec une précaution indiquée à chacune : le nom `curso-docker-revisor` ne peut être porté que par un conteneur à la fois.
 
 #### 3.6.2 La première erreur : démarrer sans configuration
 
 ```text
 ## El error: arrancar sin configuración
-$ docker run --name curso-docker-revisor curso-docker-revisor:1.0.0
+$ docker run --name curso-docker-revisor --memory 64m --cpus 0.5 --pids-limit 50 curso-docker-revisor:1.0.0
 revisor: falta REVISOR_SERVICIOS (ejemplo: REVISOR_SERVICIOS="prueba http://curso-docker-prueba:9000/ 2s")
 [código de salida: 1]
 $ docker ps -a --filter name=curso-docker-revisor --format '{{.Names}} {{.Status}}'
 curso-docker-revisor Exited (1) Less than a second ago
 ```
 
-L'image est correcte ; le conteneur a démarré et le `revisor` a refusé de travailler. Le `revisor` se configure par des variables d'environnement, et la seule obligatoire est `REVISOR_SERVICIOS`, la liste des services qu'il doit surveiller. Sans elle, il affiche ce qui lui manque, avec un exemple, et se termine avec le code 1. `docker ps -a` l'indique comme `Exited (1)` : le processus s'est terminé de lui-même, avec une erreur qui lui est propre. Compare avec le 137 de la Leçon 0 : là-bas, quelqu'un a tué le processus ; ici, le processus a décidé de partir. Savoir lire cette différence t'évite de chercher le problème au mauvais endroit. Remarque aussi que le conteneur est resté créé bien qu'il se soit terminé : le script le supprime avec `docker rm` avant de continuer, car le nom est occupé.
+L'image est correcte ; le conteneur a démarré et le `revisor` a refusé de travailler. Le `revisor` se configure par des variables d'environnement, et la seule obligatoire est `REVISOR_SERVICIOS`, la liste des services qu'il doit surveiller. Sans elle, il affiche ce qui lui manque, avec un exemple, et se termine avec le code 1. `docker ps -a` l'indique comme `Exited (1)` : le processus s'est terminé de lui-même, avec une erreur qui lui est propre. Compare avec le 137 de la Leçon 0 : là-bas, quelqu'un a tué le processus ; ici, le processus a décidé de partir. Savoir lire cette différence t'évite de chercher le problème au mauvais endroit. Remarque aussi que le conteneur est resté créé bien qu'il se soit terminé : le script le supprime avec `docker rm` avant de continuer, car le nom est occupé. Si tu tapes les commandes toi-même, fais de même avant de passer à 3.6.3 : `docker rm curso-docker-revisor`.
 
 #### 3.6.3 L'exécuter correctement
 
 ```text
 ## Correrlo bien
-$ docker run -d --name curso-docker-revisor -p 127.0.0.1:8080:8080 -e REVISOR_SERVICIOS='propio http://127.0.0.1:8080/salud' curso-docker-revisor:1.0.0 >/dev/null
+$ docker run -d --name curso-docker-revisor -p 127.0.0.1:8080:8080 --memory 64m --cpus 0.5 --pids-limit 50 -e REVISOR_SERVICIOS='propio http://127.0.0.1:8080/salud' curso-docker-revisor:1.0.0 >/dev/null
 $ curl -s http://127.0.0.1:8080/salud
 {"estado":"vivo","version":"desarrollo"}
 $ curl -s 'http://127.0.0.1:8080/api/estados?formato=tabla' | sed -E 's/[0-9.]+(ms|µs)/<tiempo>/'
 SERVICIO  ESTADO    TIEMPO  DETALLE
-propio    OK            0s  200
+propio    OK           <tiempo>  200
 $ docker exec curso-docker-revisor id
 uid=10001 gid=10001 groups=10001
 $ docker top curso-docker-revisor -o pid,user,args
 PID                 USER                COMMAND
-1387809             10001               revisor
+2246176             10001               revisor
 ```
 
-Le numéro de processus `1387809` change à chaque exécution ; tout le reste est stable, sauf, lors d'une autre exécution, la durée affichée dans le tableau (le `sed` de la commande est là pour la masquer si elle sort en millisecondes ; lors de cette exécution, elle est sortie à `0s` et il n'y avait rien à masquer).
+Le numéro de processus change à chaque exécution ; tout le reste est stable, sauf la durée affichée dans le tableau : le `sed` de la commande est là pour la masquer quand elle sort en millisecondes, et lors de cette exécution elle est sortie ainsi, d'où le `<tiempo>` que tu vois (lors d'une autre exécution, elle peut sortir à `0s`, et il n'y a alors rien à masquer).
 
-`-e` passe une variable d'environnement au conteneur. Ici, le `revisor` se surveille **lui-même** : la liste ne contient qu'un service, `propio`, qui pointe vers son propre endpoint de contrôle de santé. C'est une façon de vérifier que tout fonctionne sans autre conteneur, car connecter des conteneurs entre eux relève des réseaux et le plan du cours garde ce sujet pour la Leçon 8. Le tableau indique `OK` et `200`.
+`-p 127.0.0.1:8080:8080` et les trois limites (`--memory 64m --cpus 0.5 --pids-limit 50`) sont les habitudes de la Leçon 2, mises en place dès le premier conteneur du `revisor` : le port réservé à ton ordinateur et un plafond de mémoire, de CPU et de processus. Ces chiffres sont ceux de la Leçon 2, pas une mesure du `revisor` ; si, plus tard, il en faut davantage, on mesure et on augmente. `-e` passe une variable d'environnement au conteneur. Ici, le `revisor` se surveille **lui-même** : la liste ne contient qu'un service, `propio`, qui pointe vers son propre endpoint de contrôle de santé. C'est une façon de vérifier que tout fonctionne sans autre conteneur, car connecter des conteneurs entre eux relève des réseaux et le plan du cours garde ce sujet pour la Leçon 8. Le tableau indique `OK` et `200`.
 
 `/salud` répond `"version":"desarrollo"`. Ce n'est pas une erreur : l'image a été construite sans graver de version dans le programme, et le `revisor` est conçu pour le signaler ainsi. Attention à la différence : l'**image** porte le tag `1.0.0`, mais le **programme** à l'intérieur ne sait pas dans quelle version il se trouve. Ce sont deux choses distinctes, et les relier est le travail d'une leçon ultérieure.
 
-Passons aux deux dernières lignes, qui sont les plus importantes de cette section. `docker exec ... id` indique `uid=10001` : le `USER` du Dockerfile a fonctionné. Et `docker top`, qui liste les processus d'un conteneur vus depuis l'hôte, montre **un seul processus** : `revisor`, de l'utilisateur 10001. Cette ligne unique, c'est la forme *exec* qui fonctionne. Garde-la en mémoire, car dans la section suivante tu vas en voir une avec **deux** lignes.
+Passons aux deux dernières lignes, qui sont les plus importantes de cette section. `docker exec ... id` indique `uid=10001` : le `USER` du Dockerfile a fonctionné. Et `docker top`, qui liste les processus d'un conteneur vus depuis l'hôte, montre **un seul processus** : `revisor`, de l'utilisateur 10001. Cette ligne unique, c'est la forme *exec* qui fonctionne. Garde-la en mémoire, car dans la section suivante tu vas en voir une avec **deux** lignes. Quand tu auras fini d'essayer : `docker stop curso-docker-revisor && docker rm curso-docker-revisor`, pour que le nom soit libre et que `docker ps -a` reste propre.
 
 ### 3.7 Forme *exec* contre forme *shell*
 
 #### 3.7.1 Deux façons d'écrire la même chose
 
-`CMD` (ainsi que `RUN` et `ENTRYPOINT`) peut s'écrire de deux manières ([référence du Dockerfile, formes *shell* et *exec*](https://docs.docker.com/reference/dockerfile/#shell-and-exec-form)) :
+`CMD` (ainsi que `RUN` et `ENTRYPOINT`, l'instruction sœur de `CMD` qui fixe le programme principal de l'image et que tu utiliseras à partir de la Leçon 5) peut s'écrire de deux manières ([référence du Dockerfile, formes *shell* et *exec*](https://docs.docker.com/reference/dockerfile/#shell-and-exec-form)) :
 
 - **Forme *exec*** : une liste au format JSON, avec des crochets et des guillemets doubles : `CMD ["revisor"]`. Docker démarre ce programme directement, sans rien entre les deux.
 - **Forme *shell*** : un texte ordinaire : `CMD revisor`. Docker l'enveloppe dans un *shell* ; sous Linux, dans `/bin/sh -c "revisor"`. La référence le formule ainsi : contrairement à la forme *exec*, les instructions en forme *shell* « utilisent toujours un *shell* ».
@@ -484,7 +597,7 @@ D'abord, la moitié que tu as déjà vue : la fin de `fig03_05.sh`, qui arrête 
 
 ```text
 ## docker stop con forma exec
-tardó 299 ms
+tardó 562 ms
 $ docker logs curso-docker-revisor
 revisor desarrollo escuchando en :8080 (1 servicio(s))
 revisor: GET /salud 200 0s
@@ -495,7 +608,7 @@ revisor: recibí terminated, apagando
 revisor: apagado limpio
 ```
 
-Les durées (299 ms, ainsi que les `0s` et `1ms` de chaque requête) changent à chaque exécution ; la séquence de lignes est stable, même si le nombre de `GET /salud` dépend du nombre de fois où `esperar_http` a interrogé le service avant qu'il réponde. Les deux dernières lignes sont celles qui comptent : le `revisor` **a reçu** le signal (`terminated` est le nom que Go donne à `SIGTERM`), a terminé ce qu'il était en train de faire et a pris congé. Le tout en 299 millisecondes lors de cette exécution (161 lors de l'autre, à l'intérieur de la machine virtuelle).
+Les durées (562 ms, ainsi que les `0s` et `1ms` de chaque requête) changent à chaque exécution ; la séquence de lignes est stable, même si le nombre de `GET /salud` dépend du nombre de fois où `esperar_http` a interrogé le service avant qu'il réponde. Les deux dernières lignes sont celles qui comptent : le `revisor` **a reçu** le signal (`terminated` est le nom que Go donne à `SIGTERM`), a terminé ce qu'il était en train de faire et a pris congé. Le tout en 562 millisecondes lors de cette exécution, avec la machine très chargée.
 
 Maintenant, l'autre moitié. `fig03_07.sh` construit l'image en forme *shell*, l'exécute avec la même configuration, examine ses processus et l'arrête :
 
@@ -508,6 +621,7 @@ set -euo pipefail
 # con otra corrida en el mismo equipo (PREFIJO=... PUERTO=... ./figNN.sh).
 PREFIJO="${PREFIJO:-curso-docker-}"
 PUERTO="${PUERTO:-8080}"
+LIMITES="--memory 64m --cpus 0.5 --pids-limit 50"   # los tres límites de la Lección 2
 AQUI="$(cd "$(dirname "$0")" && pwd)"
 TRABAJO="$(mktemp -d)"
 
@@ -539,7 +653,7 @@ trap 'docker rm -f ${PREFIJO}revisor-shell >/dev/null 2>&1; docker rmi -f ${PREF
 
 titulo "docker stop con forma shell"
 docker build -q -t ${PREFIJO}revisor:1.0.0-shell -f Dockerfile.forma-shell . >/dev/null
-docker run -d --name ${PREFIJO}revisor-shell -e REVISOR_SERVICIOS='propio http://127.0.0.1:8080/salud' ${PREFIJO}revisor:1.0.0-shell >/dev/null
+docker run -d --name ${PREFIJO}revisor-shell ${LIMITES} -e REVISOR_SERVICIOS='propio http://127.0.0.1:8080/salud' ${PREFIJO}revisor:1.0.0-shell >/dev/null
 sleep 1
 muestra "docker top ${PREFIJO}revisor-shell -o pid,user,args"
 inicio=$(t); docker stop ${PREFIJO}revisor-shell >/dev/null; fin=$(t)
@@ -554,20 +668,20 @@ Les fonctions d'aide du début sont les mêmes que dans `fig03_05.sh`. Le tag `1
 ## docker stop con forma shell
 $ docker top curso-docker-revisor-shell -o pid,user,args
 PID                 USER                COMMAND
-1388087             10001               /bin/sh -c revisor
-1388102             10001               revisor
-tardó 10485 ms
+2254874             10001               /bin/sh -c revisor
+2254924             10001               revisor
+tardó 10365 ms
 $ docker inspect --format 'ExitCode={{.State.ExitCode}}' curso-docker-revisor-shell
 ExitCode=137
 $ docker logs curso-docker-revisor-shell
 revisor desarrollo escuchando en :8080 (1 servicio(s))
 ```
 
-Les numéros de processus changent ; la durée varie de quelques millisecondes, mais reste toujours **un peu au-dessus de 10 secondes** ; `ExitCode=137` et le journal d'une seule ligne sont stables. C'est la scène du début, au complet.
+Les numéros de processus changent ; la durée varie de quelques centaines de millisecondes, mais reste toujours **un peu au-dessus de 10 secondes** ; `ExitCode=137` et le journal d'une seule ligne sont stables. C'est la scène du début, au complet.
 
 #### 3.7.3 Ce qui s'est passé : le signal qui n'est pas arrivé
 
-Place les deux sorties de `docker top` côte à côte. Avec la forme *exec*, il y avait **un** processus, `revisor`. Avec la forme *shell*, il y en a **deux** : `/bin/sh -c revisor` et, comme enfant de celui-ci, `revisor`. Le *shell* a démarré en premier, donc le *shell* est le processus numéro 1 du conteneur (rappelle-toi la Leçon 0 : à l'intérieur du conteneur, le programme principal est le 1). Le `revisor` est devenu le numéro 2 à l'intérieur, un enfant parmi d'autres.
+Place les deux sorties de `docker top` côte à côte. Avec la forme *exec*, il y avait **un** processus, `revisor`. Avec la forme *shell*, il y en a **deux** : `/bin/sh -c revisor` et, comme enfant de celui-ci, `revisor`. Le *shell* a démarré en premier, donc le *shell* est le processus numéro 1 du conteneur (rappelle-toi la Leçon 0 : à l'intérieur du conteneur, le programme principal est le 1). Le `revisor` est devenu un enfant de celui-ci.
 
 Voyons maintenant la chaîne de `docker stop`, selon sa documentation : il envoie au processus principal du conteneur le signal `SIGTERM`, attend un délai qui est par défaut de **10 secondes** sous Linux, et si le processus est toujours vivant, il lui envoie `SIGKILL` ([`docker container stop`](https://docs.docker.com/reference/cli/docker/container/stop/)). Le « processus principal » est le numéro 1. Avec la forme *exec*, le numéro 1 est le `revisor`, qui est écrit pour traiter `SIGTERM` : il le reçoit, s'arrête proprement et se termine. Avec la forme *shell*, le numéro 1 est `/bin/sh`.
 
@@ -576,12 +690,14 @@ Ici se rejoignent deux faits. Le premier : le *shell* ne retransmet pas le signa
 Dès lors, la sortie se lit d'elle-même :
 
 1. `docker stop` envoie `SIGTERM` au numéro 1, le *shell*. Il se perd. Le `revisor`, en dessous, n'en sait jamais rien.
-2. 10 secondes s'écoulent. C'est presque tout le temps que tu as mesuré : 10 485 ms, ce sont les 10 000 du délai plus le temps que prennent Docker, le noyau et, lors de cette exécution, l'aller-retour depuis le Mac (lors de l'exécution à l'intérieur de la machine virtuelle, on a obtenu 10 112 ms).
+2. 10 secondes s'écoulent. C'est presque tout le temps que tu as mesuré : 10 365 ms, ce sont les 10 000 du délai plus le temps que prennent Docker et le noyau (avec la machine chargée).
 3. `docker stop` envoie `SIGKILL`, qui, selon le manuel des signaux, « ne peut être ni intercepté, ni bloqué, ni ignoré » ([signal(7)](https://man7.org/linux/man-pages/man7/signal.7.html)). Le *shell* et le `revisor` meurent d'un coup.
 4. Docker note `ExitCode=137`. Tu sais le lire depuis la Leçon 0 : 128 plus 9, et 9 est le numéro de `SIGKILL`.
 5. Le journal ne compte qu'une seule ligne. Il n'indique pas `recibí terminated`, car le `revisor` n'a rien reçu, et il n'indique pas `apagado limpio`, car il ne s'est pas arrêté : on l'a tué au milieu de ce qu'il faisait. S'il était en train d'écrire un rapport à cet instant, le rapport est resté inachevé.
 
 Remarque que le code du `revisor` est exactement le même dans les deux images. Il sait s'arrêter : il l'a démontré en quelques dixièmes de seconde. Ce qui a changé, c'est qu'avec un *shell* entre les deux, le signal ne lui est jamais parvenu. Et il ne vaut pas la peine de chercher à savoir comment se comporte le *shell* de chaque image de base : avec la forme *exec*, il n'y a pas de *shell* entre les deux et la question disparaît.
+
+Les Leçons 0 et 2 t'ont laissé ce problème en suspens pour plus tard. Ici, tu as vu la moitié qui dépend du Dockerfile : la forme *exec* fait de ton programme le processus numéro 1. La Leçon 7 apporte l'autre moitié : quelles obligations ce processus numéro 1 a envers les processus qu'il crée (`--init`), comment changer le signal avec `STOPSIGNAL` et comment mesurer l'arrêt en même temps que le contrôle de santé.
 
 > [!NOTE]
 > 🔧 **Observation de génie logiciel 3.4**
@@ -643,7 +759,7 @@ Le premier, le bon :
 ```text
 ## Revisar el Dockerfile antes de construir
 $ docker build --check .
-#0 building with "colima" instance using docker driver
+#0 building with "default" instance using docker driver
 
 #1 [internal] load build definition from Dockerfile
 #1 transferring dockerfile: 372B 0.0s done
@@ -660,35 +776,35 @@ $ docker build --check .
 #4 DONE 0.2s
 
 #5 [internal] load .dockerignore
-#5 transferring context: 127B 0.0s done
+#5 transferring context: 231B done
 #5 DONE 0.0s
 Check complete, no warnings found.
 ```
 
-Les durées et le long *digest* après `dockerfile:1@sha256:` changent (ce *digest* est la version exacte de l'interpréteur de syntaxe que Docker a utilisée ce jour-là) ; changent aussi la taille en octets de `transferring dockerfile`, qui dépend des commentaires du fichier, et le nom du contexte sur la ligne `#0` (ici `colima` ; sur ton Mint, `default`). Ce qui est stable, c'est la séquence des étapes et la dernière ligne. Les étapes numérotées sont ce que BuildKit a fait : charger la recette (`#1`), résoudre l'interpréteur que demande la ligne `# syntax` (`#2` et `#3`), demander les informations de l'image de base sans la télécharger entièrement (`#4`) et lire le `.dockerignore` (`#5`). Il n'y a eu ni `COPY` ni `RUN` : rien n'a été construit. Et à la fin, `Check complete, no warnings found.`
+Les durées et le long *digest* après `dockerfile:1@sha256:` changent (ce *digest* est la version exacte de l'interpréteur de syntaxe que Docker a utilisée ce jour-là) ; changent aussi la taille en octets de `transferring dockerfile` et de `transferring context`, qui dépendent des commentaires des fichiers. Ce qui est stable, c'est la séquence des étapes et la dernière ligne. Les étapes numérotées sont ce que BuildKit a fait : charger la recette (`#1`), résoudre l'interpréteur que demande la ligne `# syntax` (`#2` et `#3`), demander les informations de l'image de base sans la télécharger entièrement (`#4`) et lire le `.dockerignore` (`#5`). Il n'y a eu ni `COPY` ni `RUN` : rien n'a été construit. Et à la fin, `Check complete, no warnings found.`
 
 Le second, celui de la forme *shell* :
 
 ```text
 $ docker build --check -f Dockerfile.forma-shell .
-#0 building with "colima" instance using docker driver
+#0 building with "default" instance using docker driver
 
 #1 [internal] load build definition from Dockerfile.forma-shell
 #1 transferring dockerfile: 355B done
 #1 DONE 0.0s
 
 #2 resolve image config for docker-image://docker.io/docker/dockerfile:1
-#2 DONE 0.2s
+#2 DONE 0.1s
 
 #3 docker-image://docker.io/docker/dockerfile:1@sha256:4edf897a3ffa55b89f906fc8cc78afdb3f1834cc9c7083565e611a8a7d5fe99e
-#3 resolve docker.io/docker/dockerfile:1@sha256:4edf897a3ffa55b89f906fc8cc78afdb3f1834cc9c7083565e611a8a7d5fe99e 0.0s done
+#3 resolve docker.io/docker/dockerfile:1@sha256:4edf897a3ffa55b89f906fc8cc78afdb3f1834cc9c7083565e611a8a7d5fe99e done
 #3 CACHED
 
 #4 [internal] load metadata for docker.io/library/golang:1.27.3-trixie
 #4 DONE 0.1s
 
 #5 [internal] load .dockerignore
-#5 transferring context: 127B done
+#5 transferring context: 231B done
 #5 DONE 0.0s
 Check complete, 1 warning has been found!
 
@@ -744,7 +860,7 @@ Elle se lit ainsi : le conteneur a démarré, le programme a lu sa configuration
 **3. Le `docker stop` de 10 secondes et le code 137.**
 
 ```text
-tardó 10485 ms
+tardó 10365 ms
 ExitCode=137
 ```
 
@@ -766,7 +882,7 @@ Elle se lit ainsi : le processus principal n'a pas traité `SIGTERM`, le délai 
 
 **Nommer l'image avec un nom générique comme `revisor` ou `app`.** Il entre en collision avec les images d'autres projets sur le même ordinateur et leur prend leur nom sans prévenir.
 
-**Laisser le Dockerfile sans `USER` parce que « c'est juste pour tester ».** Ce qui est pour tester finit en production avec le même Dockerfile. Cela coûte une ligne.
+**Laisser le Dockerfile sans `USER` parce que « c'est juste pour tester ».** Ce qui est pour tester finit souvent en production avec le même Dockerfile. Cela coûte une ligne.
 
 **`COPY . .` sans `.dockerignore`.** Tout le contenu du dossier voyage et reste dans l'image, y compris les fichiers que personne ne se souvient d'y avoir laissés.
 
@@ -799,16 +915,21 @@ Travaille dans ton dossier `~/curso-docker/revisor` (celui du bloc « Dans ton d
 
 ### Exercice 3 — Le chronomètre sur ton ordinateur
 
-Exécute `fig03_05.sh` et `fig03_07.sh` sur ton Mint (après la Leçon 1 et avec l'image de Go téléchargée). Note dans ton journal de bord, sur la ligne que la Leçon 3 prévoit à cet effet, les deux durées de `docker stop`. Avant de les exécuter, prédis :
+Exécute `fig03_05.sh` et `fig03_07.sh` sur ton Mint (après la Leçon 1 et avec l'image de Go téléchargée). Note dans ton journal de bord, sur la ligne que la Leçon 3 prévoit à cet effet, les deux durées de `docker stop`.
+
+Un avertissement avant de les lancer : `fig03_05.sh` construit puis, en sortant, supprime une image nommée `curso-docker-revisor:1.0.0`, le même nom que la tienne de 3.6.1. Pour qu'il ne l'emporte pas, lance-le avec un autre préfixe, c'est à cela que sert la variable : `PREFIJO=curso-docker-ej3- ./fig03_05.sh`. Dans ta sortie, tu liras `curso-docker-ej3-revisor` là où la leçon dit `curso-docker-revisor` ; il commence toujours par `curso-docker-`, donc le nettoyage du cours le couvre. Si tu l'as déjà lancé sans le préfixe et que ton image a disparu, retourne dans `~/curso-docker/revisor` et reconstruis-la avec `docker build -q -t curso-docker-revisor:1.0.0 .` : cela prend quelques secondes, car tout sort du cache.
+
+Avant de les lancer, prédis :
 
 1. Laquelle des deux durées va le plus changer d'une exécution à l'autre, et laquelle va rester presque identique ?
-2. Quel nombre va sortir dans `ExitCode` avec la forme *shell* ? Et quel nombre attendrais-tu avec la forme *exec*, sachant que le `revisor` est écrit pour se terminer avec 0 après un arrêt propre ? Vérifie-le en ajoutant, après le `docker stop` de `fig03_05.sh`, un `docker inspect --format 'ExitCode={{.State.ExitCode}}' curso-docker-revisor`.
+2. Quel nombre va sortir dans `ExitCode` avec la forme *shell* ? Et quel nombre attendrais-tu avec la forme *exec*, sachant que le `revisor` est écrit pour se terminer avec 0 après un arrêt propre ? Vérifie-le en ajoutant, après le `docker stop` de `fig03_05.sh`, un `docker inspect --format 'ExitCode={{.State.ExitCode}}' "${PREFIJO}revisor"` (avec le préfixe ci-dessus, le conteneur s'appelle `curso-docker-ej3-revisor`).
 
 ### Exercice 4 — Corrige le Dockerfile d'un autre
 
 Un collègue te passe ce Dockerfile pour le `revisor`. Trouve **six** problèmes, cinq dans le fichier et un qui manque à côté de lui ; dis quel accident chacun peut causer et écris la version corrigée. Ensuite, vérifie la tienne avec `docker build --check` : elle doit afficher `Check complete, no warnings found.`
 
 ```dockerfile
+# ASÍ NO — seis problemas a propósito (Ejercicio 4 de la Lección 3).
 FROM golang
 MAINTAINER alguien@ejemplo.invalid
 COPY . /src
@@ -830,14 +951,66 @@ Indice : `docker build --check` trouve deux des six ; les quatre autres, c'est �
 5. **Se contente de noter.** Ne publie rien (3.2).
 6. **Se contente de noter** le processus que démarrera chaque conteneur.
 
-La question piège : avec l'utilisateur **10001**, car `USER` change l'utilisateur de tout ce qui suit, y compris à la construction. Et la compilation échoue. Go tente de créer son cache dans le dossier personnel de l'utilisateur et, comme le 10001 n'existe pas dans `/etc/passwd`, ce dossier est `/`, où il ne peut pas écrire. Mesuré sur la machine de cette leçon avec `docker build --progress=plain` (le `#10` et le `0.881` sont le numéro d'étape et les secondes, et ils changent) :
+La question piège : avec l'utilisateur **10001**, car `USER` change l'utilisateur de tout ce qui suit, y compris à la construction. Et la compilation échoue. Go tente de créer son cache dans le dossier personnel de l'utilisateur et, comme le 10001 n'existe pas dans `/etc/passwd`, ce dossier est `/`, où il ne peut pas écrire. Mesuré sur la machine de cette leçon avec `fig03_12.sh`, qui construit avec `docker build --progress=plain` le `fig03_11.Dockerfile` (celui de la leçon, avec `USER` avant le `RUN`) ; le `#10` et le `0.204` sont le numéro d'étape et les secondes, et ils changent, et entre les deux lignes ci-dessous le reste de la sortie se trouve dans `fig03_12.salida.txt` :
 
 ```text
-#10 0.881 failed to initialize build cache at /.cache/go-build: mkdir /.cache: permission denied
+#10 0.204 failed to initialize build cache at /.cache/go-build: mkdir /.cache: permission denied
 ERROR: failed to build: failed to solve: process "/bin/sh -c go build -o /usr/local/bin/revisor ./cmd/revisor" did not complete successfully: exit code: 1
 ```
 
 Même si le cache fonctionnait, il ne pourrait pas non plus écrire dans `/usr/local/bin`. C'est pourquoi `USER` vient après la compilation.
+
+Voici le Dockerfile avec le `USER` déplacé (`fig03_11.Dockerfile`), qui n'existe que pour voir l'échec :
+
+```dockerfile
+# syntax=docker/dockerfile:1
+# fig03_11.Dockerfile — Lección 3: el Dockerfile de la lección con USER ANTES del RUN.
+# Existe solo para ver fallar la compilación (Solución 1): así NO se escribe.
+FROM golang:1.27.3-trixie
+
+WORKDIR /src
+COPY . .
+USER 10001:10001
+RUN go build -o /usr/local/bin/revisor ./cmd/revisor
+
+EXPOSE 8080
+CMD ["revisor"]
+```
+
+Et voici `fig03_12.sh`, qui le construit et, au passage, examine avec `docker build --check` le Dockerfile d'un collègue de l'Exercice 4 (`fig03_10.Dockerfile`, le même que ci-dessus) :
+
+```bash
+#!/usr/bin/env bash
+# fig03_12.sh — Los dos Dockerfile con defectos de la lección: el del Ejercicio 4,
+# revisado con docker build --check, y el de la Solución 1 (USER antes del RUN),
+# que falla al compilar. No deja imágenes ni contenedores.
+set -euo pipefail
+AQUI="$(cd "$(dirname "$0")" && pwd)"
+TRABAJO="$(mktemp -d)"
+trap 'rm -rf "$TRABAJO"' EXIT
+
+# El proyecto: el código que entrega el curso + los dos Dockerfile con defectos.
+cp -R "$AQUI/../revisor" "$TRABAJO/revisor"
+cp "$AQUI/estado/.dockerignore" "$TRABAJO/revisor/"
+cp "$AQUI/fig03_10.Dockerfile" "$TRABAJO/revisor/Dockerfile.ajeno"
+cp "$AQUI/fig03_11.Dockerfile" "$TRABAJO/revisor/Dockerfile.user-antes"
+cd "$TRABAJO/revisor"
+
+titulo() { printf '\n## %s\n' "$*"; }
+muestra() {
+  printf '$ %s\n' "$*"
+  local rc=0
+  eval "$@" 2>&1 || rc=$?
+  [ "$rc" -ne 0 ] && echo "[código de salida: $rc]"
+  return 0
+}
+
+titulo "Ejercicio 4: el Dockerfile ajeno, revisado antes de construir"
+muestra "docker build --check -f Dockerfile.ajeno ."
+
+titulo "Solución 1: USER antes del RUN, la compilación falla"
+muestra "docker build --progress=plain -f Dockerfile.user-antes ."
+```
 
 ### Solution 2
 
@@ -872,7 +1045,7 @@ Les cinq problèmes du fichier :
 
 Et le sixième, celui qui n'est pas dans le fichier : **il manque le `.dockerignore`**, et avec `COPY . /src` tout le contexte entre dans l'image. La version corrigée est le `fig03_01.Dockerfile` de cette leçon plus le `fig03_03.dockerignore`.
 
-`docker build --check .` sur le Dockerfile d'origine trouve deux des six. Mesuré sur la machine de cette leçon (seules les lignes des avertissements sont affichées) :
+`docker build --check` sur le Dockerfile d'origine (`fig03_10.Dockerfile`, que `fig03_12.sh` examine) trouve deux des six. Mesuré sur la machine de cette leçon (seules les lignes des avertissements sont affichées ; la sortie complète se trouve dans `fig03_12.salida.txt`) :
 
 ```text
 Check complete, 2 warnings have been found!
@@ -916,6 +1089,7 @@ Réponds sans regarder la leçon :
 
 Toutes consultées le 21 octobre 2026.
 
+- [Docker, « Dockerfile overview »](https://docs.docker.com/build/concepts/dockerfile/) : ce qu'est un Dockerfile.
 - [Référence du Dockerfile](https://docs.docker.com/reference/dockerfile/) : les instructions `FROM`, `WORKDIR`, `COPY`, `RUN`, `USER`, `EXPOSE`, `CMD`, `ENTRYPOINT` et `MAINTAINER` ; les formes *shell* et *exec* ; la directive `syntax`.
 - [Docker, « Build context »](https://docs.docker.com/build/concepts/context/) : le contexte de construction et les fichiers `.dockerignore`.
 - [Docker, « Build checks »](https://docs.docker.com/build/checks/) : `docker build --check`, son code de sortie et les versions minimales.
@@ -927,6 +1101,8 @@ Toutes consultées le 21 octobre 2026.
 - [Docker, « Running containers »](https://docs.docker.com/engine/containers/run/) : remplacer le `CMD` depuis `docker run`.
 - [golang sur Docker Hub](https://hub.docker.com/_/golang) : le tag `1.27.3-trixie` et ses alias, et la signification de *trixie*.
 - [Docker Engine 29, notes de version](https://docs.docker.com/engine/release-notes/29/) : les versions citées dans « À propos des exécutions ».
+- [Linux kernel, « IP Sysctl »](https://docs.kernel.org/networking/ip-sysctl.html) : `ip_unprivileged_port_start`, par espace de noms et avec la valeur 1024 par défaut.
+- [`docker image ls`](https://docs.docker.com/reference/cli/docker/image/ls/) : le filtre `reference` avec jokers.
 - [pid_namespaces(7), manuel de Linux](https://man7.org/linux/man-pages/man7/pid_namespaces.7.html) : les signaux que peut recevoir le processus numéro 1 d'un espace de noms.
 - [signal(7), manuel de Linux](https://man7.org/linux/man-pages/man7/signal.7.html) : les numéros de `SIGTERM` (15) et de `SIGKILL` (9), et le fait que `SIGKILL` ne peut pas être intercepté.
 - [Colima](https://github.com/abiosoft/colima) : l'outil avec lequel les programmes ont été exécutés sous macOS.
@@ -939,6 +1115,7 @@ Toutes consultées le 21 octobre 2026.
 | **contexte de construction** | les fichiers que la construction peut utiliser ; presque toujours, un dossier |
 | **Dockerfile** | la recette texte avec laquelle on construit une image |
 | **`.dockerignore`** | la liste de ce qui ne voyage pas dans le contexte et ne peut pas entrer dans l'image |
+| **`ENTRYPOINT`** | instruction qui fixe le programme principal du conteneur ; `CMD` lui donne des arguments par défaut ; tu l'utilises à partir de la Leçon 5 |
 | **tag** | la partie du nom d'une image après les deux-points ; elle indique de quelle version il s'agit |
 | **forme *exec*** | instruction écrite comme une liste JSON : `CMD ["revisor"]` ; démarre le programme sans *shell* |
 | **forme *shell*** | instruction écrite comme du texte : `CMD revisor` ; `/bin/sh -c` l'enveloppe |

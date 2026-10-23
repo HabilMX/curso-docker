@@ -3,9 +3,9 @@ $ ./fig03_07.sh
 ## docker stop con forma shell
 $ docker top curso-docker-l03-revisor-shell -o pid,user,args
 PID                 USER                COMMAND
-1388087             10001               /bin/sh -c revisor
-1388102             10001               revisor
-tardó 10485 ms
+2254874             10001               /bin/sh -c revisor
+2254924             10001               revisor
+tardó 10365 ms
 $ docker inspect --format 'ExitCode={{.State.ExitCode}}' curso-docker-l03-revisor-shell
 ExitCode=137
 $ docker logs curso-docker-l03-revisor-shell

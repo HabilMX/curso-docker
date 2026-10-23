@@ -125,7 +125,7 @@ curso-docker-revisor:1.0.0 (Dockerfile.leccion3): 13011 ms
   paso 4  DONE 10.1s RUN go build -o /usr/local/bin/revisor ./cmd/revisor
 ```
 
-`CACHED` quer dizer «saiu do cache»; `DONE` com um tempo, «foi feito de verdade». O `WORKDIR` saiu do cache; o `COPY` e a compilação foram refeitos. O passo 1, o `FROM`, sempre diz `DONE 0.0s`: o builder confirma que tem a imagem base, que já estava baixada, e não faz mais nada.
+`CACHED` quer dizer «saiu do cache»; `DONE` com um tempo, «foi feito de verdade». O `WORKDIR` saiu do cache; o `COPY` e a compilação foram refeitos. Nesta execução, o passo 1, o `FROM`, diz `DONE 0.0s`: o builder confirma que já tem a imagem base e não faz mais nada. Se a imagem não estivesse baixada (uma máquina recém-instalada, ou depois de apagá-la), esse passo levaria o tempo que o download levasse, e isso apareceria no tempo mostrado.
 
 ### 4.3 A ordem importa
 
@@ -266,7 +266,7 @@ curso-docker-revisor:1.1.0 314341606
 
 O `RUN` passou de 110 MB para **10 MB**: agora a camada tem só o executável. As três camadas de código somam o mesmo que o `COPY . .` de antes, distribuído. Esse é o número firme: **a camada emagreceu 100 MB**, sem tirar nada de que o `revisor` precise.
 
-As outras duas linhas contam o tamanho da imagem de duas formas, e convém não confundi-las. `docker image inspect` dá o tamanho do **conteúdo**, compactado como é guardado e transferido: 337.3 MB contra 314.3 MB, 23 MB a menos. `docker image ls` dá 1.45 GB contra 1.32 GB, uns 130 MB a menos. A diferença entre as duas formas vem do armazenamento de imagens do Docker Engine 29, que segundo sua documentação guarda as imagens «em formato compactado e descompactado» ([Docker, «containerd image store»](https://docs.docker.com/engine/storage/containerd/)). Os 130 MB batem com essa explicação: uns 100 MB da camada descompactada mais uns 23 MB compactados, com o arredondamento dos gigabytes. Essa soma é uma conta nossa, não uma regra da documentação; o que é certo é a camada de `docker history`. É uma economia que não se buscava, e chegou por fazer bem o que se buscava.
+As outras duas linhas contam o tamanho da imagem de duas formas, e convém não confundi-las. `docker image inspect` dá o tamanho do **conteúdo**, compactado como é guardado e transferido: 337.3 MB contra 314.3 MB, 23 MB a menos. `docker image ls` dá 1.45 GB contra 1.32 GB, uns 130 MB a menos. A diferença entre as duas formas vem do armazenamento de imagens do Docker Engine 29, que segundo sua documentação guarda as imagens «em formato compactado e descompactado» ([Docker, «containerd image store»](https://docs.docker.com/engine/storage/containerd/)). A documentação não traz uma fórmula de como o número do `docker image ls` é composto, e não vamos inventá-la com uma soma que por acaso se pareça. O que podemos afirmar é o que foi medido: os dois números baixam, no sentido que corresponde a uma camada de 100 MB a menos, e a medida firme, a que não depende de como cada comando conta, é a camada de `docker history`. É uma economia que não se buscava, e chegou por fazer bem o que se buscava.
 
 > [!NOTE]
 > 🔧 **Observação de engenharia 4.2**
@@ -310,9 +310,9 @@ O `prune` informa o que liberou (`Total: 99.59MB`, o mesmo cache da seção 6), 
 
 #### 4.5.1 Ver o que o builder faz
 
-Ao construir em um terminal, o BuildKit desenha uma tela que se redesenha e se colore. É bom para olhar, mas não dá para salvar nem buscar nela. A opção `--progress` decide o formato. Segundo a referência de `docker buildx build`, o valor padrão é `auto`, que usa o modo `tty` (o interativo, «com cor e redesenho») se a saída for um terminal, e `plain` se não for; `plain` «imprime o progresso do build em texto puro» ([`docker buildx build`, `--progress`](https://docs.docker.com/reference/cli/docker/buildx/build/#progress)). Em um servidor de build, onde não há terminal, sempre aparece `plain`, então convém saber lê-lo.
+Ao construir em um terminal, o BuildKit mostra uma tela que se atualiza no mesmo lugar e ganha cores. É bom para olhar, mas não dá para salvar nem buscar nela. A opção `--progress` decide o formato. Segundo a referência de `docker buildx build`, o valor padrão é `auto`, que usa o modo `tty` (o interativo, «com cor e atualização da tela») se a saída for um terminal, e `plain` se não for; `plain` «imprime o progresso do build em texto puro» ([`docker buildx build`, `--progress`](https://docs.docker.com/reference/cli/docker/buildx/build/#progress)). Em um servidor de build, onde não há terminal, sempre aparece `plain`, então convém saber lê-lo.
 
-O texto puro tem esta forma: cada passo é um número com `#` na frente. Primeiro aparece a linha que o nomeia, como `#10 [5/6] COPY internal/ internal/`, e depois as linhas do que ele fez, todas com o mesmo número. Um passo termina normalmente com uma de duas linhas: `#10 CACHED`, se saiu do cache, ou `#10 DONE 0.5s`, se foi feito, com seu tempo. Se falha, termina com `#10 ERROR: …`, como aparece em 4.6.2. Os passos `[internal]` são os que o builder faz por conta própria: ler o Dockerfile, o `.dockerignore`, o contexto.
+O texto puro tem esta forma: cada passo é um número com `#` na frente. Primeiro aparece a linha que o nomeia, como `#10 [5/6] COPY internal/ internal/`, e depois as linhas do que ele fez, todas com o mesmo número. Um passo termina normalmente com uma de duas linhas: `#10 CACHED`, se saiu do cache, ou `#10 DONE 0.5s`, se foi feito, com seu tempo. Se falha, termina com `#10 ERROR: …`, como aparece em 4.6.2. Os passos `[internal]` são os que o builder faz por conta própria: ler o Dockerfile, o `.dockerignore`, o contexto. Repare também que os passos numerados chegam a `[6/6]`, embora o novo Dockerfile tenha nove instruções: `FROM`, `WORKDIR`, os três `COPY` e o `RUN` são os seis passos que o BuildKit numera, porque são os que produzem uma camada de arquivos. `USER`, `EXPOSE` e `CMD` apenas anotam dados na configuração da imagem (4.1), não têm passo próprio e por isso não aparecem como `[7/9]`. Não foram pulados: estão no resultado, como mostra o `docker history` com seus 0 B.
 
 #### 4.5.2 O script da medição
 
@@ -491,7 +491,7 @@ curso-docker-revisor:1.1.0 (Dockerfile): 790 ms
   paso 6  CACHED     RUN go build -o /usr/local/bin/revisor ./cmd/revisor
 ```
 
-Um `NOTAS.md` foi acrescentado à pasta e tudo saiu do cache. O arquivo nem chegou ao builder: o `.dockerignore` o deixou de fora (4.6). O que não viaja não pode invalidar nada.
+Um `NOTAS.md` foi acrescentado à pasta e tudo saiu do cache. Aqui atuam duas barreiras ao mesmo tempo: o `.dockerignore` o deixou de fora (4.6), de modo que o arquivo nem chegou ao builder, e além disso nenhum `COPY` seletivo do novo Dockerfile o pede. O que não viaja, ou não é pedido, não pode invalidar nada.
 
 > [!NOTE]
 > 🔧 **Observação de engenharia 4.3**
@@ -674,7 +674,7 @@ $ ./fig04_06.sh
 Check complete, no warnings found.
 ```
 
-Esta saída é estável. O `tail -1` deixa só o veredito; sem ele apareceriam os mesmos passos `[internal]` da Lição 3. O `RUN --mount` não incomoda a verificação: é sintaxe vigente do Dockerfile, e a linha `# syntax=docker/dockerfile:1` do início garante que o builder a entenda.
+Esta saída é estável. O `tail -1` deixa só o veredito; sem ele apareceriam os mesmos passos `[internal]` da Lição 3. O `RUN --mount` não incomoda a verificação: é sintaxe vigente do Dockerfile, e a linha `# syntax=docker/dockerfile:1` do início diz ao BuildKit que versão da sintaxe do Dockerfile ele deve usar para lê-la. Isso pressupõe que o BuildKit esteja ativo, que é o caso normal no Docker Engine 29; com o builder legado, que não usa o BuildKit, o `RUN --mount` não é entendido. As verificações do `--check` existem desde a versão 1.8 da sintaxe do Dockerfile e exigem o Buildx 0.15 ou posterior ([Docker, «Build checks»](https://docs.docker.com/build/checks/)); com ferramentas mais antigas, o comando não as reconhece.
 
 ### 4.8 O que aparece em outros projetos
 
@@ -717,7 +717,7 @@ E um bônus de segurança trazido pela montagem de cache: o que o compilador dei
 
 **Medir só o tempo total.** Um número sem a tabela de passos não diz o que foi refeito. `--progress=plain` diz.
 
-**Usar o `id` padrão ou um `id` genérico para a montagem de cache.** Projetos diferentes acabam compartilhando, e atropelando, o mesmo cache.
+**Usar o `id` padrão ou um `id` genérico para a montagem de cache.** Projetos diferentes acabam compartilhando, e sobrescrevendo, o mesmo cache.
 
 **Limpar com `prune -a` ou com um filtro amplo.** Leva o cache de outros projetos da mesma máquina. Apaga-se com o tipo e o `id` completo.
 
@@ -744,7 +744,7 @@ Copie `programas/revisor/` para uma pasta própria e coloque nela o `.dockerigno
 
 ### Exercício 3 — Corrigir a ordem
 
-Um colega escreveu este Dockerfile para o `revisor`. Funciona, mas cada mudança no código repete tudo:
+Um colega quis arrumar o Dockerfile do `revisor` para aproveitar o cache, e o deixou assim. Tem problemas de ordem, e um deles é grave:
 
 ```dockerfile
 # syntax=docker/dockerfile:1
@@ -824,7 +824,7 @@ Repare que com o Dockerfile da lição, o dos `COPY` seletivos, `datos.json` nã
 
 ### Solução 3
 
-1. **Falha.** `go build` precisa do `go.mod` para saber que módulo está compilando, e neste Dockerfile o `go.mod` chega **depois** do `RUN`. Compilar sem `go.mod` dá este erro, medido dentro da imagem `golang:1.27.3-trixie` com um pacote `main` mínimo em `cmd/revisor`: `go: go.mod file not found in current directory or any parent directory; see 'go help modules'`. Dentro do build, ele aparece com o formato de um `RUN` que falha, como em 4.6.2.
+1. **Falha.** `go build` precisa do `go.mod` para saber que módulo está compilando, e neste Dockerfile o `go.mod` chega **depois** do `RUN`. Compilar sem `go.mod` dá este erro, medido dentro da imagem `golang:1.27.3-trixie` com um pacote `main` mínimo em `cmd/revisor`: `go: go.mod file not found in current directory or any parent directory; see 'go help modules'`. Dentro do build, ele aparece com o formato de um `RUN` que falha, como em 4.6.2. Essa mensagem é produzida por `fig04_07.sh`, que compila o mesmo pacote mínimo sem `go.mod` dentro da imagem do Go e deixa a saída ao lado, em `fig04_07.salida.txt`.
 2. Os problemas: `go.mod` vem depois do `RUN` (erro) e deveria vir primeiro (cache); `internal/` vem antes de `cmd/`, ao contrário da ordem da lição (menos grave, mas o que muda mais deve ficar embaixo); e o `RUN` não tem montagem de cache, então cada mudança compila do zero. A versão corrigida é `fig04_01.Dockerfile`.
 3. Com a versão corrigida, depois da mudança em `tabla.go`, a tabela diz `CACHED` em `WORKDIR`, `COPY go.mod ./` e `COPY cmd/ cmd/`, e `DONE` em `COPY internal/ internal/` e no `RUN`, como em 4.3.3.
 

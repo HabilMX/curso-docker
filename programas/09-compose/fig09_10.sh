@@ -24,7 +24,7 @@ mkdir -p "$TRABAJO/revisor"
 cp -R "$AQUI/../revisor/." "$TRABAJO/revisor/"
 cp -R "$AQUI/../servicio-prueba" "$TRABAJO/servicio-prueba"
 cp -R "$AQUI/estado/Dockerfile" "$AQUI/estado/.dockerignore" "$AQUI/estado/secretos" "$TRABAJO/revisor/"
-chmod 644 "$TRABAJO/revisor/secretos/revisor_token.txt"
+chmod 644 "$TRABAJO/revisor/secretos/revisor_token.txt"   # 644: solo porque el token es de mentira (9.8.4)
 sed -e "s/curso-docker-revisor:1.5.0/${PREFIJO}revisor:fig09/" \
     -e "s/curso-docker-prueba:1.0.0/${PREFIJO}prueba:fig09/" \
     -e "s/127.0.0.1:8080:8080/127.0.0.1:${PUERTO}:8080/" \
@@ -90,7 +90,7 @@ muestra "tabla | head -2"
 muestra "docker compose restart revisor 2>&1 | eventos | grep -v Restarting"
 sleep 3
 muestra "docker inspect --format 'Status={{.State.Status}} ExitCode={{.State.ExitCode}}' ${COMPOSE_PROJECT_NAME}-revisor-1"
-chmod 644 secretos/revisor_token.txt
+chmod 644 secretos/revisor_token.txt   # 644: solo porque el token es de mentira (9.8.4)
 muestra "docker compose up -d --force-recreate revisor 2>&1 | eventos | grep -E 'revisor-1 Started'"
 esperar revisor healthy && echo "revisor: healthy"
 

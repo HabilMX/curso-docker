@@ -38,7 +38,7 @@ Numeración única y continua: «Lección N», de la 0 a la 10.
 | 7 | Salud y ciclo de vida | un contenedor que dice cómo está y muere bien | PID 1 y señales, `docker stop` y su plazo, `HEALTHCHECK` sin `curl`, políticas de reinicio, sistema de archivos de solo lectura, capacidades fuera, `no-new-privileges` |
 | 8 | Volúmenes y redes | el reporte que sobrevive y dos contenedores que se hablan | volúmenes con nombre, *bind mounts*, `tmpfs`, dueño de los archivos con un usuario sin privilegios; redes definidas por el usuario, DNS por nombre, redes internas |
 | 9 | Compose: el sistema completo | `compose.yaml` con el `revisor` y su servicio que falla | servicios, redes, volúmenes y secretos en un archivo; `depends_on` con `service_healthy`; `compose config`; comparar tu archivo con el de `docker init` |
-| 10 | Entregar la imagen | la imagen publicada, verificada y lista para Kubernetes | etiquetas y *digest*, registro local, escaneo de vulnerabilidades con Trivy, lista de materiales (SBOM) y procedencia, varias plataformas; el puente a `kind load docker-image` |
+| 10 | Entregar la imagen | la imagen publicada por *digest*, con su lista de materiales y su escaneo revisado, y cargada en un clúster `kind` | etiquetas y *digest*, registro local, escaneo de vulnerabilidades con Trivy, lista de materiales (SBOM) y procedencia, varias plataformas; el puente a `kind load docker-image` |
 
 **Nombres con prefijo.** Todo lo que el curso crea en tu máquina (imágenes, contenedores, redes, volúmenes) lleva el prefijo `curso-docker-`; por eso la imagen de la lección 3 se llama `curso-docker-revisor:1.x.0` y no `revisor`. Así no choca con nada que ya tengas y puedes borrar solo lo del curso sin tocar lo demás.
 

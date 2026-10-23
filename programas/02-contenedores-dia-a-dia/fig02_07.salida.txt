@@ -1,18 +1,18 @@
 == 1. Borrar un contenedor que está corriendo, sin -f
-Error response from daemon: cannot remove container "curso-docker-prueba": container is running: stop the container before removing or force remove
+Error response from daemon: cannot remove container "curso-docker-l02-prueba": container is running: stop the container before removing or force remove
 código de salida: 1
 
 == 2. Detenerlo, midiendo cuánto tarda
-docker stop tardó 242 ms
-curso-docker-prueba Exited (0) Less than a second ago
+docker stop tardó 414 ms
+curso-docker-l02-prueba Exited (0) Less than a second ago
 servicio-prueba: GET / en modo sano
 servicio-prueba: recibí terminated, apagando
 
 == 3. Detenido no es borrado: vuelve a arrancar con start
-curso-docker-prueba Up Less than a second (health: starting)
+curso-docker-l02-prueba Up Less than a second (health: starting)
 
 == 4. Ahora sí: borrarlo
-curso-docker-prueba
+curso-docker-l02-prueba
 
 == 5. Un contenedor con --rm se borra solo al terminar
 no sano: Get "http://127.0.0.1:9000/": dial tcp 127.0.0.1:9000: connect: connection refused

@@ -1,0 +1,15 @@
+$ ./fig10_00.sh
+== 1. El almacén de imágenes de este Docker
+$ docker info -f '{{ .DriverStatus }}'
+[[driver-type io.containerd.snapshotter.v1]]
+
+== 2. kind v0.33.0 (la línea de tu procesador)
+$ ./kind version
+kind v0.33.0 go1.26.7 linux/arm64
+
+== 3. kubectl v1.37.1, con la comprobación de su suma sha256
+$ echo "$(cat kubectl.sha256)  kubectl" | sha256sum --check
+kubectl: OK
+$ ./kubectl version --client
+Client Version: v1.37.1
+Kustomize Version: v5.8.1

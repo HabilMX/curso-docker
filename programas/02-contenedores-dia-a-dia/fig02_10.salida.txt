@@ -1,0 +1,14 @@
+== 1. Antes
+memoria=67108864 cpus(nano)=500000000 pids=50 puertos={"9000/tcp":[{"HostIp":"127.0.0.1","HostPort":"18020"}]}
+
+== 2. docker update de los tres límites, con el contenedor corriendo
+curso-docker-l02-prueba
+código de salida: 0
+
+== 3. Después (mismo contenedor, sin reiniciar)
+memoria=134217728 cpus(nano)=1000000000 pids=100 puertos={"9000/tcp":[{"HostIp":"127.0.0.1","HostPort":"18020"}]}
+sigue corriendo: true, reinicios: 0
+
+== 4. El puerto publicado no tiene opción en update
+unknown shorthand flag: 'p' in -p
+

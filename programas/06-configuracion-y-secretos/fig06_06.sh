@@ -51,7 +51,7 @@ docker rm -f "$NOMBRE" >/dev/null
 
 echo
 echo "== 3. El token por archivo, con permisos 644 y montado de solo lectura"
-chmod 644 secretos/revisor_token.txt
+chmod 644 secretos/revisor_token.txt   # 644: solo porque el token es de mentira (6.5.4)
 stat -c '%a %n' secretos/revisor_token.txt
 docker run -d --name "$NOMBRE" -p "127.0.0.1:$PUERTO:8080" \
   --mount type=bind,src="$PWD/secretos/revisor_token.txt",dst=/run/secrets/revisor_token,readonly \

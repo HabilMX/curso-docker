@@ -1,0 +1,7 @@
+$ ./fig03_13.sh
+## .dockerignore con: *.tar
+$ docker run --rm --name curso-docker-l03-mira curso-docker-l03-ctx:1.0.0-tar find /ctx -name '*.tar'
+/ctx/respaldos/enero.tar
+
+## .dockerignore con: **/*.tar
+$ docker run --rm --name curso-docker-l03-mira curso-docker-l03-ctx:1.0.0-tar find /ctx -name '*.tar'

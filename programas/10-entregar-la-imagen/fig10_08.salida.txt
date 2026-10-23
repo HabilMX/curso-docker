@@ -1,0 +1,23 @@
+$ ./fig10_08.sh
+== Ejercicio 1. Dos etiquetas, un digest
+$ docker buildx imagetools create -t localhost:5000/curso-docker-revisor:1.6 localhost:5000/curso-docker-revisor:1.6.0 >/dev/null 2>&1 && echo 'etiqueta 1.6 creada'
+etiqueta 1.6 creada
+$ curl -s http://127.0.0.1:5000/v2/curso-docker-revisor/tags/list
+{"name":"curso-docker-revisor","tags":["1.6","1.6.0"]}
+$ for t in 1.6.0 1.6; do docker buildx imagetools inspect localhost:5000/curso-docker-revisor:$t --format '{{json .Manifest.Digest}}'; echo; done
+"sha256:125ba52e53985a3e2e0b7618baf1edaa6c4b4e9a1afd93cd98459f245b433be8"
+"sha256:125ba52e53985a3e2e0b7618baf1edaa6c4b4e9a1afd93cd98459f245b433be8"
+
+== Ejercicio 4. Renovar el digest de la base y volver a escanear
+$ diff Dockerfile.viejo Dockerfile | cut -c1-120 | sed -E 's/sha256:([0-9a-f]{12})[0-9a-f]+/sha256:\1…/'; true
+32c32
+< FROM gcr.io/distroless/static-debian13:nonroot@sha256:516757106de3…
+---
+> FROM gcr.io/distroless/static-debian13:nonroot@sha256:d62067879de8…
+$ docker build -q --build-arg VERSION=1.6.0 -t curso-docker-revisor:fig10 . >/dev/null && docker run --rm curso-docker-revisor:fig10 version
+1.6.0
+$ docker save --platform linux/arm64 -o revisor-1.6.0.tar curso-docker-revisor:fig10 && du -h revisor-1.6.0.tar | cut -f1
+3.6M
+$ { docker run --rm -v curso-docker-trivy-cache-fig10:/root/.cache -v "$PWD":/trabajo:ro aquasec/trivy:0.76.0 image --quiet --input /trabajo/revisor-1.6.0.tar --exit-code 1 2>&1; echo "código de Trivy: $?"; } | sin_fechas | grep -E '^Total|^código|tar \(' | sed 's#/trabajo/#./#'
+│ ./revisor-1.6.0.tar (debian 13.7) │  debian  │        0        │    -    │
+código de Trivy: 0

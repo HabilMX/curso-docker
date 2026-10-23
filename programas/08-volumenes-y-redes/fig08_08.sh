@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # fig08_08.sh — Red interna. El servicio de prueba vive SOLO en una red interna,
-# sin salida a internet. El revisor vive en la red normal (por donde se publica
+# sin salida a internet. El revisor vive en la red normal (por donde expone
 # su puerto) y se conecta además a la interna. Es el estado final de la lección.
 # Usa tu imagen curso-docker-prueba:1.0.0 (de la Lección 2) sin modificarla.
 set -uo pipefail

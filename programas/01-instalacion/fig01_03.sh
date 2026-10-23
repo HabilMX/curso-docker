@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # fig01_03.sh — EL ERROR DE MINT, provocado a propósito.
-# Es el paso 1 de la guía oficial con UNA sola diferencia: «Suites» sale de
+# Es el paso 1 de la guía oficial con UNA diferencia que importa: «Suites» sale de
 # VERSION_CODENAME (el nombre en clave de Mint) en vez de UBUNTU_CODENAME.
+# (Además lleva -y en «apt install», para no preguntar.)
 # Así lo escriben muchas guías viejas y la guía oficial de Debian.
 set -uo pipefail
 

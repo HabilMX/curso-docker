@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # fig01_07.sh — Por qué el grupo docker equivale a root.
 # Córrelo SIN sudo, como tu usuario normal (que ya está en el grupo docker).
-# Lee /etc/shadow, el archivo de contraseñas cifradas que solo root puede leer,
+# Lee /etc/shadow, el archivo de contraseñas cifradas que solo root y el grupo shadow pueden leer,
 # y solo imprime cuántos renglones tiene y el primer NOMBRE de usuario: nada secreto.
 set -uo pipefail
 IMAGEN=debian:13.7-slim

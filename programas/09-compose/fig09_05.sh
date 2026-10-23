@@ -24,7 +24,7 @@ mkdir -p "$TRABAJO/revisor"
 cp -R "$AQUI/../revisor/." "$TRABAJO/revisor/"
 cp -R "$AQUI/../servicio-prueba" "$TRABAJO/servicio-prueba"
 cp -R "$AQUI/estado/Dockerfile" "$AQUI/estado/.dockerignore" "$AQUI/estado/secretos" "$TRABAJO/revisor/"
-chmod 644 "$TRABAJO/revisor/secretos/revisor_token.txt"
+chmod 644 "$TRABAJO/revisor/secretos/revisor_token.txt"   # 644: solo porque el token es de mentira (9.8.4)
 sed -e "s/curso-docker-revisor:1.5.0/${PREFIJO}revisor:fig09/" \
     -e "s/curso-docker-prueba:1.0.0/${PREFIJO}prueba:fig09/" \
     -e "s/127.0.0.1:8080:8080/127.0.0.1:${PUERTO}:8080/" \

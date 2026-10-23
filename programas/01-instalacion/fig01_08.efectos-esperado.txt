@@ -1,0 +1,31 @@
+# Efecto de un docker.list viejo junto a un docker.sources bien escrito (Suites: noble).
+# Corrida real · Mint simulado (contenedor Ubuntu 24.04 arm64): se creó a mano el docker.list
+# de un "tutorial anterior" y se corrió «sudo apt-get update» tras escribir docker.sources.
+# C = docker.list con zena · D = docker.list con noble y OTRA llave · D2 = con noble y la MISMA llave
+# E = sin docker.list. Salidas filtradas con grep -E 'docker|^E:|^W:'.
+##### C. docker.sources bien + docker.list con zena
+Ign:1 https://download.docker.com/linux/ubuntu zena InRelease
+Get:2 https://download.docker.com/linux/ubuntu noble InRelease [48.5 kB]
+Err:4 https://download.docker.com/linux/ubuntu zena Release
+Get:6 https://download.docker.com/linux/ubuntu noble/stable arm64 Packages [82.7 kB]
+E: The repository 'https://download.docker.com/linux/ubuntu zena Release' does not have a Release file.
+salida: 100
+
+##### D. docker.list con noble + docker.sources noble
+E: Conflicting values set for option Signed-By regarding source https://download.docker.com/linux/ubuntu/ noble: /usr/share/keyrings/docker-archive-keyring.gpg != /etc/apt/keyrings/docker.asc
+E: The list of sources could not be read.
+salida: 100
+
+##### E. sin docker.list
+Hit:1 https://download.docker.com/linux/ubuntu noble InRelease
+salida: 0
+
+
+##### D2. mismo repositorio dos veces, misma llave
+Get:1 https://download.docker.com/linux/ubuntu noble InRelease [48.5 kB]
+Get:2 https://download.docker.com/linux/ubuntu noble/stable arm64 Packages [82.7 kB]
+W: Target Packages (stable/binary-arm64/Packages) is configured multiple times in /etc/apt/sources.list.d/docker.list:1 and /etc/apt/sources.list.d/docker.sources:1
+W: Target Packages (stable/binary-all/Packages) is configured multiple times in /etc/apt/sources.list.d/docker.list:1 and /etc/apt/sources.list.d/docker.sources:1
+W: Target Packages (stable/binary-arm64/Packages) is configured multiple times in /etc/apt/sources.list.d/docker.list:1 and /etc/apt/sources.list.d/docker.sources:1
+W: Target Packages (stable/binary-all/Packages) is configured multiple times in /etc/apt/sources.list.d/docker.list:1 and /etc/apt/sources.list.d/docker.sources:1
+salida: 0

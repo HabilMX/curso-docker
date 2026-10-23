@@ -1,0 +1,77 @@
+$ ./fig10_09.sh
+== 1. Una imagen de dos plataformas, publicada en el registro local
+$ docker buildx imagetools inspect localhost:5000/curso-docker-revisor:1.6.0 --format '{{json .Manifest.Digest}}'; echo
+"sha256:7c9f949290181fc458b8053b9442bb722c7b0be2c5a68afbd562738840eaf993"
+$ docker pull -q localhost:5000/curso-docker-revisor@sha256:7c9f949290181fc458b8053b9442bb722c7b0be2c5a68afbd562738840eaf993
+localhost:5000/curso-docker-revisor@sha256:7c9f949290181fc458b8053b9442bb722c7b0be2c5a68afbd562738840eaf993
+
+== 2. Un clúster kind de un nodo
+$ kind create cluster --name curso-docker-puente-fig10 --wait 120s 2>&1 | grep -E '^Creating|Ready after|Set kubectl context' | sed -E 's/Ready after [0-9]+s/Ready after Ns/; s/ +[^ -~]+//g'
+Creating cluster "curso-docker-puente-fig10" ...
+ Ready after Ns
+Set kubectl context to "kind-curso-docker-puente-fig10"
+$ kubectl config current-context
+kind-curso-docker-puente-fig10
+
+== 3. Cargar la imagen traída del registro, por su referencia con digest
+$ kind load docker-image localhost:5000/curso-docker-revisor@sha256:7c9f949290181fc458b8053b9442bb722c7b0be2c5a68afbd562738840eaf993 --name curso-docker-puente-fig10
+Image: "localhost:5000/curso-docker-revisor@sha256:7c9f949290181fc458b8053b9442bb722c7b0be2c5a68afbd562738840eaf993" with ID "sha256:7c9f949290181fc458b8053b9442bb722c7b0be2c5a68afbd562738840eaf993" not yet present on node "curso-docker-puente-fig10-control-plane", loading...
+$ docker exec curso-docker-puente-fig10-control-plane crictl images 2>&1 | grep -E 'IMAGE|revisor|<none>' | cut -c1-120
+IMAGE                                           TAG                  IMAGE ID            SIZE
+docker.io/library/import-2026-10-22             <none>               011d6bb2f3c70       3.68MB
+
+== 4. Guardarla con docker save y cargar el archivo
+$ docker save --platform linux/arm64 -o revisor.tar localhost:5000/curso-docker-revisor@sha256:7c9f949290181fc458b8053b9442bb722c7b0be2c5a68afbd562738840eaf993 && du -h revisor.tar | cut -f1
+3.5M
+$ kind load image-archive revisor.tar --name curso-docker-puente-fig10
+
+== 5. ¿Qué nombres tiene la imagen dentro del nodo?
+$ docker exec curso-docker-puente-fig10-control-plane crictl images 2>&1 | grep -E 'IMAGE|revisor|<none>' | cut -c1-120 | sed -E 's/([0-9a-f]{12})[0-9a-f]{52}/\1…/g'
+IMAGE                                           TAG                  IMAGE ID            SIZE
+docker.io/library/import-2026-10-22             <none>               011d6bb2f3c70       3.68MB
+docker.io/library/import-2026-10-22             <none>               3b73f89567870       2.32kB
+
+== 6. Pedir el pod con la MISMA referencia con digest, sin descarga
+$ kubectl run revisor --image=localhost:5000/curso-docker-revisor@sha256:7c9f949290181fc458b8053b9442bb722c7b0be2c5a68afbd562738840eaf993 --image-pull-policy=Never --port=8080 --env='REVISOR_SERVICIOS=propio http://127.0.0.1:8080/salud'
+pod/revisor created
+$ kubectl wait --for=condition=Ready pod/revisor --timeout=60s
+error: timed out waiting for the condition on pods/revisor
+[código de salida: 1]
+$ kubectl get pod revisor -o custom-columns=NOMBRE:.metadata.name,ESTADO:.status.phase,RAZON:.status.containerStatuses[0].state.waiting.reason
+NOMBRE    ESTADO    RAZON
+revisor   Pending   ErrImageNeverPull
+
+== 7. Una etiqueta local sobre la misma imagen, y cargar esa etiqueta
+$ kubectl delete pod revisor --wait=true
+pod "revisor" deleted from default namespace
+$ docker tag localhost:5000/curso-docker-revisor@sha256:7c9f949290181fc458b8053b9442bb722c7b0be2c5a68afbd562738840eaf993 curso-docker-revisor:fig10-registro
+$ kind load docker-image curso-docker-revisor:fig10-registro --name curso-docker-puente-fig10
+Image: "curso-docker-revisor:fig10-registro" with ID "sha256:7c9f949290181fc458b8053b9442bb722c7b0be2c5a68afbd562738840eaf993" not yet present on node "curso-docker-puente-fig10-control-plane", loading...
+$ docker exec curso-docker-puente-fig10-control-plane crictl images 2>&1 | grep -E 'IMAGE|revisor|<none>' | cut -c1-100
+IMAGE                                           TAG                  IMAGE ID            SIZE
+docker.io/library/curso-docker-revisor      fig10-registro       011d6bb2f3c70       3.68MB
+docker.io/library/import-2026-10-22             <none>               3b73f89567870       2.32kB
+$ kubectl run revisor --image=curso-docker-revisor:fig10-registro --image-pull-policy=Never --port=8080 --env='REVISOR_SERVICIOS=propio http://127.0.0.1:8080/salud'
+pod/revisor created
+$ kubectl wait --for=condition=Ready pod/revisor --timeout=60s
+pod/revisor condition met
+$ kubectl get pod revisor -o custom-columns=NOMBRE:.metadata.name,ESTADO:.status.phase,IMAGEN:.spec.containers[0].image
+NOMBRE    ESTADO    IMAGEN
+revisor   Running   curso-docker-revisor:fig10-registro
+$ kubectl delete pod revisor --wait=true
+pod "revisor" deleted from default namespace
+
+== 8. Traer solo el manifiesto de la plataforma (no el índice) y cargarlo
+$ docker pull -q localhost:5000/curso-docker-revisor@sha256:7d767818297cb2c958a3037e95b1405641c6b3d46f13b8dc4093fb824a1199e0
+localhost:5000/curso-docker-revisor@sha256:7d767818297cb2c958a3037e95b1405641c6b3d46f13b8dc4093fb824a1199e0
+$ kind load docker-image localhost:5000/curso-docker-revisor@sha256:7d767818297cb2c958a3037e95b1405641c6b3d46f13b8dc4093fb824a1199e0 --name curso-docker-puente-fig10
+Image: "localhost:5000/curso-docker-revisor@sha256:7d767818297cb2c958a3037e95b1405641c6b3d46f13b8dc4093fb824a1199e0" with ID "sha256:7d767818297cb2c958a3037e95b1405641c6b3d46f13b8dc4093fb824a1199e0" not yet present on node "curso-docker-puente-fig10-control-plane", loading...
+$ docker exec curso-docker-puente-fig10-control-plane crictl images 2>&1 | grep -E 'IMAGE|revisor|<none>' | cut -c1-100
+IMAGE                                           TAG                  IMAGE ID            SIZE
+docker.io/library/import-2026-10-22             <none>               3b73f89567870       2.32kB
+docker.io/library/curso-docker-revisor      fig10-registro       011d6bb2f3c70       3.68MB
+$ kubectl run revisor --image=localhost:5000/curso-docker-revisor@sha256:7d767818297cb2c958a3037e95b1405641c6b3d46f13b8dc4093fb824a1199e0 --image-pull-policy=Never --port=8080 --env='REVISOR_SERVICIOS=propio http://127.0.0.1:8080/salud'
+pod/revisor created
+$ kubectl wait --for=condition=Ready pod/revisor --timeout=60s
+error: timed out waiting for the condition on pods/revisor
+[código de salida: 1]

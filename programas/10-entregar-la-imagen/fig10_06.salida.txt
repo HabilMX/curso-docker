@@ -1,0 +1,55 @@
+$ ./fig10_06.sh
+== 1. Versiones
+$ kind version
+kind v0.33.0 go1.27.0 darwin/arm64
+$ kubectl version --client | head -1
+Client Version: v1.37.1
+
+== 2. La imagen, para la plataforma de este equipo
+$ docker build -q --build-arg VERSION=1.6.0 -t curso-docker-revisor:fig10 . >/dev/null && docker image ls curso-docker-revisor:fig10 --format '{{.Repository}}:{{.Tag}} {{.Size}}'
+curso-docker-revisor:fig10 16.2MB
+
+== 3. Un clúster kind de un nodo
+$ kind create cluster --name curso-docker-puente-fig10 --wait 120s 2>&1 | grep -E '^Creating|Ready after|Set kubectl context' | sed -E 's/Ready after [0-9]+s/Ready after Ns/; s/ +[^ -~]+//g'
+Creating cluster "curso-docker-puente-fig10" ...
+ Ready after Ns
+Set kubectl context to "kind-curso-docker-puente-fig10"
+$ kubectl config current-context
+kind-curso-docker-puente-fig10
+
+== 4. El error: el pod ANTES de cargar la imagen
+$ kubectl run revisor --image=curso-docker-revisor:fig10 --image-pull-policy=Never --port=8080 --env='REVISOR_SERVICIOS=propio http://127.0.0.1:8080/salud'
+pod/revisor created
+$ kubectl get pod revisor -o custom-columns=NOMBRE:.metadata.name,ESTADO:.status.phase,RAZON:.status.containerStatuses[0].state.waiting.reason
+NOMBRE    ESTADO    RAZON
+revisor   Pending   ErrImageNeverPull
+$ kubectl get events --field-selector involvedObject.name=revisor,reason=ErrImageNeverPull -o custom-columns=MENSAJE:.message | head -2 | cut -c1-110
+MENSAJE
+Container image "curso-docker-revisor:fig10" is not present with pull policy of Never
+$ kubectl delete pod revisor --wait=true
+pod "revisor" deleted from default namespace
+
+== 5. Cargar la imagen en el nodo (sin registro) y volver a pedir el pod
+$ kind load docker-image curso-docker-revisor:fig10 --name curso-docker-puente-fig10
+Image: "curso-docker-revisor:fig10" with ID "sha256:0c8af76b8a5fbea25ddafedf41bc49ad9ec5f7144117559da98afbd1da0d2eaa" not yet present on node "curso-docker-puente-fig10-control-plane", loading...
+$ docker exec curso-docker-puente-fig10-control-plane crictl images 2>&1 | grep -E 'IMAGE|revisor' | cut -c1-100
+IMAGE                                           TAG                  IMAGE ID            SIZE
+docker.io/library/curso-docker-revisor      fig10                dda2fbcae183b       3.68MB
+$ kubectl run revisor --image=curso-docker-revisor:fig10 --image-pull-policy=Never --port=8080 --env='REVISOR_SERVICIOS=propio http://127.0.0.1:8080/salud'
+pod/revisor created
+$ kubectl wait --for=condition=Ready pod/revisor --timeout=90s
+pod/revisor condition met
+$ kubectl get pod revisor -o custom-columns=NOMBRE:.metadata.name,ESTADO:.status.phase,IMAGEN:.spec.containers[0].image,REINICIOS:.status.containerStatuses[0].restartCount
+NOMBRE    ESTADO    IMAGEN                           REINICIOS
+revisor   Running   curso-docker-revisor:fig10   0
+$ kubectl logs revisor
+revisor 1.6.0 escuchando en :8080 (1 servicio(s))
+$ kubectl get events --field-selector involvedObject.name=revisor -o custom-columns=RAZON:.reason,MENSAJE:.message | cut -c1-110
+RAZON               MENSAJE
+Scheduled           Successfully assigned default/revisor to curso-docker-puente-fig10-control-plane
+ErrImageNeverPull   Container image "curso-docker-revisor:fig10" is not present with pull policy of Never
+Failed              Error: ErrImageNeverPull
+Scheduled           Successfully assigned default/revisor to curso-docker-puente-fig10-control-plane
+Pulled              Container image "curso-docker-revisor:fig10" already present on machine and can be acc
+Created             Container created
+Started             Container started

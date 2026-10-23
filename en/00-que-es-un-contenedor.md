@@ -6,13 +6,13 @@ It is 2:14 in the morning and the alert goes off: the test server has stopped re
 
 **What you build:** nothing yet. It is a reading lesson: here you build the mental map that makes the rest of the course predictable. It comes with nine short programs so that you can see with your own eyes what the lesson claims.
 
-**What you learn:** that a container is an isolated process and not a virtual machine; which pieces of the Linux kernel that isolation is built from (namespaces and control groups); the difference between an image and a container; that Docker is two programs, a client and a daemon; and what a container shares with the host machine and why that determines security.
+**What you learn:** that a container is an isolated process and not a virtual machine; which components of the Linux kernel that isolation is built from (namespaces and control groups); the difference between an image and a container; that Docker is two programs, a client and a daemon; and what a container shares with the host machine and why that determines security.
 
 **Where you are coming from.** You bring nothing from this course: you have not installed Docker yet. You do bring what the course takes for granted: you use a terminal comfortably, you know what a process is (a program that is running) and what an HTTP server is. Perhaps you already wrote the `revisor` in Hábil's Go, Rust or TypeScript course. If not, this is enough: it is a program that queries a list of services at once and hands you a report of which ones are up, which are slow and which are down. What you probably do not bring is a precise idea of what a container is on the inside, and that idea is the one you will need every time something fails.
 
 **What this lesson does not do.** It does not install anything (that is [Lesson 1](01-instalacion.md)) and it does not teach the Docker commands one by one (that starts in [Lesson 2](02-contenedores-dia-a-dia.md)). The programs in this lesson are *bash* scripts of ten to thirty lines that call `docker` and standard Linux tools such as `ps` and `uname`. You do not need to understand every option yet, although each one is explained: what matters is what they **print**. You run them after Lesson 1, once you have Docker.
 
-**About the runs.** The outputs in this lesson were obtained on October 21, 2026 on a Mac with [Colima](https://github.com/abiosoft/colima), which starts a Linux virtual machine so that containers can run. That virtual machine has Ubuntu 24.04.4, which is the same base as Linux Mint 22, so **the scripts were run inside it** and that is where the "host" in the outputs appears: on your Mint, the host is your own computer and the same commands work unchanged. The Docker version inside that machine was 29.2.1 (client and daemon). The course was planned with 29.8.2 and, on the day of this run, the latest release was 29.9.2, from October 20, 2026, according to the [official release notes](https://docs.docker.com/engine/release-notes/29/). Nothing this lesson shows changes between those versions; Lesson 1 teaches you to see yours. What **does** change from one run to another, and it is flagged where it happens: the process numbers (PIDs), the namespace numbers, the times and, if your computer has an Intel or AMD processor, the word `arm64`, which on yours will say `amd64`. The programs are in [`programas/00-que-es-un-contenedor/`](../programas/00-que-es-un-contenedor), in the course repository, each one with its saved output next to it.
+**About the runs.** The outputs in this lesson were obtained on October 21, 2026 on a Mac with [Colima](https://github.com/abiosoft/colima), which starts a Linux virtual machine so that containers can run. That virtual machine has Ubuntu 24.04.4, which is the same base as Linux Mint 22, so **the scripts were run inside it** and that is where the "host" in the outputs appears: on your Mint, the host is your own computer and the same commands are typed exactly the same once you have done Lesson 1; what changes are the values specific to your machine, listed below. The Docker version inside that machine was 29.2.1 (client and daemon). The course was planned with 29.8.2 and, on the day of this run, the latest release was 29.9.2, from October 20, 2026, according to the [official release notes](https://docs.docker.com/engine/release-notes/29/). The release notes from 29.2.1 to 29.9.2 record no changes to the default capabilities, to the format of `docker version` or to `docker context inspect`, which are the commands and values this lesson depends on, so what you see here should match what you get; if a later version changes something, what the documentation for your version says takes precedence. Lesson 1 teaches you to see which one that is. What **does** change from one run to another, and it is flagged where it happens: the process numbers (PIDs), the namespace numbers, the times and, if your computer has an Intel or AMD processor, the word `arm64`, which on yours will say `amd64`. The programs are in [`programas/00-que-es-un-contenedor/`](../programas/00-que-es-un-contenedor), in the course repository, each one with its saved output next to it.
 
 ## By the end you will be able to
 
@@ -118,7 +118,7 @@ Now the output, block by block:
 1. **From inside**, the container sees only two processes: `sleep 300`, which has number **1**, and the `ps` you just launched. It does not see your browser, or your terminal, or anything else that runs on your machine. From its point of view, it is the first process of the system.
 2. **From outside**, Docker tells you that this same process has number 836426 on the host.
 3. And **the host's operating system** confirms it with a normal `ps`, the same one you would use for any other program: there is `sleep 300`, running as `root`. There is no other computer. There is one more process in your machine's list.
-4. Its parent is `containerd-shim`, a small program that Docker starts to look after each container. (The full name is `containerd-shim-runc-v2`; `ps` cuts it short because the `comm` field only holds 15 characters.)
+4. Its parent is `containerd-shim`, a small program that Docker starts to look after each container, so that the container does not depend on the daemon staying up in order to keep running. (The full name is `containerd-shim-runc-v2`; `ps` cuts it short because the `comm` field only holds 15 characters. `containerd` and `runc` are placed in 0.6 and 0.8.)
 
 🔑 **Read that again: the same process has two numbers.** Inside it is 1; outside it is 836426. They are not two processes: it is a single one, seen from two places. That it has two numbers is the first clue to how isolation works, and section 0.3 explains it.
 
@@ -127,7 +127,7 @@ Now the output, block by block:
 That a container is a process is not a technical detail; it has consequences you will feel throughout the course:
 
 - **It starts in milliseconds**, because starting a process is fast. There is no operating system to boot.
-- **It dies like a process.** If the main program ends, the container ends. If the kernel kills it, the container dies. In Lesson 7 you will see that this includes signals: `docker stop` sends that process number 1 the same signal you would send with `kill`.
+- **It dies like a process.** If the main program ends, the container ends. If the kernel kills it, the container dies. In Lessons 3 and 7 you will see that this includes signals: `docker stop` sends that process number 1 the same signal you would send with `kill`.
 - **It spends like a process.** It uses your machine's memory and CPU, from the same pool as every other program. If nobody puts a limit on it, it has no limit.
 - **You see it with your usual tools.** `ps`, `top` and the system monitor show it. That is useful for diagnosing and it is a warning: whoever has power over the host's processes has power over the containers.
 
@@ -251,8 +251,8 @@ Docker says it bluntly: it uses "a technology called namespaces to provide the i
 | UTS | `uts` | the machine's name | it has its own *hostname* |
 | IPC | `ipc` | communication between processes through shared memory | it does not mix with other programs' shared memory |
 | Cgroup | `cgroup` | the root of the control groups | it sees its own group as if it were the root (0.4) |
-| User | `user` | user and group numbers | **by default, it is not isolated** |
-| Time | `time` | certain system clocks | **by default, it is not isolated** |
+| User | `user` | user and group numbers | **by default, it is not isolated**; it can be enabled (`userns-remap`, *rootless*; see below) |
+| Time | `time` | certain system clocks | **by default, it is not isolated**; the `docker run` reference lists no option to isolate it |
 
 The Network row explains something you will use from Lesson 2: two containers can listen on port 8080 at the same time without conflict, because each one has its own network. The Mount row explains why the Debian container saw Debian files even though your machine is Mint.
 
@@ -358,7 +358,7 @@ With limits, each `docker run` option turns into a number that the kernel enforc
 - `--cpus 0.5` became `50000 100000`: in each tenth of a second, the group can use the CPU for half of it, 50,000 microseconds. That is half a CPU.
 - `--pids-limit 50` became `50`.
 
-Notice the chain of responsibilities. You write an option in `docker run`; Docker translates it and writes it into a kernel file; the kernel is the one that enforces it. Docker does not watch the container: the one that watches is the kernel. That is why the limit works even if the program inside is malicious or broken.
+Notice the chain of responsibilities. You write an option in `docker run`; Docker translates it and writes it into a kernel file; the kernel is the one that enforces it. Docker does not watch the container: the one that watches is the kernel. That is why the limit is enforced even if the program inside is broken and burns through memory or processes without restraint. Mind what the limit does **not** promise: it bounds what the group consumes, but it does not protect the group, or you, from an attack aimed at the shared kernel; the layers in 0.7 take care of that.
 
 #### 0.4.3 What happens when the limit is reached
 
@@ -391,9 +391,9 @@ código de salida: 137
 OOMKilled=true  ExitCode=137
 ```
 
-This output is stable. `--rm` is not used here, on purpose: if Docker deleted the container when it finished, you could not ask it afterwards what happened to it. `--memory-swap 32m` sets the total of memory plus swap to the same value as the memory, that is, zero swap; without that, the process would take longer to die because it would first fill the swap disk.
+This output is stable. `--rm` is not used here, on purpose: if Docker deleted the container when it finished, you could not ask it afterwards what happened to it. `--memory-swap 32m` sets the total of memory plus swap to the same value as the memory, that is, zero swap; without that, Docker lets the container use as much swap as memory (with `--memory 32m`, another 32 MiB, as long as the host has swap configured), so the process would survive longer and the OOM would arrive later ([Docker, "Resource constraints"](https://docs.docker.com/engine/containers/resource_constraints/)).
 
-The container printed its message, started eating memory and, on reaching 32 MiB, the kernel killed it. Nobody else on the machine noticed: the scene's database, had it been there, would still be alive. The number **137** is the convention for saying "this process died from a signal": it is 128 plus the signal number, and signal 9 is `KILL`, the one that can be neither caught nor ignored. The convention was not invented by Docker: it is the shell's, whose manual says that, when a command ends because of signal N, *bash* uses 128+N as the exit code ([Bash manual](https://www.gnu.org/software/bash/manual/html_node/Exit-Status.html)); you can check it in any *bash*: `bash -c 'kill -9 $$'; echo $?` prints `137`. Docker records the same number in `ExitCode`, and `docker run` returns it as is, because any code other than 125, 126 and 127 is the container command's ([Docker, exit codes](https://docs.docker.com/engine/containers/run/)). And `OOMKilled=true` is Docker confirming that it was due to lack of memory. The section "The error you will see" tells you how to read this when it shows up without your having triggered it.
+The container printed its message, started eating memory and, on reaching 32 MiB, the kernel killed it inside its own group. The kernel did not have to pick anyone else: the scene's database, had it been there, would not have been the one chosen. The number **137** is the convention for saying "this process died from a signal": it is 128 plus the signal number, and signal 9 is `KILL`, the one that can be neither caught nor ignored. The convention was not invented by Docker: it is the shell's, whose manual says that, when a command ends because of signal N, *bash* uses 128+N as the exit code ([Bash manual](https://www.gnu.org/software/bash/manual/html_node/Exit-Status.html)); you can check it in any *bash*: `bash -c 'kill -9 $$'; echo $?` prints `137`. Docker records the same number in `ExitCode`, and `docker run` returns it as is, because any code other than 125, 126 and 127 is the container command's ([Docker, exit codes](https://docs.docker.com/engine/containers/run/)). And `OOMKilled=true` is Docker confirming that it was due to lack of memory. The section "The error you will see" tells you how to read this when it shows up without your having triggered it.
 
 Now you can rewrite the scene precisely. The `revisor`'s container was in its own namespace—it did not see the database—but in a control group with no limit—it spent from the same pool. When the pool ran dry, the kernel had to kill someone **across the whole machine**, not only in the container's group, and it chose another. With `--memory`, the killer would have acted **inside the group** of the `revisor`, and only the `revisor` would have died. Lesson 2 sets limits from the first container for this reason.
 
@@ -530,7 +530,7 @@ Three things learned from this output:
 
 1. **`docker version` reports two versions**, because there are two programs. They almost always match, but they do not have to: on the Mac used for these runs, the macOS client was 29.8.2 and the virtual machine's daemon, 29.2.1. When a command behaves oddly, the first question is which of the two versions is causing it.
 2. **The client and the daemon talk through the *socket***. It is an entry point, and whoever can open it controls the daemon.
-3. **Without a daemon, the client is useless.** The message says exactly that: it could not connect to the Docker API at that path; check that the path is correct and that the daemon is running. On your Mint you will see this message with the path `/var/run/docker.sock` the day the Docker service is stopped.
+3. **Without a daemon, the client cannot ask Docker for anything.** The commands that do not need the daemon, such as `docker --version` or `docker context ls`, do respond. The message says that: it could not connect to the Docker API at that path; check that the path is correct and that the daemon is running. On your Mint you will see this message with the path `/var/run/docker.sock` the day the Docker service is stopped.
 
 #### 0.6.2 Why it matters to know this
 
@@ -540,7 +540,7 @@ It may seem like an architectural curiosity, but it is not. The daemon runs as `
 
 #### 0.7.1 Root inside is root outside
 
-You now have all the pieces for the most serious question of the lesson: how separate is a container from the host? `fig00_08.sh` asks who the user is inside, who owns the process as seen from outside, and what powers it has:
+You now have all the components for the most serious question of the lesson: how separate is a container from the host? `fig00_08.sh` asks who the user is inside, who owns the process as seen from outside, and what powers it has:
 
 ```bash
 #!/usr/bin/env bash
@@ -611,9 +611,9 @@ The right-hand column is the list of what you have to look after. Each lesson of
 
 ### 0.8 Where all this came from
 
-Docker did not invent any of the above. The pieces belong to the Linux kernel and arrived little by little. Docker's security guide recounts it: namespaces entered the kernel between versions 2.6.15 and 2.6.26, the latter from July 2008, and control groups began in 2006 and were merged in version 2.6.24 ([Docker Engine security](https://docs.docker.com/engine/security/)). For years there were tools that used them, but they were hard to use.
+Docker did not invent any of the above. The components belong to the Linux kernel and arrived little by little. Docker's security guide recounts it: namespaces entered the kernel between versions 2.6.15 and 2.6.26, the latter from July 2008, and control groups began in 2006 and were merged in version 2.6.24 ([Docker Engine security](https://docs.docker.com/engine/security/)). For years there were tools that used them, but they were hard to use.
 
-What changed in 2013 was the **way of using them**. On March 15 of that year, in a five-minute lightning talk at the PyCon conference, Solomon Hykes explained that at his company they used Linux containers, that it was complicated and that this was why they had not talked about it, "until now: Docker" ([PyCon US 2013, "The future of Linux Containers"](https://pyvideo.org/pycon-us-2013/the-future-of-linux-containers.html)). Docker put together the kernel's pieces with two ideas of its own: an image format that can be shared and commands that anyone understands.
+What changed in 2013 was the **way of using them**. On March 15 of that year, in a five-minute lightning talk at the PyCon conference, Solomon Hykes explained that at his company they used Linux containers, that it was complicated and that this was why they had not talked about it, "until now: Docker" ([PyCon US 2013, "The future of Linux Containers"](https://pyvideo.org/pycon-us-2013/the-future-of-linux-containers.html)). Docker put together the kernel's components with two ideas of its own: an image format that can be shared and commands that anyone understands.
 
 Two years later, on June 22, 2015, Docker, CoreOS and other companies founded the **Open Container Initiative** (OCI), and Docker donated to it its format and its program for creating containers, `runc` ([OCI, "About"](https://opencontainers.org/about/overview/)). Today the OCI maintains three specifications: the runtime one, the image format one and the distribution one. For you that means something practical: the image you build in this course is not "a Docker image" locked inside Docker, it is an OCI image, and that is why the Kubernetes cluster of the next course can run it without Docker. Incidentally, `runc` is the program that appears at the end of the name `containerd-shim-runc-v2` that you saw in 0.1.
 
@@ -621,11 +621,11 @@ Two years later, on June 22, 2015, Docker, CoreOS and other companies founded th
 
 With this lesson's map, each following lesson is a piece whose place you already know:
 
-- **Lesson 1** installs the client, the daemon and the pieces in between on your Mint.
+- **Lesson 1** installs the client, the daemon and the components in between on your Mint.
 - **Lesson 2** handles isolated processes: starting them, looking at them, giving them a budget (0.4) and deleting them.
 - **Lessons 3, 4 and 5** build the `revisor`'s **image** (0.5): its recipe, its layers and how to make it small.
 - **Lesson 6** separates configuration and secrets from the image.
-- **Lesson 7** deals with process number 1 (0.1) and with trimming its powers (0.7).
+- **Lesson 3** measures what happens to the `docker stop` signal depending on how the `CMD` is written; **Lesson 7** deals with process number 1 (0.1) and with trimming its powers (0.7).
 - **Lesson 8** solves the container layer being disposable (0.5) and connects containers over a network (0.3).
 - **Lesson 9** describes all of that in a single file, and **10** delivers the OCI image (0.8) ready for Kubernetes.
 

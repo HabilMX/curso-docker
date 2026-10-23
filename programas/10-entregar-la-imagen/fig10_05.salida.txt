@@ -1,0 +1,61 @@
+$ ./fig10_05.sh
+== 1. La imagen, para la plataforma de este equipo (linux/arm64)
+$ docker build -q --build-arg VERSION=1.6.0 -t curso-docker-revisor:fig10 . >/dev/null && docker image ls curso-docker-revisor:fig10 --format '{{.Repository}}:{{.Tag}} {{.Size}}'
+curso-docker-revisor:fig10 16.2MB
+
+== 2. El error: pedirle a Trivy la imagen por su nombre, sin socket
+$ docker run --rm -v curso-docker-trivy-cache-fig10:/root/.cache aquasec/trivy:0.76.0 image --quiet curso-docker-revisor:fig10 2>&1 | grep -oE 'unable to find the specified image.*|^\s+\* [a-z]+ error: .*' | cut -c1-120
+unable to find the specified image "curso-docker-revisor:fig10" in ["docker" "containerd" "podman" "remote"]: 4 erro
+	* docker error: unable to inspect the image (curso-docker-revisor:fig10): failed to connect to the docker API at un
+	* containerd error: containerd socket not found: /run/containerd/containerd.sock
+	* podman error: unable to initialize Podman client: no podman socket found: stat podman/podman.sock: no such file or di
+	* remote error: GET https://index.docker.io/v2/library/curso-docker-revisor/manifests/fig10: UNAUTHORIZED: authenti
+[código de salida: 1]
+
+== 3. Guardar la imagen en un archivo y escanear el archivo
+$ docker save --platform linux/arm64 -o revisor-1.6.0.tar curso-docker-revisor:fig10 && du -h revisor-1.6.0.tar | cut -f1
+3.6M
+$ docker run --rm -v curso-docker-trivy-cache-fig10:/root/.cache -v "$PWD":/trabajo:ro aquasec/trivy:0.76.0 image --quiet --input /trabajo/revisor-1.6.0.tar --severity HIGH,CRITICAL --exit-code 1 2>&1 | sin_fechas | sed 's#/trabajo/#./#'
+
+Report Summary
+
+┌──────────────────────────────────────────┬──────────┬─────────────────┬─────────┐
+│                  Target                  │   Type   │ Vulnerabilities │ Secrets │
+├──────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ ./revisor-1.6.0.tar (debian 13.7) │  debian  │        0        │    -    │
+├──────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ revisor                                  │ gobinary │        0        │    -    │
+└──────────────────────────────────────────┴──────────┴─────────────────┴─────────┘
+Legend:
+- '-': Not scanned
+- '0': Clean (no security findings detected)
+
+
+== 4. El mismo archivo, con todas las severidades y el mismo --exit-code 1
+$ docker run --rm -v curso-docker-trivy-cache-fig10:/root/.cache -v "$PWD":/trabajo:ro aquasec/trivy:0.76.0 image --quiet --input /trabajo/revisor-1.6.0.tar --exit-code 1 2>&1 | sin_fechas | sed 's#/trabajo/#./#' | grep -E 'Total|│' 
+│                  Target                  │   Type   │ Vulnerabilities │ Secrets │
+│ ./revisor-1.6.0.tar (debian 13.7) │  debian  │        1        │    -    │
+│ revisor                                  │ gobinary │        0        │    -    │
+Total: 1 (UNKNOWN: 1, LOW: 0, MEDIUM: 0, HIGH: 0, CRITICAL: 0)
+│     Library     │ Vulnerability │ Severity │ Status │ Installed Version │  Fixed Version   │               Title               │
+│ ca-certificates │ DSA-6572-1    │ UNKNOWN  │ fixed  │ 20250419          │ 20250419+deb13u1 │ ca-certificates - security update │
+[código de salida: 1]
+
+== 4b. Lo mismo, sin --exit-code: ¿con qué código sale Trivy por omisión?
+$ { docker run --rm -v curso-docker-trivy-cache-fig10:/root/.cache -v "$PWD":/trabajo:ro aquasec/trivy:0.76.0 image --quiet --input /trabajo/revisor-1.6.0.tar 2>&1; echo "código de Trivy: $?"; } | sin_fechas | grep -E '^Total|^código'
+Total: 1 (UNKNOWN: 1, LOW: 0, MEDIUM: 0, HIGH: 0, CRITICAL: 0)
+código de Trivy: 0
+
+== 5. ¿Y si se ignora lo que no tiene arreglo?
+$ docker run --rm -v curso-docker-trivy-cache-fig10:/root/.cache -v "$PWD":/trabajo:ro aquasec/trivy:0.76.0 image --quiet --input /trabajo/revisor-1.6.0.tar --ignore-unfixed --exit-code 1 2>&1 | sin_fechas | grep -E '^Total'
+Total: 1 (UNKNOWN: 1, LOW: 0, MEDIUM: 0, HIGH: 0, CRITICAL: 0)
+[código de salida: 1]
+
+== 6. ¿De cuándo es la base de datos de vulnerabilidades?
+$ docker run --rm -v curso-docker-trivy-cache-fig10:/root/.cache aquasec/trivy:0.76.0 version 2>&1 | sin_fechas
+Version: 0.76.0
+Vulnerability DB:
+  Version: 2
+  UpdatedAt: 2026-10-21 19:18:22.876313144 +0000 UTC
+  NextUpdate: 2026-10-22 19:18:22.876312904 +0000 UTC
+  DownloadedAt: 2026-10-22 00:17:14.540681058 +0000 UTC

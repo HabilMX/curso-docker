@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # fig01_06.sh — El error de permisos: un usuario que NO está en el grupo docker.
-# Usa al usuario «nobody», que existe en todo Linux y no pertenece a ningún
+# Usa al usuario «nobody», que existe en prácticamente toda distribución (Mint y
+# Ubuntu lo traen) y no pertenece a ningún
 # grupo útil, para mostrar el error sin tener que sacarte a ti del grupo.
 set -uo pipefail
 

@@ -203,7 +203,7 @@ Ahora los bloques 1 a 3; los demás se leen en 7.3.
 2. **El plazo se puede cambiar.** Con `docker stop -t 2`, el mismo `sleep` murió en **2,707 ms**, también con `137` (2,124 en la corrida menos cargada). El plazo cambió; el final, no. Acortar el plazo no arregla nada: solo hace que maten antes.
 3. **Fuera del contenedor, el mismo programa sí muere.** El guion lanza `sleep 300` en tu propio equipo, le manda `SIGTERM` con `kill` y lee su código: `143`, que es 128 + 15. Mismo programa, misma señal, ningún manejador: en tu equipo `sleep` es un proceso cualquiera y la acción por omisión se aplica; en el contenedor era el número 1 y no.
 
-Compara este bloque 1 con la forma *shell* de la Lección 3. Allí el número 1 era `/bin/sh` y el `revisor` estaba debajo; aquí no hay *shell* en medio, el `CMD` es *exec* y aun así pasa lo mismo. La forma *exec* garantiza que tu programa sea el número 1; **no** garantiza que tu programa sepa serlo.
+Compara este bloque 1 con la forma *shell* de la Lección 3. Allí el número 1 era `/bin/sh` y el `revisor` estaba debajo; aquí no hay *shell* en medio, el `CMD` es *exec* y aun así pasa lo mismo. La forma *exec* hace que Docker lance tu programa directamente, sin un *shell* en medio, y por eso queda como el número 1; **no** asegura que tu programa sepa comportarse como tal.
 
 > [!NOTE]
 > 🔧 **Observación de ingeniería 7.1**
@@ -458,7 +458,7 @@ Bloque por bloque:
 1. **La imagen trae su revisión.** `docker image inspect` la muestra en JSON: el comando en forma *exec* (`"CMD"` seguido de la lista) y los tiempos en nanosegundos (`10000000000` son diez segundos). La señal de apagado quedó anotada: `StopSignal=SIGTERM`.
 2. **Con `curl`, `unhealthy`.** El guion pidió una revisión cada dos segundos y dos fallas para rendirse, y a los 5 segundos el contenedor ya estaba `(unhealthy)`: dos revisiones fallidas, a los 2 y a los 4 segundos, más lo que tarda cada una. Fíjate en `--health-start-period 1ms`. Una opción `--health-*` en `0s` **no** apaga el tiempo de arranque: para Docker, un cero significa «usa el valor de la imagen», y el contenedor conservaría los 5 segundos de arranque del Dockerfile. `1ms` es la forma de pedir un arranque casi nulo; el Ejercicio 2 te muestra la diferencia medida. La bitácora de salud dice por qué, y el código no es `1` sino **`-1`**: Docker ni siquiera pudo ejecutar la revisión. El mensaje es el de la Lección 2 cuando intentaste `docker exec ... sh`, con otra redacción: `exec: "/bin/sh": stat /bin/sh: no such file or directory`. Y lo más importante viene después: `docker exec ... /revisor healthcheck` contesta `sano`. **El servicio estaba bien; la revisión estaba rota.** Es el error más traicionero de esta lección, porque el estado `unhealthy` acusa al programa de algo que es culpa de quien escribió la revisión.
 3. **Con la revisión de la imagen, `healthy` a los 5 segundos.** Primero `(health: starting)`, después `(healthy)`. Los cinco segundos son el `--start-interval`: la primera pregunta llegó al terminar el primer intervalo del arranque, y salió bien. La referencia del Dockerfile dice que la primera revisión llega tras un `--interval`, que aquí serían diez segundos; medido con Docker 29.2.1, durante el arranque Docker usa `--start-interval`, y la primera llegó a los cinco. Cuando la documentación y la medición no coinciden, gana la medición (lo vas a ver otra vez en 7.6.3). La bitácora tiene una entrada: código `0` y la salida `sano\n`. El último renglón lee lo mismo por partes: el proceso está `running`, su salud es `healthy` y la racha de fallas (`FailingStreak`) es `0`.
-4. **El apagado.** Sin `--init`, el `revisor` es el número 1, pero esta vez **sí** tiene manejador. `docker stop` tardó **657 ms** en esta corrida, con la máquina cargada (161 ms en la Lección 3, 107 en una corrida anterior de este mismo guion), y el código es `0`, no `143`: el programa no murió por la señal, la atendió y salió por su cuenta. Los registros lo cuentan con sus propias palabras (el `grep -v` deja fuera los `GET /salud` de cada revisión).
+4. **El apagado.** Sin `--init`, el `revisor` es el número 1, pero esta vez **sí** tiene manejador. `docker stop` tardó **657 ms** en esta corrida, con la máquina cargada (562 ms en la Lección 3, según su salida guardada), y el código es `0`, no `143`: el programa no murió por la señal, la atendió y salió por su cuenta. Los registros lo cuentan con sus propias palabras (el `grep -v` deja fuera los `GET /salud` de cada revisión).
 
 #### 7.4.5 En tu carpeta
 
@@ -1004,7 +1004,7 @@ Los bloques 4 y 5 de `fig07_07.sh` hacen la prueba. Como `root`, el guion copia 
 
 #### 7.10.1 El comando
 
-Estas son las opciones con las que el `revisor` corre desde ahora, y las que la Lección 9 escribe en el `compose.yaml`:
+Estas son las opciones con las que el `revisor` corre desde ahora. La Lección 9 las escribe en el `compose.yaml` con sus equivalentes en YAML (`read_only: true`, `cap_drop: [ALL]`, `security_opt`, `init: true`), no como opciones de línea de órdenes:
 
 ```bash
 docker run -d --name curso-docker-revisor -p 127.0.0.1:8080:8080 \
@@ -1015,6 +1015,8 @@ docker run -d --name curso-docker-revisor -p 127.0.0.1:8080:8080 \
 ```
 
 Cada renglón viene de una lección: el puerto en `127.0.0.1` y los límites, de la 2; la imagen sin `root` ni *shell*, de la 3 y la 5; la configuración por `-e`, de la 6; y el segundo renglón y la política de reinicio, de esta. No lleva `--tmpfs` porque aquí no se le pide guardar el reporte; en la Lección 8 tendrá un volumen para eso.
+
+Estas opciones reducen mucho lo que un intruso puede hacer, pero no sustituyen nada más: un programa que de verdad necesite una capacidad concreta o escribir en un lugar concreto pide `--cap-add` o un volumen, uno por uno, y el resto de la defensa (qué código corre, qué se le monta) sigue siendo trabajo tuyo.
 
 #### 7.10.2 Comprobarlo
 
@@ -1043,7 +1045,7 @@ Esta lección tiene un error principal y dos que aparecen con él.
 **El error principal: la revisión de salud que no se puede ejecutar.** Es el de `fig07_03.sh`:
 
 ```text
-Up 7 seconds (unhealthy)
+Up 4 seconds (unhealthy)
 -1 "OCI runtime exec failed: exec failed: unable to start container process: exec: \"/bin/sh\": stat /bin/sh: no such file or directory"
 ```
 

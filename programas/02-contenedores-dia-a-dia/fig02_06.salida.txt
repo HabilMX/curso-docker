@@ -1,0 +1,23 @@
+== 1. Otro contenedor con el MISMO nombre
+docker: Error response from daemon: Conflict. The container name "/curso-docker-l02-prueba" is already in use by container "61860733f6c9d97f75ca78c406e3c29d849500f981d1c8a506de77775199b7c6". You have to remove (or rename) that container to be able to reuse that name.
+
+Run 'docker run --help' for more information
+código de salida: 125
+
+== 2. Otro contenedor en el MISMO puerto
+docker: Error response from daemon: failed to set up container networking: driver failed programming external connectivity on endpoint curso-docker-l02-otro (1de3263e30d85ae5c235769e50302b3a7bba937a5a2d7b88698413e7b62995d3): Bind for 127.0.0.1:18020 failed: port is already allocated
+
+Run 'docker run --help' for more information
+ab4acba42a64
+código de salida: 125
+
+== 3. ¿Qué quedó?
+NAMES                     STATUS
+curso-docker-l02-otro     Created
+curso-docker-l02-prueba   Up 5 seconds (health: starting)
+
+== 4. El filtro name y el ancla ^ (cuántos contenedores encuentra cada uno)
+name=prueba           : 1
+name='^prueba'        : 0
+name=curso-docker-l02-      : 3
+name='^curso-docker-l02-'   : 2

@@ -1,4 +1,4 @@
-# Lesson 4 — Layers, Cache, and Context
+# Lesson 4 — Layers, cache, and context
 
 It is 11:20 in the morning and at 12 there is a demo with the department that is going to use the `revisor`. One detail is left: the report table prints a column shifted by one space. It is a one-line change. You make it, build the image, and wait. Thirteen seconds. You test it, it is not right, you fix it again. Another thirteen. And another thirteen. On the fifth round you realize you have spent more time watching the terminal compile than thinking about the problem, and that every build compiles the **whole** program from scratch, even though you only touched one file. Meanwhile, your teammate, who works on her own copy of the project, asks why her build says it "uploaded" 62 MB when the `revisor`'s code weighs a few kilobytes. In her copy someone deleted the `.dockerignore`, and the folder holds a backup and the Git history. Both questions have the same answer, and it is not in the `revisor`'s code: it is in the order of four lines of the Dockerfile and in a file called `.dockerignore`. By the end of this lesson, that same one-line change rebuilds in under two seconds.
 
@@ -125,7 +125,7 @@ curso-docker-revisor:1.0.0 (Dockerfile.leccion3): 13011 ms
   paso 4  DONE 10.1s RUN go build -o /usr/local/bin/revisor ./cmd/revisor
 ```
 
-`CACHED` means "it came from the cache"; `DONE` with a time, "it was actually done". The `WORKDIR` came from the cache; the `COPY` and the compilation were redone. Step 1, the `FROM`, always says `DONE 0.0s`: the builder confirms it has the base image, which was already downloaded, and does nothing else.
+`CACHED` means "it came from the cache"; `DONE` with a time, "it was actually done". The `WORKDIR` came from the cache; the `COPY` and the compilation were redone. In this run, step 1, the `FROM`, says `DONE 0.0s`: the builder confirms it already has the base image and does nothing else. If the image were not downloaded (a freshly installed machine, or after deleting it), that step would take as long as the download takes and you would see it in its time.
 
 ### 4.3 Order matters
 
@@ -266,7 +266,7 @@ curso-docker-revisor:1.1.0 314341606
 
 The `RUN` went from 110 MB to **10 MB**: now the layer contains only the executable. The three code layers add up to the same as the earlier `COPY . .`, split up. That is the solid number: **the layer slimmed down by 100 MB**, without removing anything the `revisor` needs.
 
-The other two lines count the image's size in two ways, and it is worth not confusing them. `docker image inspect` gives the size of the **content**, compressed as it is stored and transferred: 337.3 MB versus 314.3 MB, 23 MB less. `docker image ls` gives 1.45 GB versus 1.32 GB, about 130 MB less. The difference between the two ways comes from Docker Engine 29's image store, which according to its documentation stores images "in both compressed and uncompressed format" ([Docker, "containerd image store"](https://docs.docker.com/engine/storage/containerd/)). The 130 MB add up with that explanation: about 100 MB of uncompressed layer plus about 23 MB compressed, with the gigabyte rounding. That sum is our own arithmetic, not a rule from the documentation; what is certain is the layer in `docker history`. It is a saving you were not looking for, and it came from doing right what you were looking for.
+The other two lines count the image's size in two ways, and it is worth not confusing them. `docker image inspect` gives the size of the **content**, compressed as it is stored and transferred: 337.3 MB versus 314.3 MB, 23 MB less. `docker image ls` gives 1.45 GB versus 1.32 GB, about 130 MB less. The difference between the two ways comes from Docker Engine 29's image store, which according to its documentation stores images "in both compressed and uncompressed format" ([Docker, "containerd image store"](https://docs.docker.com/engine/storage/containerd/)). The documentation gives no formula for how the `docker image ls` number is composed, and we are not going to invent one with a sum that happens to look right. What we can state is what was measured: both numbers go down, in the direction that corresponds to a layer 100 MB smaller, and the firm measure, the one that does not depend on how each command counts, is the layer in `docker history`. It is a saving you were not looking for, and it came from doing right what you were looking for.
 
 > [!NOTE]
 > 🔧 **Engineering observation 4.2**
@@ -312,7 +312,7 @@ The `prune` reports what it freed (`Total: 99.59MB`, the same cache as in sectio
 
 When you build in a terminal, BuildKit draws a screen that redraws itself and uses color. It is fine for watching, but you cannot save it or search it. The `--progress` option decides the format. According to the `docker buildx build` reference, the default value is `auto`, which uses `tty` mode (the interactive one, "with color and redrawing") if the output is a terminal, and `plain` if not; `plain` "prints the raw build progress in a plaintext format" ([`docker buildx build`, `--progress`](https://docs.docker.com/reference/cli/docker/buildx/build/#progress)). On a build server, where there is no terminal, you always see `plain`, so it is worth knowing how to read it.
 
-Plain text has this shape: each step is a number with `#` in front. First comes the line naming it, such as `#10 [5/6] COPY internal/ internal/`, and then the lines of what it did, all with the same number. A step normally ends with one of two lines: `#10 CACHED`, if it came from the cache, or `#10 DONE 0.5s`, if it was done, with its time. If it fails, it ends with `#10 ERROR: …`, as you will see in 4.6.2. The `[internal]` steps are the ones the builder does on its own: reading the Dockerfile, the `.dockerignore`, the context.
+Plain text has this shape: each step is a number with `#` in front. First comes the line naming it, such as `#10 [5/6] COPY internal/ internal/`, and then the lines of what it did, all with the same number. A step normally ends with one of two lines: `#10 CACHED`, if it came from the cache, or `#10 DONE 0.5s`, if it was done, with its time. If it fails, it ends with `#10 ERROR: …`, as you will see in 4.6.2. The `[internal]` steps are the ones the builder does on its own: reading the Dockerfile, the `.dockerignore`, the context. Notice also that the numbered steps reach `[6/6]` even though the new Dockerfile has nine instructions: `FROM`, `WORKDIR`, the three `COPY`s and the `RUN` are the six steps BuildKit numbers, because they are the ones that produce a layer of files. `USER`, `EXPOSE` and `CMD` only record data in the image configuration (4.1), have no step of their own and that is why they do not appear as `[7/9]`. They were not skipped: they are in the result, as `docker history` shows with their 0 B.
 
 #### 4.5.2 The measurement script
 
@@ -491,7 +491,7 @@ curso-docker-revisor:1.1.0 (Dockerfile): 790 ms
   paso 6  CACHED     RUN go build -o /usr/local/bin/revisor ./cmd/revisor
 ```
 
-A `NOTAS.md` was added to the folder and everything came from the cache. The file did not even reach the builder: the `.dockerignore` left it out (4.6). What does not travel cannot invalidate anything.
+A `NOTAS.md` was added to the folder and everything came from the cache. Two barriers act at once here: the `.dockerignore` left it out (4.6), so the file did not even reach the builder, and in addition no selective `COPY` in the new Dockerfile asks for it. What does not travel, or is not requested, cannot invalidate anything.
 
 > [!NOTE]
 > 🔧 **Engineering observation 4.3**
@@ -674,7 +674,7 @@ $ ./fig04_06.sh
 Check complete, no warnings found.
 ```
 
-This output is stable. The `tail -1` keeps only the verdict; without it you would see the same `[internal]` steps as in Lesson 3. The `RUN --mount` does not bother the check: it is current Dockerfile syntax, and the `# syntax=docker/dockerfile:1` line at the top guarantees the builder understands it.
+This output is stable. The `tail -1` keeps only the verdict; without it you would see the same `[internal]` steps as in Lesson 3. The `RUN --mount` does not bother the check: it is current Dockerfile syntax, and the `# syntax=docker/dockerfile:1` line at the top tells BuildKit which version of the Dockerfile syntax to use to read it. That assumes BuildKit is active, which is the normal case in Docker Engine 29; with the legacy builder, which does not use BuildKit, `RUN --mount` is not understood. The `--check` checks have existed since version 1.8 of the Dockerfile syntax and require Buildx 0.15 or later ([Docker, "Build checks"](https://docs.docker.com/build/checks/)); with older tools, the command does not recognize them.
 
 ### 4.8 What you will see in other projects
 
@@ -705,7 +705,7 @@ It reads from top to bottom: Go tried to obtain the version control status (*VCS
 
 And a security bonus that the cache mount brings: what the compiler leaves in its cache does not stay in the image. Fewer files inside means a smaller attack surface, and fewer things to explain on the day someone reviews what your image contains.
 
-## What gets done wrong
+## Common mistakes
 
 **`COPY . .` and then compiling.** Any change, even a comment or a note, repeats the full compilation. Copy first what changes little and at the end what changes a lot.
 
@@ -744,7 +744,7 @@ Copy `programas/revisor/` to a folder of your own and give it the lesson's `.doc
 
 ### Exercise 3 — Fix the order
 
-A teammate wrote this Dockerfile for the `revisor`. It works, but every change in the code repeats everything:
+A teammate tried to rearrange the `revisor`'s Dockerfile to take advantage of the cache, and left it like this. It has ordering problems, and one of them is serious:
 
 ```dockerfile
 # syntax=docker/dockerfile:1
@@ -824,7 +824,7 @@ Notice that with the lesson's Dockerfile, the one with selective `COPY`s, `datos
 
 ### Solution 3
 
-1. **It fails.** `go build` needs the `go.mod` to know which module it is compiling, and in this Dockerfile the `go.mod` arrives **after** the `RUN`. Compiling without `go.mod` gives this error, measured inside the `golang:1.27.3-trixie` image with a minimal `main` package in `cmd/revisor`: `go: go.mod file not found in current directory or any parent directory; see 'go help modules'`. Inside the build you will see it in the format of a failing `RUN`, as in 4.6.2.
+1. **It fails.** `go build` needs the `go.mod` to know which module it is compiling, and in this Dockerfile the `go.mod` arrives **after** the `RUN`. Compiling without `go.mod` gives this error, measured inside the `golang:1.27.3-trixie` image with a minimal `main` package in `cmd/revisor`: `go: go.mod file not found in current directory or any parent directory; see 'go help modules'`. Inside the build you will see it in the format of a failing `RUN`, as in 4.6.2. That message is produced by `fig04_07.sh`, which compiles the same minimal package without `go.mod` inside the Go image and leaves its output next to it, in `fig04_07.salida.txt`.
 2. The problems: `go.mod` comes after the `RUN` (error) and should come first (cache); `internal/` comes before `cmd/`, the reverse of the lesson's order (less serious, but the one that changes more should go below); and the `RUN` has no cache mount, so every change compiles from scratch. The corrected version is `fig04_01.Dockerfile`.
 3. With the corrected version, after the change in `tabla.go`, the table says `CACHED` for `WORKDIR`, `COPY go.mod ./`, and `COPY cmd/ cmd/`, and `DONE` for `COPY internal/ internal/` and the `RUN`, as in 4.3.3.
 
@@ -832,7 +832,7 @@ Notice that with the lesson's Dockerfile, the one with selective `COPY`s, `datos
 
 One possible answer: "The **layer cache** decides whether a step is repeated, and since the code changed, the `RUN go build` is repeated: nothing prevents that. What the **cache mount** does is that, when it is repeated, Go finds there everything it compiled the previous time and only recompiles the package you touched. The **builder** keeps that cache separately, and it does not get into the **image**. That is why the `RUN` went from 10.1 to 0.8 seconds, and the compilation layer weighs 100 MB less. It gets repeated, yes, but almost for free."
 
-## How I know I succeeded
+## How I know I got it
 
 Check each item only if you verified it on your machine:
 

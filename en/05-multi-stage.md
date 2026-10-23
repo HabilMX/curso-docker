@@ -20,7 +20,7 @@ It is 7:50 in the morning and the branch opens at 9. The `revisor` has to be ins
 - Write a Dockerfile with several named stages (`FROM ... AS`), pass a file from one stage to another with `COPY --from`, and build only up to a stage with `--target`.
 - Put the tests inside the build so that a broken test stops it, and show with a run why the binary stage must come from the test stage and not from the compilation stage.
 - Show with `docker exec`, `docker inspect`, and `docker top` that the final image has no *shell* and does not run as `root`, and list all its files without getting into it.
-- Pin a base image by tag and by *digest*, and say what each one guarantees.
+- Pin a base image by tag and by *digest*, and say what each one ensures.
 - Read the message `exec /revisor: no such file or directory`, explain which file is the one missing, and fix it with `CGO_ENABLED=0`.
 
 ## The why before the how
@@ -170,7 +170,7 @@ Notice also what is **not** on the list: none of this is fixed by deleting files
 
 Until now each Dockerfile had a single `FROM`, and everything that came after was stacked on that base. The central idea of this lesson is that **a Dockerfile can have several `FROM`s**. Each `FROM` starts a new **stage**, from scratch, with its own base. The Dockerfile reference puts it this way: `FROM` "can appear multiple times within a single Dockerfile" to create multiple images or to use one build stage as a dependency for another ([Dockerfile reference, `FROM`](https://docs.docker.com/reference/dockerfile/#from)).
 
-What makes that idea useful is three pieces, which you are going to see in a four-line fragment before the full Dockerfile:
+What makes that idea useful is three components, which you are going to see in a four-line fragment before the full Dockerfile:
 
 ```dockerfile
 FROM golang:1.27.3-trixie AS compilacion
@@ -194,7 +194,7 @@ The second tool is being able to build **only up to** a stage. `docker build --t
 
 #### 5.2.3 What BuildKit builds and what it does not
 
-The third piece is the least known and the one that brings the most surprises. Docker's builder, BuildKit, does not build all the stages in the file in order: **it builds only the stages the stage you asked for depends on**. The documentation says it bluntly: "BuildKit only builds the stages that the target stage depends on" ([Docker, "Differences between legacy builder and BuildKit"](https://docs.docker.com/build/building/multi-stage/#differences-between-legacy-builder-and-buildkit)). A stage nobody needs does not run.
+The third component is the least known and the one that brings the most surprises. Docker's builder, BuildKit, does not build all the stages in the file in order: **it builds only the stages the stage you asked for depends on**. The documentation says it bluntly: "BuildKit only builds the stages that the target stage depends on" ([Docker, "Differences between legacy builder and BuildKit"](https://docs.docker.com/build/building/multi-stage/#differences-between-legacy-builder-and-buildkit)). A stage nobody needs does not run.
 
 That is an advantage (no time is wasted on what is not needed) and a trap, which you are going to trigger in 5.5: if the tests live in a stage the final image does not depend on, BuildKit does not run them, and the build comes out green with a broken test inside. Keep that sentence in mind; it is the key to this lesson's silent error.
 
@@ -262,7 +262,7 @@ The binary ends up in `/out/revisor`, a directory that exists only for that: to 
 
 **The `final` stage.** It starts from scratch on `gcr.io/distroless/static-debian13:nonroot`, pinned by *digest*. Of everything before it, it brings only one file: `COPY --from=binario /out/revisor /revisor`. After that:
 
-- `USER 65532:65532` is the `nonroot` user that the *distroless* image itself has in its `/etc/passwd`; you are going to see it with your own eyes in 5.4. From here on, the course drops the `10001` of the single-stage images and uses `65532`, because it is the one the base already knows.
+- `USER 65532:65532` is the `nonroot` user that the *distroless* image itself has in its `/etc/passwd`; you are going to see it with your own eyes in 5.4. From here on, the course drops the `10001` of the single-stage images and uses `65532`, because it is the one the base already knows. Notice that the `COPY --from=binario` has no `--chown`: the `/revisor` file ends up owned by `root` (you will see it as `0/0` in 5.4) with `rwxr-xr-x` permissions. That is on purpose. User `65532` can execute it, but cannot modify or replace it; if someone took control of the process, they could not rewrite the program on the image's disk.
 - `EXPOSE 8080` is still just an annotation, as in Lesson 3.
 - **`ENTRYPOINT ["/revisor"]`** replaces the `CMD ["revisor"]` from the earlier lessons. The difference is practical. The reference explains it: the arguments you write after the image name in `docker run` "will be appended after all elements" of an `ENTRYPOINT` in *exec* form, and instead "will override all elements specified using `CMD`" ([reference, `ENTRYPOINT`](https://docs.docker.com/reference/dockerfile/#entrypoint)). With `ENTRYPOINT`, `docker run curso-docker-revisor:1.2.0 version` runs `/revisor version`: the image behaves like the program, and its subcommands (`version`, and in Lesson 7 `healthcheck`) are invoked just as in the terminal. With the earlier `CMD`, that `version` would have replaced the whole program and Docker would have tried to run a file called `version`. It is still in *exec* form, for everything you measured in Lesson 3. And the path is written in full, `/revisor`, because the file is at the root of the file system, `/`, which is not one of the directories where the image's `PATH` looks for programs.
 
@@ -407,7 +407,7 @@ The first block shows the steps with their stage in brackets: `[compilacion 4/5]
 
 The second block is the one that justifies the lesson: **from 1.32 GB to 16.1 MB**, about eighty times less. The new image fits seventeen times into what the Go compiler alone used to take up (277 MB in `/usr/local/go`, in 5.1). And the third block, `docker history`, says what is inside: the big layer is `COPY /out/revisor /revisor`, at **6.69 MB**, the binary; the others belong to the *distroless* base and add up to about 5.8 MB, the largest at 2.24 MB (the time zones, `tzdata`). The base's layers say `bazel build`: that is the tool Google builds those images with, and in their history there is not a single `RUN apt-get`, because they were not put together by installing packages with a package manager. Compare with Lesson 4, where `docker history` showed layers of 290 MB, 281 MB, and 208 MB.
 
-If you add up those layers by hand, you do not get 16.1 MB, and it is worth knowing why before it confuses you. The fourth block adds them up for you: **12,468,224 bytes**, about 12.5 MB. 3.6 MB are missing. And the second query in that block finds them: `docker image inspect` reports **3,679,492 bytes**, and 12,468,224 + 3,679,492 = 16,147,716 bytes, the 16.1 MB from `docker image ls`. The explanation lies in how Docker Engine 29 stores images, with the containerd image store: according to its documentation, that store "stores images in both compressed and uncompressed format": it keeps the compressed layers just as they arrived from the registry **and also** unpacks them on disk ([Docker, "containerd image store"](https://docs.docker.com/engine/storage/containerd/)). The `docker image ls` number counts both copies; `docker history` counts only the unpacked layers, and `docker image inspect`, on this machine, the compressed part, which is what gets downloaded. For what matters in this lesson nothing changes: always compare images with the **same** command, and the two `docker image ls` figures (1.32 GB and 16.1 MB) were measured the same way.
+If you add up those layers by hand, you do not get 16.1 MB, and it is worth knowing why before it confuses you. The fourth block adds them up for you: **12,468,224 bytes**, about 12.5 MB. 3.6 MB are missing. And the second query in that block finds them: `docker image inspect` reports **3,679,492 bytes**, and 12,468,224 + 3,679,492 = 16,147,716 bytes, the 16.1 MB from `docker image ls`. The explanation lies in how Docker Engine 29 stores images, with the containerd image store: according to its documentation, that store "stores images in both compressed and uncompressed format": it keeps the compressed layers just as they arrived from the registry **and also** unpacks them on disk ([Docker, "containerd image store"](https://docs.docker.com/engine/storage/containerd/)). The `docker image ls` number counts both copies; `docker history` counts only the unpacked layers, and `docker image inspect`, on this machine, the compressed part, which is what gets downloaded. All of this holds for a freshly installed Docker Engine 29, which uses the containerd store by default; the documentation makes clear that a Docker that was upgraded from an earlier version stays on the classic store, `overlay2`, until you enable it by hand. In that case `docker image ls` will show about 12.5 MB instead of 16.1 MB, and so will `docker image inspect`: it is not a mistake of yours, it is another store counting a single copy. For what matters in this lesson nothing changes: always compare images with the **same** command, and the two `docker image ls` figures (1.32 GB and 16.1 MB) were measured the same way.
 
 A natural question is where the `compilacion`, `pruebas`, and `binario` stages went. They stayed in your machine's build cache, which is what makes the next build fast, but **they are not part of the image**: `docker history` for `1.2.0` has not a single layer from them. The only thing that crossed from one side to the other is the file the `COPY --from` names.
 
@@ -420,7 +420,7 @@ What it says:
 - **1,301 files** in total (`grep -v '/$'` removes the directories from the count). It seems like a lot, until you look at what they are: almost all of them are the time zones and the certificates of the internet's authorities, which a service that queries others over HTTPS needs.
 - **The top-level directories** are those of any Linux (`bin`, `etc`, `usr`, `var`…), plus `revisor` and `.dockerenv`, an empty file Docker adds to every container. That a `bin` directory exists does not mean there are programs inside.
 - **The search for *shells*** asked, in any directory, for a file called `sh`, `bash`, `dash`, `ash`, or `busybox`, plus `revisor` and `passwd` as a control: if the pattern were badly written, those two would not come out either. The two controls came out and no *shell*. There is no *shell*, and in 5.6 you confirm it another way: by trying to run it. The `revisor` is 6,684,832 bytes, the 6.69 MB of the layer.
-- **The date of `/etc/passwd`**, `1969-12-31 18:00`, is the zero date of the Unix clock (January 1, 1970 in universal time) seen in the time zone of the machine used for the runs. The base's files carry that date on purpose: that way two builds of the same base give exactly the same bytes. The `revisor`, on the other hand, carries the date it was compiled. The one you see here is from the early hours of that same day: the binary came from the build cache, because nothing that produces it had changed since the previous run on that machine. On yours you will see a different date.
+- **The date of `/etc/passwd`**, `1969-12-31 18:00`, is the zero date of the Unix clock (January 1, 1970 in universal time) seen in the time zone of the machine used for the runs. The base's files carry that date on purpose: that way the date of the day the base was built does not alter the files, and two builds of the same base cannot be told apart by that value. (A byte-for-byte reproducible build asks for more than fixing the date, such as a fixed file order and deterministic compression; here the date is only one of those requirements.) The `revisor`, on the other hand, carries the date it was compiled. The one you see here is from the early hours of that same day: the binary came from the build cache, because nothing that produces it had changed since the previous run on that machine. On yours you will see a different date.
 - **The contents of `/etc/passwd`** have three users, and the third is the one the final stage uses: `nonroot`, with number **65532**. That is the reason for the `USER 65532:65532`. Notice also the last column of all three: `/sbin/nologin`. Not even `root` has a *shell* assigned.
 
 > [!NOTE]
@@ -780,7 +780,7 @@ This output is the one from October 21, 2026. **It is the one most likely to cha
 
 #### 5.7.4 Tag **and** *digest*
 
-The Dockerfile writes both together: `golang:1.27.3-trixie@sha256:6041…`. The reference allows that syntax: `FROM <image>[@<digest>] [AS <name>]` ([reference, `FROM`](https://docs.docker.com/reference/dockerfile/#from)). When there is a *digest*, the *digest* rules: Docker pulls exactly those bytes, whatever the tag says today. So what is the tag for? For people: `@sha256:6041…` tells nobody which version of Go it is; `1.27.3-trixie` does. The tag documents; the *digest* guarantees.
+The Dockerfile writes both together: `golang:1.27.3-trixie@sha256:6041…`. The reference allows that syntax: `FROM <image>[@<digest>] [AS <name>]` ([reference, `FROM`](https://docs.docker.com/reference/dockerfile/#from)). When there is a *digest*, the *digest* rules: Docker pulls exactly those bytes, whatever the tag says today. So what is the tag for? For people: `@sha256:6041…` tells nobody which version of Go it is; `1.27.3-trixie` does. The tag documents; the *digest* pins the content: it ensures that Docker always pulls the same bytes, even if someone has moved the tag in the registry. It does not ensure that the registry keeps that image forever, or that the image has no flaws or vulnerabilities.
 
 The best practices guide explains the guarantee and also its price. The guarantee: with the *digest*, you are "guaranteed to always use the same image version, even if a publisher replaces the tag with a new image". The price: a pinned *digest* **does not update itself**, so the base's security fixes do not reach you on their own either ([best practices](https://docs.docker.com/build/building/best-practices/#pin-base-image-versions)). Pinning is not forgetting: it is deciding when you change base, after reviewing it, instead of having it change without warning in the middle of a build. The same guide mentions tools that open automatic change requests when a new *digest* comes out. And Lesson 10 teaches you to scan the pinned base so you know when it is time to renew it.
 
@@ -810,7 +810,7 @@ FROM compilacion AS pruebas
 RUN --mount=type=cache,id=curso-docker-go-build,target=/root/.cache/go-build \
     go test ./...
 
-# --- Etapa 3: el binario, estático (CGO_ENABLED=0), sale DESPUÉS de las pruebas ---
+# --- Etapa 3: el binario, SIN CGO_ENABLED=0 (el binario sale dinámico), sale DESPUÉS de las pruebas ---
 FROM pruebas AS binario
 RUN --mount=type=cache,id=curso-docker-go-build,target=/root/.cache/go-build \
     go build -trimpath -ldflags="-s -w" -o /out/revisor ./cmd/revisor
@@ -823,7 +823,7 @@ EXPOSE 8080
 ENTRYPOINT ["/revisor"]
 ```
 
-The comment on stage 3 still says "static", on purpose: that is how these errors look in real life, with a comment that no longer tells the truth. `fig05_08.sh` builds that image, runs it, and then examines both binaries, this image's and the lesson's, from the `binario` stage, which does have tools:
+The comment on stage 3 does tell the truth here (without `CGO_ENABLED=0` the binary comes out dynamic), but in real life that comment tends to keep saying "static" after it has stopped being true: the Dockerfile warns of nothing and the error does not show up until the image runs. `fig05_08.sh` builds that image, runs it, and then examines both binaries, this image's and the lesson's, from the `binario` stage, which does have tools:
 
 ```bash
 #!/usr/bin/env bash
@@ -908,7 +908,7 @@ The Linux manual explains the chain. A dynamic program does not start on its own
 
 #### 5.8.3 Why Go produced a dynamic binary
 
-Go is famous for producing binaries that depend on nothing, and that is true almost always. The exception is *cgo*, the mechanism a Go program uses to call C code. Go's documentation says *cgo* "is enabled by default for native builds on systems where it is expected to work", and that it is turned off with the variable `CGO_ENABLED=0` ([cmd/cgo](https://pkg.go.dev/cmd/cgo)). The Go image ships a C compiler (you saw it in 5.1: `gcc`), so *cgo* is enabled there.
+Go is famous for producing binaries that depend on nothing, and that is true almost always. The exception is *cgo*, the mechanism a Go program uses to call C code. Go's documentation says *cgo* "is enabled by default for native builds on systems where it is expected to work", and that it is disabled with the variable `CGO_ENABLED=0` ([cmd/cgo](https://pkg.go.dev/cmd/cgo)). The Go image ships a C compiler (you saw it in 5.1: `gcc`), so *cgo* is enabled there.
 
 And why would the `revisor` want C code, if it has not a single line of C? Because of networking. The `revisor` uses the standard library's `net` package, for its server and to query other services. That package has two ways of turning a name into an address: one written in pure Go and another that calls the system C library's functions. It normally uses the Go one, but under certain system configurations it uses the C one ([net package, "Name Resolution"](https://pkg.go.dev/net#hdr-Name_Resolution)). To be able to choose at run time, when *cgo* is available the binary carries both, and that is what you saw with `ldd` in 5.8.1: the dependency on `libc.so.6` and on the loader. With `CGO_ENABLED=0`, Go uses only its own implementation and the binary ends up static.
 
@@ -924,7 +924,7 @@ Multi-stage builds arrived in Docker in version 17.05, on May 4, 2017: that rele
 
 - **The "builder pattern" with two Dockerfiles.** A `Dockerfile.build` built an image with the compiler; a *shell* script created a container from that image, extracted the binary with `docker cp`, and then built a second image with another Dockerfile. It worked, but it was three steps that had to be kept in sync by hand. A single multi-stage build does the same.
 - **Chained `RUN`s with `&&` that install, compile, and delete in a single line**, so that what is deleted does not remain in any layer. It was the way to save space with a single stage; it is still less effective than not putting the compiler in the final image.
-- **`FROM scratch`.** `scratch` is an empty image, without a single file. A static binary can run there, and many tutorials do it. It lacks what *distroless* `static` does bring: certificates for HTTPS, time zones, and an `/etc/passwd` with an unprivileged user. For the `revisor`, which queries services and must not run as `root`, the course's base saves you from having to add those pieces by hand.
+- **`FROM scratch`.** `scratch` is an empty image, without a single file. A static binary can run there, and many tutorials do it. It lacks what *distroless* `static` does bring: certificates for HTTPS, time zones, and an `/etc/passwd` with an unprivileged user. For the `revisor`, which queries services and must not run as `root`, the course's base saves you from having to add those components by hand.
 - **`FROM alpine` as the final base "because it is tiny".** Alpine is small, but it brings a *shell* and a package manager, and it uses a different C library (musl) from Debian's: a dynamic binary compiled in Debian's Go image does not start on it, for the same reason as in 5.8.
 - **`COPY --from=0`**, with a number instead of a name. It works, but it breaks silently the day someone adds a stage at the beginning.
 
@@ -952,7 +952,7 @@ It reads like this: the container could not **start** the program, and the progr
 
 **Deliver only what is needed to run, on a minimal base, pinned and without `root`.** The final image has no *shell*, no package manager, no compiler, and no `curl`; it runs as user 65532; and its base is pinned by *digest*. This habit prevents three concrete accidents. The first is the one in the opening scene: whoever manages to run something inside the container—through a bug in the program, for example—finds no tools to download, compile, or run anything else; they have to bring everything, and without a *shell* they do not even have anything to run it with. The second is the base that changes by itself: without a *digest*, tomorrow's build may bring a different base from today's without anyone deciding so. The third is noise: a scanner that checks 16 MB with a handful of packages tells you something you can read; one that checks 1.32 GB with two hundred Debian packages does not. That the image also shrinks eightyfold is the consequence, not the goal.
 
-## What gets done wrong
+## Common mistakes
 
 **Shrinking the image by deleting files with `RUN rm`.** What is deleted is still in the layer below; the image does not shrink. What must not travel stays in another stage.
 
@@ -960,7 +960,7 @@ It reads like this: the container could not **start** the program, and the progr
 
 **Taking the binary from the compilation stage and leaving the tests in a separate stage nobody needs.** It looks as if there were tests, and there are none (5.5). The binary comes **from** the test stage.
 
-**Pinning the base only by tag, or using *distroless*'s `nonroot` tag without a *digest*.** It is using `latest` under another name. Tag for reading, *digest* for guaranteeing.
+**Pinning the base only by tag, or using *distroless*'s `nonroot` tag without a *digest*.** It is using `latest` under another name. Tag for reading, *digest* for pinning the content.
 
 **Copying a platform's *digest* instead of the index's.** The base becomes tied to a single architecture, and whoever builds on another does not get the one that corresponds to them. The *digest* that goes in the `FROM` is the one on the `Digest:` line at the top, the index's.
 
@@ -1026,7 +1026,7 @@ In your folder `~/curso-docker/revisor`, with the image `curso-docker-revisor:1.
 3. That it does not run as `root`, in two different ways: one that reads the image's configuration and another that looks at the process from the host.
 4. That your image's binary is static, without getting into the final image.
 
-The exercise is self-checking: you are done when you have four commands whose outputs say, respectively, about 16 MB, `executable file not found`, `65532` (twice), and `not a dynamic executable`.
+The exercise is self-checking: you are done when you have four commands whose outputs say, respectively, about 16 MB (or about 12.5 MB if your Docker uses the classic store, see 5.4.3), `executable file not found`, the user `65532` (as `65532:65532` in `inspect` and as `65532` in `top`), and `not a dynamic executable`.
 
 ## Solutions
 
@@ -1044,7 +1044,7 @@ The extra question: **no**. The `pruebas` stage only runs `go test`; the binary 
 1. **`golang:latest`.** The base can change on any build, and with it the Go version: the same code compiles differently from one day to the next. It should be `golang:1.27.3-trixie@sha256:…`.
 2. **The binary stage does not come from the test stage.** It is a separate `FROM golang:latest`, so the test stage is not on the final stage's path and BuildKit **does not run it**: a broken test stops nothing (the error you do not see, 5.5). The binary stage must come from the test stage.
 3. **`CGO_ENABLED=0` is missing.** The binary comes out dynamic and on *distroless* `static` it fails with `exec /revisor: no such file or directory` (the main error, 5.8).
-4. **`COPY --from=1` with a number.** The day someone adds or removes a stage at the beginning, the number points to another stage and the wrong thing is copied, without warning. With names (`COPY --from=binario`), that does not happen.
+4. **`COPY --from=1` with a number.** The day someone adds or removes a stage at the beginning, the number points to another stage and the wrong thing is copied, without warning. With names (`COPY --from=binario`), that does not happen silently: the instruction still points to the stage its name says, and if someone deletes that stage, the build fails with an error instead of copying from another one.
 5. **The final base without a *digest*.** The `nonroot` tag without a *digest* is `latest` under another name: the base can change without anyone deciding so (5.7).
 6. **`CMD` instead of `ENTRYPOINT`.** With `CMD ["/revisor"]`, `docker run image version` replaces the whole program and Docker tries to run a file called `version`, which does not exist (5.3.2).
 
@@ -1078,7 +1078,7 @@ docker rm -f curso-docker-revisor && docker rmi curso-docker-revisor:binario
 
 The expected outputs are the lesson's: `16.1MB` (a few megabytes more or less on Intel or AMD) versus `1.32GB`; the error `exec: "sh": executable file not found in $PATH` with code 127; `65532:65532` in `inspect` and `65532` in `top`'s `USER` column; and `not a dynamic executable` in `ldd` (as in `fig05_08.sh`). If in the last step `ldd` lists `libc.so.6`, your Dockerfile lost the `CGO_ENABLED=0`.
 
-## How I know I succeeded
+## How I know I got it
 
 Check each item only if you can do it **without looking at the text again**:
 
@@ -1088,7 +1088,7 @@ Check each item only if you can do it **without looking at the text again**:
 - [ ] You added a broken test to your folder, `docker build -t curso-docker-revisor:rota .` failed with `exit code: 1`, and `docker image ls curso-docker-revisor:rota` shows nothing; afterwards you deleted the test.
 - [ ] You can explain why `FROM pruebas AS binario` and not `FROM compilacion AS binario`, with BuildKit's sentence about which stages it builds.
 - [ ] You can explain which file is missing when `exec /revisor: no such file or directory` appears, and how you confirm it with `ldd` or `readelf` from the `binario` stage.
-- [ ] You can say what the tag guarantees, what the *digest* guarantees, and why the *digest* in the `FROM` is the index's.
+- [ ] You can say what the tag ensures, what the *digest* ensures, and why the *digest* in the `FROM` is the index's.
 - [ ] You ran the scripts in [`programas/05-multi-stage/`](../programas/05-multi-stage) and your outputs match this lesson's in what each section marks as stable. What is not compared: step numbers, PIDs, times, dates, `ldd` addresses, the architecture, sizes within a few megabytes, and the *digests* from `fig05_09.sh` if the base was republished. And when you finish, `docker ps -a --filter name=curso-docker-` shows no containers from this lesson.
 
 ## Summary
@@ -1117,7 +1117,7 @@ All consulted on October 21, 2026.
 - [distroless (GoogleContainerTools)](https://github.com/GoogleContainerTools/distroless): what *distroless* images bring and do not bring, the size of `static-debian13`, its tags, and the recommendation to name the Debian release.
 - [golang on Docker Hub](https://hub.docker.com/_/golang): the `1.27.3-trixie` tag and its aliases.
 - [OCI Image Specification, descriptors](https://github.com/opencontainers/image-spec/blob/main/descriptor.md): what a *digest* is and why it identifies the content.
-- [cmd/cgo](https://pkg.go.dev/cmd/cgo): when *cgo* is enabled and how it is turned off with `CGO_ENABLED=0`.
+- [cmd/cgo](https://pkg.go.dev/cmd/cgo): when *cgo* is enabled and how it is disabled with `CGO_ENABLED=0`.
 - [Go net package, "Name Resolution"](https://pkg.go.dev/net#hdr-Name_Resolution): the two ways of resolving names, pure Go and the one that uses the C library.
 - [cmd/link](https://pkg.go.dev/cmd/link): the linker's `-s` and `-w` options, and that `-s` implies `-w`.
 - [cmd/go, `go build`](https://pkg.go.dev/cmd/go#hdr-Compile_packages_and_dependencies): the `-trimpath` option.
@@ -1132,7 +1132,7 @@ All consulted on October 21, 2026.
 | **dynamic binary** | an executable that needs system libraries and a loader to start |
 | **static binary** | an executable that carries inside everything it needs; it does not depend on system libraries |
 | **dynamic loader** | the program (`ld-linux…`) that starts a dynamic binary and loads its libraries |
-| ***cgo*** | the mechanism a Go program uses to call C code; it is turned off with `CGO_ENABLED=0` |
+| ***cgo*** | the mechanism a Go program uses to call C code; it is disabled with `CGO_ENABLED=0` |
 | ***digest*** | the SHA-256 fingerprint of an image's or an index's contents; if one byte changes, the fingerprint changes |
 | ***distroless*** | a family of minimal base images, without a *shell* or a package manager |
 | **stage** | each part of a Dockerfile that begins with a `FROM`; only the last one is the image that is delivered |

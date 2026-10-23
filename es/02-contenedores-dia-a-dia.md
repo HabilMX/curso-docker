@@ -12,7 +12,7 @@ Faltan doce minutos para la demostración y el servicio no arranca. Tecleas el m
 
 **Qué no hace esta lección.** No escribe ningún `Dockerfile`: el del servicio de prueba se usa tal como viene, y aprender a leerlo es trabajo de las Lecciones 3 a 5. No toca todavía al `revisor`, el proyecto principal del curso, porque para correrlo primero hay que empaquetarlo, y eso empieza en la [Lección 3](03-primer-dockerfile.md). Tampoco explica volúmenes ni redes entre contenedores; aquí cada contenedor vive solo y se habla con él desde tu equipo.
 
-**Sobre las corridas.** Las salidas de esta lección se obtuvieron el 21 de octubre de 2026 en una Mac con [Colima](https://github.com/abiosoft/colima), que levanta una máquina virtual de Linux con Ubuntu 24.04.4 (la misma base de Linux Mint 22), procesador ARM de 64 bits. Los guiones se corrieron **dentro de esa máquina virtual**, con Docker 29.2.1 (cliente y daemon, API 1.53). El cliente de la Mac era la 29.8.2, la versión con la que se planeó el curso, y la más reciente publicada ese día era la 29.9.2, del 20 de octubre de 2026, según las [notas de versión oficiales](https://docs.docker.com/engine/release-notes/29/). Tres avisos sobre cómo se corrió. **Primero:** en esa máquina se escribían al mismo tiempo varias lecciones del curso, así que, para no chocar, las corridas usaron nombres con un prefijo propio (`curso-docker-l02-` en vez de `curso-docker-`) y los puertos 18020 y 18021 en vez de 9000 y 9001. En las salidas que lees aquí, y en los archivos `.salida.txt` de los programas, se devolvieron los nombres y puertos que tú vas a usar, y se reacomodaron los espacios de las tablas, porque el ancho de cada columna depende del nombre más largo; nada más se tocó. Es una excepción a la regla del curso de no editar una salida, y se tomó a propósito: correr los guiones con los nombres reales en esa máquina compartida habría sido peligroso, no solo incómodo, porque el `trap` de cada guion borra `curso-docker-prueba` al salir, y ese contenedor podía ser el de otra lección corriendo en ese momento. En tu Mint no hay nadie más, y los guiones corren tal como están escritos. **Segundo:** la salida de `fig02_01.sh` es la de la primera construcción, cuando la imagen todavía no existía; la imagen base de Go ya estaba descargada, así que la construcción de la sección 2.1 no muestra descargas; en tu primera vez vas a ver primero la descarga de las dos imágenes base, la de Go y la mínima, y tardará más. **Tercero:** lo que cambia en tu Mint es la arquitectura (`amd64` en vez de `arm64` si tu procesador es Intel o AMD), los identificadores, los tiempos y la memoria total que reporta `docker stats`. Las soluciones de los ejercicios que citan una salida también se comprobaron en esa máquina, con el mismo prefijo. Los programas están en [`programas/02-contenedores-dia-a-dia/`](../programas/02-contenedores-dia-a-dia), cada uno con su salida guardada al lado.
+**Sobre las corridas.** Las salidas de esta lección se obtuvieron el 21 de octubre de 2026 en una Mac con [Colima](https://github.com/abiosoft/colima), que levanta una máquina virtual de Linux con Ubuntu 24.04.4 (la misma base de Linux Mint 22), procesador ARM de 64 bits. Los guiones se corrieron **dentro de esa máquina virtual**, con Docker 29.2.1 (cliente y daemon, API 1.53). El cliente de la Mac era la 29.8.2, la versión con la que se planeó el curso, y la más reciente publicada ese día era la 29.9.2, del 20 de octubre de 2026, según las [notas de versión oficiales](https://docs.docker.com/engine/release-notes/29/). Cuatro avisos sobre cómo se corrió. **Primero:** esa máquina la usaban al mismo tiempo otras lecciones del curso, así que, para no chocar, los guiones se lanzaron con otro prefijo de nombres y otros puertos: traen las variables `PREFIJO` (por omisión `curso-docker-`) y `PUERTO` (por omisión `9000`), y se corrieron con `PREFIJO=curso-docker-l02-` y `PUERTO=18020`; `fig02_05.sh` usa además el puerto siguiente, `18021` en vez de `9001`. Donde las salidas muestran nombres y puertos, la lección muestra los valores por omisión, que son los que vas a ver tú: `curso-docker-prueba` en lugar de `curso-docker-l02-prueba`, y `9000` y `9001` en lugar de `18020` y `18021`; las tablas se reacomodaron al ancho del nombre más corto, porque el ancho de cada columna depende del nombre; ese es el único cambio, y los archivos `.salida.txt` guardan la corrida tal cual. Lo que no cambia con las variables, porque ocurre dentro del contenedor, sale tal cual: el puerto `9000` de las revisiones de salud. El `trap` de cada guion borra por nombre exacto, así que con otro prefijo no toca lo de otra lección. En tu Mint no hace falta ninguna variable: los guiones corren tal como están escritos. **Segundo:** la salida de `fig02_01.sh` es la de una construcción **en frío**, corrida con `SIN_CACHE=1` para que no reuse capas de construcciones anteriores, que es lo que verás tu primera vez. La máquina ya tenía descargadas las imágenes base, así que no se ven descargas; en tu primera vez vas a ver primero la descarga de tres imágenes: la de Go, la mínima y una pequeña, `docker/dockerfile:1`, que es el intérprete de la receta (la Lección 3 explica esa primera línea), y tardará más. El paso que compila tardó 236.8 segundos en esta corrida porque la máquina estaba compartida y muy cargada; en otra corrida anterior del mismo guion, con menos carga, fueron 32.9 (esa salida no se guardó): el tiempo depende de tu equipo. Si repites el guion con la imagen ya construida, la salida es otra (2.1.3); esa corrida está en `fig02_01.salida-repetida.txt`. **Tercero:** lo que cambia en tu Mint es la arquitectura (`amd64` en vez de `arm64` si tu procesador es Intel o AMD), los identificadores, los tiempos y la memoria total que reporta `docker stats`. **Cuarto:** los ejercicios y sus soluciones también se corrieron, con los mismos prefijos, en `fig02_08.sh` (ejercicio 1), `fig02_09.sh` (ejercicios 2 y 3) y `fig02_10.sh` (`docker update`, 2.10.4); cada uno con su salida guardada. Los programas están en [`programas/02-contenedores-dia-a-dia/`](../programas/02-contenedores-dia-a-dia), cada uno con su salida guardada al lado.
 
 ## Al terminar vas a poder
 
@@ -30,7 +30,7 @@ En la Lección 0 viste contenedores desde dentro, para entender qué son. Ahora 
 
 Un contenedor es muy fácil de crear. Basta un `docker run`. Y, como no hace ruido, es muy fácil de olvidar. Al cabo de una semana de pruebas tienes contenedores detenidos que ocupan disco, contenedores corriendo que ocupan memoria y puertos, y nombres que ya no puedes reusar. Lo peor no es el disco: es que alguno de ellos quedó escuchando en todas las interfaces de red de tu equipo, y tú no lo sabes. La escena del principio no la causó un error raro; la causaron tres costumbres que nadie corrigió: publicar puertos sin decir dónde, correr sin límites y no limpiar.
 
-Esta lección te da el juego completo de comandos para manejar un contenedor de principio a fin, y junto con cada comando, la costumbre que evita el desorden. Lo vas a hacer con el **servicio de prueba** del curso, un servidor HTTP muy pequeño que falla a propósito. Tiene tres modos: en modo **sano** contesta `200` de inmediato; en modo **lento** tarda tres segundos y luego contesta `200`; en modo **caído** contesta `503`, el código de HTTP para «servicio no disponible». Y el modo se cambia en caliente, sin reiniciarlo, con una petición `POST`. Ese servicio va a ser, a lo largo del curso, el blanco que el `revisor` vigila; aquí te sirve de práctica segura, y todo lo que hagas con él lo vas a repetir con el `revisor`: cuando lo empaquetes en la Lección 3, lo vas a arrancar con este mismo tipo de comando, cambiando el nombre, la imagen y el puerto 8080. Y te sirve para ver una idea que el curso repite: **que un contenedor diga «corriendo» no quiere decir que el servicio esté sano**.
+Esta lección te da el juego completo de comandos para manejar un contenedor de principio a fin, y junto con cada comando, la costumbre que evita el desorden. Lo vas a hacer con el **servicio de prueba** del curso, un servidor HTTP muy pequeño que falla a propósito. Tiene tres modos: en modo **sano** contesta `200` de inmediato; en modo **lento** tarda tres segundos y luego contesta `200`; en modo **caído** contesta `503`, el código de HTTP para «servicio no disponible». Y el modo se cambia en caliente, sin reiniciarlo, con una petición `POST`. Ese servicio va a ser, a lo largo del curso, el blanco que el `revisor` vigila; aquí te sirve de práctica segura, y todo lo que hagas con él lo vas a repetir con el `revisor`: cuando lo empaquetes en la Lección 3, lo vas a arrancar con un comando de la misma familia: cambia el nombre, la imagen y el puerto 8080, y conserva la dirección `127.0.0.1` y los tres límites. Y te sirve para ver una idea que el curso repite: **que un contenedor diga «corriendo» no quiere decir que el servicio esté sano**.
 
 La lección va en este orden:
 
@@ -64,17 +64,22 @@ Para correr un contenedor necesitas una imagen. Antes de construirla, vale la pe
 # único comando que necesitas para construir el servicio de prueba.
 set -uo pipefail
 cd "$(dirname "$0")/.."          # la carpeta programas/, donde está servicio-prueba/
-IMAGEN=curso-docker-prueba:1.0.0
+# Nombres por omisión: los del curso. Se pueden cambiar para no chocar con otra
+# corrida en el mismo equipo (PREFIJO=... ./fig02_01.sh).
+PREFIJO="${PREFIJO:-curso-docker-}"
+# SIN_CACHE=1 ./fig02_01.sh construye sin reusar capas, como la primera vez en un equipo nuevo.
+NOMBRE="${PREFIJO}prueba"
+IMAGEN="${PREFIJO}prueba:1.0.0"
 # Si la imagen ya existía, el bloque 1 no falla y SÍ crea un contenedor: se borra al salir.
-trap 'docker rm -f curso-docker-prueba >/dev/null 2>&1 || true' EXIT
+trap 'docker rm -f "$NOMBRE" >/dev/null 2>&1 || true' EXIT
 
 echo "== 1. Correr la imagen antes de construirla"
-docker run -d --name curso-docker-prueba "$IMAGEN"
+docker run -d --name "$NOMBRE" "$IMAGEN"
 echo "código de salida: $?"
 
 echo
 echo "== 2. Construirla: un solo comando"
-docker build -t "$IMAGEN" servicio-prueba
+docker build ${SIN_CACHE:+--no-cache} -t "$IMAGEN" servicio-prueba
 echo "código de salida: $?"
 
 echo
@@ -83,7 +88,11 @@ docker image ls "$IMAGEN"
 
 echo
 echo "== 4. Y el intento fallido no dejó contenedores"
-docker ps -a --filter name=curso-docker-prueba --format '{{.Names}} {{.Status}}' | wc -l
+docker ps -a --filter name="$NOMBRE" --format '{{.Names}} {{.Status}}' | wc -l
+
+echo
+echo "== 5. El tamaño, con un formato propio"
+docker image ls "$IMAGEN" --format '{{.Repository}}:{{.Tag}} {{.Size}}'
 ```
 
 El guion usa `set -uo pipefail` y no `set -euo pipefail` como los de la Lección 0: le quitamos la `-e` a propósito, porque el primer comando **debe** fallar y queremos que el guion siga. `cd "$(dirname "$0")/.."` se mueve a la carpeta `programas/`, que es donde está `servicio-prueba/`, sin importar desde dónde corras el guion. Y el `trap ... EXIT` deja programado borrar el contenedor al salir: la primera vez no hay nada que borrar, pero si corres el guion con la imagen ya construida, el bloque 1 ya no falla, crea el contenedor y el `trap` lo quita. Esta es la primera parte de la salida:
@@ -114,7 +123,7 @@ El servicio de prueba se entrega con su receta escrita: el archivo `programas/se
 docker build -t curso-docker-prueba:1.0.0 servicio-prueba
 ```
 
-Tiene dos partes. `-t curso-docker-prueba:1.0.0` le pone **nombre y etiqueta** a la imagen que resulte: el nombre es `curso-docker-prueba` y la etiqueta, lo que va después de los dos puntos, es `1.0.0`. Y `servicio-prueba`, al final, es la carpeta que Docker usa como **contexto**: ahí busca el `Dockerfile` y de ahí toma los archivos que la receta pide copiar. La Lección 4 se dedica entera al contexto; aquí basta saber que es una carpeta.
+Tiene dos partes. `-t curso-docker-prueba:1.0.0` le pone **nombre y etiqueta** a la imagen que resulte: el nombre es `curso-docker-prueba` y la etiqueta, lo que va después de los dos puntos, es `1.0.0`. Y `servicio-prueba`, al final, es la carpeta que Docker usa como **contexto**: ahí busca el `Dockerfile` y de ahí toma los archivos que la receta pide copiar. Las Lecciones 3 y 4 explican el contexto a fondo; aquí basta saber que es una carpeta.
 
 La salida de la construcción es larga; esta es la parte central (el archivo completo está en `fig02_01.salida.txt`):
 
@@ -123,28 +132,28 @@ La salida de la construcción es larga; esta es la parte central (el archivo com
 #0 building with "default" instance using docker driver
 
 #1 [internal] load build definition from Dockerfile
-#1 transferring dockerfile: 836B done
-#1 DONE 0.0s
+#1 transferring dockerfile: 836B 0.1s done
+#1 DONE 0.1s
 […]
-#6 [1/4] FROM docker.io/library/golang:1.27.3-trixie@sha256:604106102d33b1084e37ca08adf98ac0813624ae8595bd0d7f3965ecebded09c
-#6 resolve docker.io/library/golang:1.27.3-trixie@sha256:604106102d33b1084e37ca08adf98ac0813624ae8595bd0d7f3965ecebded09c 0.0s done
-#6 DONE 0.0s
+#9 [compilacion 1/4] FROM docker.io/library/golang:1.27.3-trixie@sha256:604106102d33b1084e37ca08adf98ac0813624ae8595bd0d7f3965ecebded09c
+#9 resolve docker.io/library/golang:1.27.3-trixie@sha256:604106102d33b1084e37ca08adf98ac0813624ae8595bd0d7f3965ecebded09c 0.2s done
+#9 DONE 0.3s
 […]
 #12 [compilacion 4/4] RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/servicio-prueba .
-#12 DONE 32.9s
+#12 DONE 236.8s
 
 #13 [stage-1 2/2] COPY --from=compilacion /out/servicio-prueba /servicio-prueba
-#13 DONE 0.1s
+#13 DONE 2.4s
 
 #14 exporting to image
 […]
-#14 naming to docker.io/library/curso-docker-prueba:1.0.0 done
-#14 unpacking to docker.io/library/curso-docker-prueba:1.0.0 0.1s done
-#14 DONE 0.5s
+#14 naming to docker.io/library/curso-docker-prueba:1.0.0 0.2s done
+#14 unpacking to docker.io/library/curso-docker-prueba:1.0.0 0.3s done
+#14 DONE 6.1s
 código de salida: 0
 ```
 
-No hace falta entender cada renglón hoy, pero sí tres cosas. La construcción va en **pasos numerados** (`#1`, `#2`…) y cada uno dice cuánto tardó: el más largo, 32.9 segundos, es el que compila el programa en Go dentro de una imagen que trae el compilador. Al final aparece `naming to docker.io/library/curso-docker-prueba:1.0.0`: el nombre corto que diste es, completo, el de una imagen de Docker Hub en la biblioteca oficial (`library`), aunque nunca vaya a subirse a ningún lado; así nombra Docker a todo lo que no trae un registro escrito. Y el código de salida es **0**: todo salió bien. Las Lecciones 3, 4 y 5 te enseñan a leer este archivo renglón por renglón.
+No hace falta entender cada renglón hoy, pero sí tres cosas. La construcción va en **pasos numerados** (`#1`, `#2`…) y cada uno dice cuánto tardó: el más largo, 236.8 segundos en esta corrida (la máquina estaba muy cargada; ver «Sobre las corridas»), es el que compila el programa en Go dentro de una imagen que trae el compilador. Al final aparece `naming to docker.io/library/curso-docker-prueba:1.0.0`: el nombre corto que diste es, completo, el de una imagen de Docker Hub en la biblioteca oficial (`library`), aunque nunca vaya a subirse a ningún lado; así nombra Docker a todo lo que no trae un registro escrito. Y el código de salida es **0**: todo salió bien. Las Lecciones 3, 4 y 5 te enseñan a leer este archivo renglón por renglón.
 
 #### 2.1.3 Encontrar la imagen
 
@@ -152,10 +161,13 @@ No hace falta entender cada renglón hoy, pero sí tres cosas. La construcción 
 == 3. La imagen ya está en tu equipo
 WARNING: This output is designed for human readability. For machine-readable output, please use --format.
 IMAGE                       ID             DISK USAGE   CONTENT SIZE   EXTRA
-curso-docker-prueba:1.0.0   06306fe8744c   15.1MB       3.37MB
+curso-docker-prueba:1.0.0   56406ca1d761       15.1MB         3.37MB        
 
 == 4. Y el intento fallido no dejó contenedores
 0
+
+== 5. El tamaño, con un formato propio
+curso-docker-prueba:1.0.0 15.1MB
 ```
 
 Si vienes de tutoriales viejos, esta tabla te va a parecer distinta. Desde la versión 29.0, `docker image ls` muestra una vista nueva por omisión, «como `--tree`, pero plegada», y esconde las imágenes sin etiqueta salvo que pidas `--all` ([notas de versión de Docker Engine 29](https://docs.docker.com/engine/release-notes/29/)). La página de referencia del comando todavía muestra las columnas anteriores (`REPOSITORY`, `TAG`, `IMAGE ID`, `CREATED`, `SIZE`) ([docker image ls](https://docs.docker.com/reference/cli/docker/image/ls/)), así que no te extrañe si tu salida y un tutorial no coinciden. El aviso `WARNING` de la primera línea te lo dice el propio Docker: esta vista es para leerla una persona; si vas a procesar la salida con un guion, usa `--format`, que es lo que hace el resto de la lección.
@@ -166,9 +178,11 @@ La columna que usa este curso para hablar del tamaño de una imagen es **DISK US
 docker image ls curso-docker-prueba:1.0.0 --format '{{.Repository}}:{{.Tag}} {{.Size}}'
 ```
 
-En la salida de las corridas del curso, ese comando imprimió `curso-docker-prueba:1.0.0 15.1MB`.
+Es el bloque 5 de `fig02_01.sh`, y en la corrida imprimió `curso-docker-prueba:1.0.0 15.1MB`.
 
-El bloque 4 confirma algo que importa para la limpieza: el `docker run` fallido de la sección 2.1.1 **no dejó contenedor**. Como no había imagen, no había de dónde crearlo. En la sección 2.8 vas a ver un error que sí deja uno.
+El bloque 4 confirma algo que importa para la limpieza: el `docker run` fallido de la sección 2.1.1 **no dejó contenedor**. Como no había imagen, no había de dónde crearlo. En «El error que vas a ver» provocas uno que sí deja contenedor.
+
+Una advertencia si repites el guion: con la imagen ya construida, el bloque 1 **no** falla. Crea el contenedor `curso-docker-prueba`, imprime su identificador y termina con código 0, y el bloque 4 cuenta `1` y no `0`, porque ese contenedor sigue corriendo hasta que el `trap` lo borra al salir. No es un error: es la prueba de que el error del bloque 1 dependía de que la imagen no existiera. La corrida está en `fig02_01.salida-repetida.txt`.
 
 ### 2.2 Arrancar un contenedor
 
@@ -190,12 +204,12 @@ Léelo de izquierda a derecha. Cada opción responde una pregunta que, si no con
 | `-p 127.0.0.1:9000:9000` | ¿quién puede hablarle, y por qué puerto? | ninguna otra máquina, y tú solo por la dirección interna del contenedor, no por `127.0.0.1`; y si pones `-p 9000:9000` sin dirección, **cualquiera en tu red** |
 | `--memory 64m` | ¿cuánta memoria puede usar? | toda la de tu equipo |
 | `--cpus 0.5` | ¿cuánta CPU? | toda |
-| `--pids-limit 50` | ¿cuántos procesos puede crear? | los que quiera |
+| `--pids-limit 50` | ¿cuántos procesos (e hilos) puede crear? | los que quiera |
 | `curso-docker-prueba:1.0.0` | ¿de qué imagen? | (obligatorio) |
 
 `-d` es la forma corta de `--detach`: según la documentación, corre el contenedor en segundo plano e imprime su identificador ([docker container run](https://docs.docker.com/reference/cli/docker/container/run/)). Sin `-d`, la salida del servicio aparece en tu terminal y la terminal se queda ocupada hasta que el contenedor termine. Eso a veces sirve para una prueba rápida; para un servidor, casi nunca.
 
-`--name` le da un nombre. La documentación dice que, si no lo das, el daemon genera uno al azar ([docker container run](https://docs.docker.com/reference/cli/docker/container/run/)). Un nombre propio sirve para dos cosas: para escribir `docker logs curso-docker-prueba` en vez de copiar un identificador de 64 caracteres, y para que el nombre te recuerde de quién es el contenedor. Pero tiene una consecuencia: **en un mismo daemon no puede haber dos contenedores con el mismo nombre**, ni siquiera si uno está detenido. Es el primer error de la escena, y lo provocas en la sección 2.8.
+`--name` le da un nombre. La documentación dice que, si no lo das, el daemon genera uno al azar ([docker container run](https://docs.docker.com/reference/cli/docker/container/run/)). Un nombre propio sirve para dos cosas: para escribir `docker logs curso-docker-prueba` en vez de copiar un identificador de 64 caracteres, y para que el nombre te recuerde de quién es el contenedor. Pero tiene una consecuencia: **en un mismo daemon no puede haber dos contenedores con el mismo nombre**, ni siquiera si uno está detenido. Es el primer error de la escena, y lo provocas en «El error que vas a ver».
 
 `-p` es la forma corta de `--publish`, y tiene tres partes separadas por dos puntos: `dirección:puerto-del-anfitrión:puerto-del-contenedor`. `127.0.0.1:9000:9000` quiere decir «en mi equipo, solo en la dirección `127.0.0.1` y en el puerto 9000, recibe conexiones y pásalas al puerto 9000 del contenedor». Los dos números no tienen que ser iguales: con `127.0.0.1:18000:9000`, tú le hablarías por el 18000 y el servicio seguiría escuchando en su 9000. Recuerda de la Lección 0 que cada contenedor tiene su propia red. Sin `-p`, su puerto 9000 solo se alcanza desde la red interna de Docker: desde los otros contenedores de esa red y desde tu propio equipo, si usas la dirección interna del contenedor; la documentación lo dice así: los puertos de los contenedores en las redes de tipo puente son accesibles desde el anfitrión aunque no se publiquen ([Docker, «Port publishing and mapping»](https://docs.docker.com/engine/network/port-publishing/)). Lo que no se alcanza sin `-p` es el puerto desde `127.0.0.1` de tu equipo ni desde ninguna otra máquina. La sección 2.8 se dedica a la dirección, que es la parte más importante.
 
@@ -210,14 +224,19 @@ Léelo de izquierda a derecha. Cada opción responde una pregunta que, si no con
 # fig02_02.sh — El servicio de prueba corriendo: arrancar, listar, consultar y leer su bitácora.
 # Puerto publicado solo en 127.0.0.1 y con límites de memoria, CPU y procesos.
 set -euo pipefail
-NOMBRE=curso-docker-prueba
+# Nombres y puerto por omisión: los del curso. Se pueden cambiar para no chocar
+# con otra corrida en el mismo equipo (PREFIJO=... PUERTO=... ./figNN.sh).
+PREFIJO="${PREFIJO:-curso-docker-}"
+PUERTO="${PUERTO:-9000}"
+NOMBRE="${PREFIJO}prueba"
+IMAGEN="${PREFIJO}prueba:1.0.0"
 trap 'docker rm -f "$NOMBRE" >/dev/null 2>&1 || true' EXIT
 
 echo "== 1. Arrancar en segundo plano"
-docker run -d --name "$NOMBRE" -p 127.0.0.1:9000:9000 \
-  --memory 64m --cpus 0.5 --pids-limit 50 curso-docker-prueba:1.0.0 | cut -c1-12
+docker run -d --name "$NOMBRE" -p "127.0.0.1:${PUERTO}:9000" \
+  --memory 64m --cpus 0.5 --pids-limit 50 "$IMAGEN" | cut -c1-12
 # Esperar a que conteste (máximo 10 s), en vez de dormir un número fijo.
-for _ in $(seq 20); do curl -fs -o /dev/null http://127.0.0.1:9000/ && break; sleep 0.5; done
+for _ in $(seq 20); do curl -fs -o /dev/null "http://127.0.0.1:${PUERTO}/" && break; sleep 0.5; done
 
 echo
 echo "== 2. Lo que está corriendo"
@@ -225,13 +244,13 @@ docker ps --filter name="$NOMBRE" --format 'table {{.Names}}\t{{.Image}}\t{{.Sta
 
 echo
 echo "== 3. Consultarlo en sus tres modos"
-curl -s http://127.0.0.1:9000/
-curl -s -X POST http://127.0.0.1:9000/modo/caido
-curl -s -w 'código HTTP: %{http_code}\n' http://127.0.0.1:9000/
-curl -s -X POST http://127.0.0.1:9000/modo/lento
-curl -s -w 'código HTTP: %{http_code} en %{time_total} s\n' http://127.0.0.1:9000/
-curl -s -X POST http://127.0.0.1:9000/modo/sano
-curl -s http://127.0.0.1:9000/modo
+curl -s "http://127.0.0.1:${PUERTO}/"
+curl -s -X POST "http://127.0.0.1:${PUERTO}/modo/caido"
+curl -s -w 'código HTTP: %{http_code}\n' "http://127.0.0.1:${PUERTO}/"
+curl -s -X POST "http://127.0.0.1:${PUERTO}/modo/lento"
+curl -s -w 'código HTTP: %{http_code} en %{time_total} s\n' "http://127.0.0.1:${PUERTO}/"
+curl -s -X POST "http://127.0.0.1:${PUERTO}/modo/sano"
+curl -s "http://127.0.0.1:${PUERTO}/modo"
 
 echo
 echo "== 4. Su bitácora completa"
@@ -245,7 +264,7 @@ docker logs --tail 2 "$NOMBRE"
 ```text
 $ ./fig02_02.sh
 == 1. Arrancar en segundo plano
-c516467655b6
+7f01c45325dd
 ```
 
 Lo único que imprime `docker run -d` es el **identificador** del contenedor, un número hexadecimal de 64 caracteres; el guion lo recorta a los primeros 12 con `cut -c1-12`, que es como Docker lo muestra en casi todos lados. Cambia en cada corrida. Que aparezca quiere decir que el contenedor se creó y se le pidió arrancar; **no** quiere decir que el servicio de dentro ya esté atendiendo.
@@ -273,7 +292,7 @@ Las columnas, una por una:
 - **STATUS** dice `Up 2 seconds`: está corriendo desde hace dos segundos. Y trae algo más, `(health: starting)`, que merece un párrafo propio.
 - **PORTS** dice `127.0.0.1:9000->9000/tcp`: el puerto 9000 de tu equipo, solo en `127.0.0.1`, lleva al 9000 del contenedor, por TCP.
 
-El `(health: starting)` aparece porque el `Dockerfile` del servicio de prueba trae una instrucción `HEALTHCHECK`: le dice a Docker que, cada cinco segundos, corra dentro del contenedor el subcomando `servicio-prueba healthcheck`, que pregunta al propio servicio si contesta bien. Mientras no termina la primera revisión, el estado es `starting`; después será `healthy` o `unhealthy`. Hoy no lo vas a usar más que para leerlo; cómo se escribe una revisión de salud y qué hace Docker con ella es tema de la Lección 7. Pero fíjate desde ahora en que **`Up` y la salud son dos cosas distintas**: `Up` dice que el proceso existe; la salud dice si atiende. La sección siguiente lo muestra.
+El `(health: starting)` aparece porque el `Dockerfile` del servicio de prueba trae una instrucción `HEALTHCHECK`: le dice a Docker que, cada cinco segundos, corra dentro del contenedor el subcomando `servicio-prueba healthcheck`, que pregunta al propio servicio si contesta bien. Mientras ninguna revisión haya pasado todavía, el estado es `starting`; pasa a `healthy` con la primera que contesta bien, y a `unhealthy` cuando fallan seguidas tantas como diga `retries` (en esta imagen, dos) ([referencia del Dockerfile, `HEALTHCHECK`](https://docs.docker.com/reference/dockerfile/#healthcheck)). Hoy no lo vas a usar más que para leerlo; cómo se escribe una revisión de salud y qué hace Docker con ella es tema de la Lección 7. Pero fíjate desde ahora en que **`Up` y la salud son dos cosas distintas**: `Up` dice que el proceso existe; la salud dice si atiende. La sección siguiente lo muestra.
 
 ### 2.4 Hablar con el servicio
 
@@ -285,7 +304,7 @@ caido
 código HTTP: 503
 modo: lento
 lento
-código HTTP: 200 en 3.081298 s
+código HTTP: 200 en 3.002647 s
 modo: sano
 modo: sano
 ```
@@ -293,8 +312,8 @@ modo: sano
 Lee cada par de renglones como pregunta y respuesta:
 
 1. `GET /` en modo sano contesta `sano`.
-2. `POST /modo/caido` cambia el modo y confirma `modo: caido`. Desde ese instante, `GET /` contesta el texto `caido` con el código **503**. La opción `-w` de `curl` imprime datos de la petición después de la respuesta; aquí, el código HTTP.
-3. `POST /modo/lento` y el siguiente `GET /` tarda **3.08 segundos** en contestar `lento` con un 200. Los tres segundos son el retardo del modo lento; lo de más es el viaje de ida y vuelta. Ese número cambia un poco en cada corrida; en otra corrida del curso salió 3.003 segundos.
+2. `POST /modo/caido` cambia el modo y confirma `modo: caido`. Desde ese instante, `GET /` contesta el texto `caido` con el código **503** (*Service Unavailable*, [RFC 9110, §15.6.4](https://www.rfc-editor.org/rfc/rfc9110.html#section-15.6.4)). La opción `-w` de `curl` imprime datos de la petición después de la respuesta; aquí, el código HTTP.
+3. `POST /modo/lento` y el siguiente `GET /` tarda **3.00 segundos** en contestar `lento` con un 200. Los tres segundos son el retardo del modo lento; lo de más (aquí, unas dos milésimas) es el viaje de ida y vuelta. Ese número cambia un poco en cada corrida.
 4. `POST /modo/sano` lo regresa a la normalidad, y `GET /modo` lo confirma.
 
 Ahora la pregunta que importa. Mientras el servicio contestaba `503`, ¿qué decía `docker ps`? Decía `Up`. Para Docker, el contenedor estaba perfecto: el proceso existía y no había terminado. Para cualquiera que lo usara, estaba caído. **Docker no sabe lo que contesta tu servicio**, salvo que se lo enseñes con una revisión de salud. Es el criterio que el curso repite en cada lección: un contenedor corriendo no es un servicio sano. El `revisor`, el proyecto que vas a empaquetar desde la Lección 3, existe exactamente para hacer esa pregunta desde fuera.
@@ -319,7 +338,7 @@ servicio-prueba: modo cambiado a sano
 
 Todo lo que el programa principal del contenedor escribe en su **salida estándar** y en su **salida de errores** —lo que en tu terminal verías con `printf` o con `echo`— lo guarda Docker, y `docker logs` te lo devuelve. La documentación lo describe así: el comando entrega los registros que existen en el momento de ejecutarlo, y con `--follow` sigue transmitiendo lo nuevo que salga del `STDOUT` y el `STDERR` del contenedor ([docker container logs](https://docs.docker.com/reference/cli/docker/container/logs/)).
 
-Fíjate que la bitácora cuenta la historia completa de la sección anterior, en orden: el arranque, las dos primeras peticiones (la del ciclo de espera y la tuya), cada cambio de modo y cada petición con su modo. Las peticiones a `/modo` no dejan rastro porque el servicio no las anota; un programa solo deja en la bitácora lo que su autor decidió escribir. Y un aviso: la revisión de salud de la imagen (2.3) también hace un `GET /` cada cinco segundos, y cada una deja su renglón. Esta corrida duró menos de cinco segundos, así que no aparece ninguna; en un contenedor que lleva rato corriendo vas a ver renglones `GET / en modo …` que tú no pediste. Los pidió Docker.
+Fíjate que la bitácora cuenta la historia completa de la sección anterior, en orden: el arranque, las dos primeras peticiones (la del ciclo de espera y la tuya), cada cambio de modo y cada petición con su modo. Las peticiones a `/modo` no dejan rastro porque el servicio no las anota; un programa solo deja en la bitácora lo que su autor decidió escribir. Y un aviso: la revisión de salud de la imagen (2.3) también hace un `GET /` cada cinco segundos, y cada una deja su renglón. La primera corre cinco segundos después del arranque ([referencia del Dockerfile, `HEALTHCHECK`](https://docs.docker.com/reference/dockerfile/#healthcheck)). En esta corrida no aparece ninguna, y no es porque haya durado menos de cinco segundos: el bloque 2 ya decía `Up 2 seconds` y la petición lenta del bloque 3 tardó tres más. Lo más probable es que la primera revisión cayera mientras el servicio estaba en modo lento: la revisión se rinde a los dos segundos, y el servicio, al ver que quien preguntó ya se fue, regresa sin anotar la petición que quedó a medias (en su código, el modo lento termina sin escribir si la petición se cancela). Es decir, la revisión ocurrió y no dejó rastro. En un contenedor que lleva rato corriendo vas a ver renglones `GET / en modo …` que tú no pediste, y en tu equipo, según su velocidad, puede aparecer uno de más al final de este bloque y entonces tu bloque 5 será distinto. Los pidió Docker, no tú.
 
 Las opciones que vas a usar a diario, todas de la [página del comando](https://docs.docker.com/reference/cli/docker/container/logs/):
 
@@ -345,12 +364,17 @@ En los tutoriales verás mucho este comando: `docker exec -it <nombre> sh`, «pa
 # fig02_03.sh — exec: ejecutar un programa dentro de un contenedor que ya corre.
 # La imagen del servicio de prueba no trae shell: se ve el error y lo que sí funciona.
 set -uo pipefail
-NOMBRE=curso-docker-prueba
+# Nombres y puerto por omisión: los del curso. Se pueden cambiar para no chocar
+# con otra corrida en el mismo equipo (PREFIJO=... PUERTO=... ./figNN.sh).
+PREFIJO="${PREFIJO:-curso-docker-}"
+PUERTO="${PUERTO:-9000}"
+NOMBRE="${PREFIJO}prueba"
+IMAGEN="${PREFIJO}prueba:1.0.0"
 trap 'docker rm -f "$NOMBRE" >/dev/null 2>&1 || true' EXIT
 
-docker run -d --name "$NOMBRE" -p 127.0.0.1:9000:9000 \
-  --memory 64m --cpus 0.5 --pids-limit 50 curso-docker-prueba:1.0.0 >/dev/null
-for _ in $(seq 20); do curl -fs -o /dev/null http://127.0.0.1:9000/ && break; sleep 0.5; done
+docker run -d --name "$NOMBRE" -p "127.0.0.1:${PUERTO}:9000" \
+  --memory 64m --cpus 0.5 --pids-limit 50 "$IMAGEN" >/dev/null
+for _ in $(seq 20); do curl -fs -o /dev/null "http://127.0.0.1:${PUERTO}/" && break; sleep 0.5; done
 
 echo "== 1. Pedir un shell"
 docker exec "$NOMBRE" sh
@@ -363,7 +387,7 @@ echo "código de salida: $?"
 
 echo
 echo "== 3. Lo mismo, con el servicio en modo caído"
-curl -s -X POST http://127.0.0.1:9000/modo/caido >/dev/null
+curl -s -X POST "http://127.0.0.1:${PUERTO}/modo/caido" >/dev/null
 docker exec "$NOMBRE" /servicio-prueba healthcheck
 echo "código de salida: $?"
 
@@ -389,11 +413,11 @@ no sano: GET / respondió 503
 código de salida: 1
 
 == 4. exec en un contenedor detenido
-Error response from daemon: container 78614f9ea0da425237a13924f63235bf6a1e45629efd4000d3764b5c54e23dcb is not running
+Error response from daemon: container 9601e9716cd5e38f75a59d4cfb0b59706907808aaefba701a04fb9244a931c4a is not running
 código de salida: 1
 ```
 
-El primer bloque es el error. Léelo de derecha a izquierda, que es como se leen casi todos los errores de Docker: la causa está al final. `exec: "sh": executable file not found in $PATH` dice que no existe ningún programa llamado `sh` en las carpetas donde se buscan los programas. Lo de antes, `OCI runtime exec failed`, dice quién lo descubrió: `runc`, el programa que crea los procesos de los contenedores (lo conociste en la Lección 0). Y el código **127**, como viste en 2.1.1, es el que Docker reserva para «el comando no se encontró».
+El primer bloque es el error. Léelo de derecha a izquierda, que es como se leen casi todos los errores de Docker: la causa está al final. `exec: "sh": executable file not found in $PATH` dice que no existe ningún programa llamado `sh` en las carpetas donde se buscan los programas. Lo de antes, `OCI runtime exec failed`, dice quién lo descubrió: `runc`, el programa que crea los procesos de los contenedores (lo conociste en la Lección 0). Y el código **127** es el mismo que la documentación de `docker run` reserva para «el comando no se encontró» (2.1.1); en `exec` lo devuelve el runtime, con el mismo significado.
 
 No es una falla del contenedor: es una decisión de diseño. La imagen del servicio de prueba se construyó sobre una base mínima, de las llamadas *distroless*, que **solo trae el programa y lo indispensable para que corra**: no trae `sh`, ni `ls`, ni `cat`, ni gestor de paquetes. Eso tiene un precio, que acabas de pagar: no puedes «meterte» a curiosear. Y tiene una ganancia, que la Lección 5 aprovecha para el `revisor`: si alguien lograra ejecutar algo dentro de ese contenedor, no encontraría herramientas con las cuales seguir. Una imagen sin shell es una imagen con menos con qué atacar.
 
@@ -426,14 +450,19 @@ docker exec -it curso-docker-dormilon sh
 #!/usr/bin/env bash
 # fig02_04.sh — inspect y stats: lo que Docker sabe de un contenedor, con y sin límites.
 set -euo pipefail
-CON=curso-docker-prueba
-SIN=curso-docker-sin-limites
+# Nombres y puerto por omisión: los del curso. Se pueden cambiar para no chocar
+# con otra corrida en el mismo equipo (PREFIJO=... PUERTO=... ./figNN.sh).
+PREFIJO="${PREFIJO:-curso-docker-}"
+PUERTO="${PUERTO:-9000}"
+CON="${PREFIJO}prueba"
+SIN="${PREFIJO}sin-limites"
+IMAGEN="${PREFIJO}prueba:1.0.0"
 trap 'docker rm -f "$CON" "$SIN" >/dev/null 2>&1 || true' EXIT
 
-docker run -d --name "$CON" -p 127.0.0.1:9000:9000 \
-  --memory 64m --cpus 0.5 --pids-limit 50 curso-docker-prueba:1.0.0 >/dev/null
-docker run -d --name "$SIN" curso-docker-prueba:1.0.0 >/dev/null
-for _ in $(seq 20); do curl -fs -o /dev/null http://127.0.0.1:9000/ && break; sleep 0.5; done
+docker run -d --name "$CON" -p "127.0.0.1:${PUERTO}:9000" \
+  --memory 64m --cpus 0.5 --pids-limit 50 "$IMAGEN" >/dev/null
+docker run -d --name "$SIN" "$IMAGEN" >/dev/null
+for _ in $(seq 20); do curl -fs -o /dev/null "http://127.0.0.1:${PUERTO}/" && break; sleep 0.5; done
 
 FORMATO='{{.Name}}: memoria={{.HostConfig.Memory}} cpus(nano)={{.HostConfig.NanoCpus}} pids={{.HostConfig.PidsLimit}} usuario={{.Config.User}}'
 
@@ -463,9 +492,9 @@ $ ./fig02_04.sh
 estado=running pid1=[/servicio-prueba] puertos={"9000/tcp":[{"HostIp":"127.0.0.1","HostPort":"9000"}]}
 
 == 3. stats: lo que gastan ahora mismo, contra su límite
-NAME                       MEM USAGE / LIMIT     PIDS
-curso-docker-prueba        1.59MiB / 64MiB       8
-curso-docker-sin-limites   1.496MiB / 15.59GiB   7
+NAME                       MEM USAGE / LIMIT    PIDS
+curso-docker-prueba        1.484MiB / 64MiB     7
+curso-docker-sin-limites   1.57MiB / 15.59GiB   8
 
 == 4. Cuántos renglones trae inspect completo
 224
@@ -478,9 +507,9 @@ Todo el primer bloque es estable: estos números salen iguales en tu Mint. Léel
 - `pids=50`, el tope de procesos.
 - `usuario=65532:65532`: el servicio **no corre como `root`**. Lo decidió la imagen, con una instrucción `USER` que la Lección 3 te enseña a escribir. Compáralo con el `sleep` de la Lección 0, que corría como usuario 0.
 
-Y el renglón del contenedor sin límites dice `memoria=0`, `cpus(nano)=0` y `pids=<no value>`. En este campo, **cero no quiere decir «nada de memoria»: quiere decir «sin límite»**. Es la forma en que Docker guarda «no me pediste nada». `<no value>` es lo que imprime la plantilla cuando el campo ni siquiera existe. Cuando revises un contenedor ajeno, un cero aquí es una señal de alarma, no de tranquilidad.
+Y el renglón del contenedor sin límites dice `memoria=0`, `cpus(nano)=0` y `pids=<no value>`. En este campo, **cero no quiere decir «nada de memoria»: quiere decir «sin límite»**. Es la forma en que Docker guarda «no me pediste nada». `<no value>` es lo que imprime la plantilla cuando el campo está vacío: en el JSON completo de `docker inspect` aparece como `"PidsLimit": null`. Cuando revises un contenedor ajeno, un cero aquí es una señal de alarma, no de tranquilidad.
 
-El nombre sale con una diagonal adelante, `/curso-docker-prueba`. No es un error tuyo: así guarda Docker los nombres internamente, y por eso el mensaje del nombre repetido de la sección 2.8 también la lleva.
+El nombre sale con una diagonal adelante, `/curso-docker-prueba`. No es un error tuyo: así guarda Docker los nombres internamente, y por eso el mensaje del nombre repetido de «El error que vas a ver» también la lleva.
 
 El segundo bloque muestra otros tres campos. `.State.Status` es el estado (`running`). `.Config.Entrypoint` es el programa que la imagen arranca como proceso principal. Y `{{json .HostConfig.PortBindings}}` usa la función `json` de las plantillas para imprimir un campo compuesto tal cual: el puerto 9000 del contenedor está atado a la dirección `127.0.0.1`, puerto 9000, de tu equipo.
 
@@ -490,7 +519,7 @@ El cuarto bloque explica por qué se usan plantillas: el `inspect` completo de e
 
 `inspect` dice cuáles son los límites; `docker stats` dice **cuánto se está gastando**. Por omisión es una pantalla que se actualiza sola, como `top`; con `--no-stream` toma una sola lectura y termina, que es lo que necesita un guion ([docker container stats](https://docs.docker.com/reference/cli/docker/container/stats/)). La columna **MEM USAGE / LIMIT** muestra la memoria que el contenedor usa contra la que tiene permitida, y **PIDS** cuántos procesos e hilos ha creado ([docker container stats](https://docs.docker.com/reference/cli/docker/container/stats/)).
 
-El servicio de prueba usa entre 1 y 2 MiB y tiene unos cuantos hilos (8 en esta corrida, 6 en otra; el número varía). Lo importante es la columna del límite. Con límites dice `64MiB`. Sin límites dice `15.59GiB`, que es **toda la memoria de la máquina** donde se corrió (la máquina virtual de Colima). En tu Mint, ese número será la memoria de tu computadora. Es la escena de la Lección 0 vista desde Docker: un contenedor sin límite tiene como límite el equipo entero.
+El servicio de prueba usa entre 1 y 2 MiB y tiene unos cuantos hilos (7 y 8 en esta corrida; el número varía de una corrida a otra). Lo importante es la columna del límite. Con límites dice `64MiB`. Sin límites dice `15.59GiB`, que es **toda la memoria de la máquina** donde se corrió (la máquina virtual de Colima). En tu Mint, ese número será la memoria de tu computadora. Es la escena de la Lección 0 vista desde Docker: un contenedor sin límite tiene como límite el equipo entero.
 
 ### 2.8 Los puertos: `127.0.0.1` contra todas las interfaces
 
@@ -507,23 +536,29 @@ Cuando publicas un puerto sin dirección, con `-p 9000:9000`, Docker lo publica 
 # fig02_05.sh — Publicar en 127.0.0.1 contra publicar en todas las interfaces.
 # Se corre en el anfitrión (tu Mint): ss lista los puertos en los que escucha el equipo.
 set -euo pipefail
-trap 'docker rm -f curso-docker-prueba curso-docker-abierto >/dev/null 2>&1 || true' EXIT
+# Nombres y puerto por omisión: los del curso. Se pueden cambiar para no chocar
+# con otra corrida en el mismo equipo (PREFIJO=... PUERTO=... ./figNN.sh).
+PREFIJO="${PREFIJO:-curso-docker-}"
+PUERTO="${PUERTO:-9000}"
+ABIERTO=$((PUERTO + 1))        # el segundo puerto, el que se abre a propósito
+IMAGEN="${PREFIJO}prueba:1.0.0"
+trap 'docker rm -f "${PREFIJO}prueba" "${PREFIJO}abierto" >/dev/null 2>&1 || true' EXIT
 
-docker run -d --name curso-docker-prueba -p 127.0.0.1:9000:9000 \
-  --memory 64m --cpus 0.5 --pids-limit 50 curso-docker-prueba:1.0.0 >/dev/null
-docker run -d --name curso-docker-abierto -p 9001:9000 \
-  --memory 64m --cpus 0.5 --pids-limit 50 curso-docker-prueba:1.0.0 >/dev/null
-for p in 9000 9001; do
+docker run -d --name "${PREFIJO}prueba" -p "127.0.0.1:${PUERTO}:9000" \
+  --memory 64m --cpus 0.5 --pids-limit 50 "$IMAGEN" >/dev/null
+docker run -d --name "${PREFIJO}abierto" -p "${ABIERTO}:9000" \
+  --memory 64m --cpus 0.5 --pids-limit 50 "$IMAGEN" >/dev/null
+for p in "$PUERTO" "$ABIERTO"; do
   for _ in $(seq 20); do curl -fs -o /dev/null "http://127.0.0.1:$p/" && break; sleep 0.5; done
 done
 
 echo "== 1. Lo que dice docker port"
-echo "-- curso-docker-prueba:"; docker port curso-docker-prueba
-echo "-- curso-docker-abierto:"; docker port curso-docker-abierto
+echo "-- ${PREFIJO}prueba:"; docker port "${PREFIJO}prueba"
+echo "-- ${PREFIJO}abierto:"; docker port "${PREFIJO}abierto"
 
 echo
 echo "== 2. Lo que dice el sistema operativo: dónde escucha el equipo"
-ss -ltn | grep -E ':900[01] ' | awk '{print $4}' | sort
+ss -ltn | grep -E ":(${PUERTO}|${ABIERTO}) " | awk '{print $4}' | sort
 ```
 
 ```text
@@ -549,7 +584,7 @@ Las dos fuentes dicen lo mismo. El contenedor publicado bien escucha **solo** en
 
 Quizá pienses que para eso tienes un cortafuegos. En Mint, el cortafuegos de escritorio es `ufw`. Aquí está la trampa: **los puertos que publica Docker pasan por encima de las reglas de `ufw`**. La referencia de `docker run` lo advierte: los puertos publicados en todas las interfaces quedan accesibles desde fuera aunque `ufw` esté configurado para bloquearlos, porque Docker administra sus propias reglas de filtrado de paquetes ([docker container run](https://docs.docker.com/reference/cli/docker/container/run/)). La guía de cortafuegos de Docker explica el mecanismo: el tráfico de un contenedor «se desvía antes de pasar por la configuración de `ufw`» y los paquetes se enrutan «antes de que las reglas del cortafuegos se puedan aplicar» ([Docker, «Packet filtering and firewalls»](https://docs.docker.com/engine/network/packet-filtering-firewalls/)).
 
-No lo midas en tu red sin permiso. Basta con saberlo y con la conclusión: **la protección está en el `-p`, no en el cortafuegos**. Por eso en este curso todos los puertos se publican con `127.0.0.1:` delante, y el único que no lo lleva es el `9001` de este guion, que existe para que lo veas y se borra al terminar.
+No lo midas en tu red sin permiso. Basta con saberlo y con la conclusión: **la protección está en el `-p`, no en el cortafuegos**. Quien necesite filtrar de verdad el tráfico hacia los contenedores tiene la cadena `DOCKER-USER` (1.3), pero eso es trabajo de reglas de `iptables` escritas a mano, no de `ufw` tal como viene, y no cambia la conclusión de un escritorio normal. Por eso en este curso todos los puertos se publican con `127.0.0.1:` delante, y el único que no lo lleva es el `9001` de este guion, que existe para que lo veas y se borra al terminar.
 
 > [!NOTE]
 > 🔧 **Observación de ingeniería 2.2**
@@ -563,9 +598,9 @@ La documentación de Docker es clara sobre lo que pasa si no pones ninguno: un c
 
 **`--memory 64m`.** El servicio de prueba usa entre 1 y 2 MiB (lo mediste en 2.7.2). 64 MiB le dan un margen de más de treinta veces. La regla general es esa: **mide primero, y pon un límite holgado por encima de lo medido**, no por debajo. Si el programa pasa el límite, el núcleo lo mata dentro de su propio grupo, como viste en la Lección 0 (código 137 y `OOMKilled=true`), y nadie más en tu equipo se entera. La documentación fija un mínimo de 6 MB para esta opción ([Docker, «Resource constraints»](https://docs.docker.com/engine/containers/resource_constraints/)).
 
-**`--cpus 0.5`.** Media CPU. Un servicio que solo contesta peticiones pequeñas no necesita más, y si entra en un ciclo infinito por un error, se come media CPU y no toda. La documentación lo explica con su propio ejemplo: en un equipo con dos CPU, `--cpus="1.5"` le garantiza al contenedor como máximo una CPU y media ([Docker, «Resource constraints»](https://docs.docker.com/engine/containers/resource_constraints/)). A diferencia de la memoria, pasarse de la CPU no mata a nadie: el núcleo simplemente le da menos tiempo, y el programa va más lento.
+**`--cpus 0.5`.** Media CPU. Un servicio que solo contesta peticiones pequeñas no necesita más, y si entra en un ciclo infinito por un error, se come media CPU y no toda. La documentación lo explica con su propio ejemplo: en un equipo con dos CPU, `--cpus="1.5"` le garantiza al contenedor como máximo una CPU y media ([Docker, «Resource constraints»](https://docs.docker.com/engine/containers/resource_constraints/)). A diferencia de la memoria, pasarse de la CPU no mata a nadie: el núcleo simplemente le da menos tiempo (se dice que lo *estrangula*), y el programa va más lento. Ojo con una consecuencia indirecta: un servicio demasiado estrangulado puede tardar en contestar más de lo que tolera su revisión de salud (2.3), y entonces Docker lo marcará `unhealthy` sin que nada lo haya matado.
 
-**`--pids-limit 50`.** Ajusta el tope de procesos del contenedor; con `-1` se quita ([docker container run](https://docs.docker.com/reference/cli/docker/container/run/)). Este límite protege de algo muy concreto: un programa que, por error o por un ataque, crea procesos sin parar. Sin tope, puede llenar la tabla de procesos del equipo y dejarte sin poder abrir ni una terminal. El servicio tenía 8 (2.7.2); 50 le sobra.
+**`--pids-limit 50`.** Ajusta el tope de procesos del contenedor; con `-1` se quita ([docker container run](https://docs.docker.com/reference/cli/docker/container/run/)). Este límite protege de algo muy concreto: un programa que, por error o por un ataque, crea procesos sin parar. Sin tope, puede llenar la tabla de procesos del equipo y dejarte sin poder abrir ni una terminal. El servicio tenía 7 u 8 (2.7.2); 50 le sobra.
 
 Fíjate que los tres límites van **desde el primer contenedor**, no «cuando el servicio esté en producción». La Lección 0 lo dijo con la escena de la base de datos: el límite no es para el día normal, es para el día malo, y el día malo no avisa.
 
@@ -590,13 +625,18 @@ Lo más importante de la tabla es la diferencia entre **detenido** y **borrado**
 #!/usr/bin/env bash
 # fig02_07.sh — El ciclo de vida completo y la limpieza: stop, start, rm y --rm.
 set -uo pipefail
-NOMBRE=curso-docker-prueba
-trap 'docker rm -f "$NOMBRE" curso-docker-efimero >/dev/null 2>&1 || true' EXIT
+# Nombres y puerto por omisión: los del curso. Se pueden cambiar para no chocar
+# con otra corrida en el mismo equipo (PREFIJO=... PUERTO=... ./figNN.sh).
+PREFIJO="${PREFIJO:-curso-docker-}"
+PUERTO="${PUERTO:-9000}"
+NOMBRE="${PREFIJO}prueba"
+IMAGEN="${PREFIJO}prueba:1.0.0"
+trap 'docker rm -f "$NOMBRE" "${PREFIJO}efimero" >/dev/null 2>&1 || true' EXIT
 ms() { date +%s%3N; }
 
-docker run -d --name "$NOMBRE" -p 127.0.0.1:9000:9000 \
-  --memory 64m --cpus 0.5 --pids-limit 50 curso-docker-prueba:1.0.0 >/dev/null
-for _ in $(seq 20); do curl -fs -o /dev/null http://127.0.0.1:9000/ && break; sleep 0.5; done
+docker run -d --name "$NOMBRE" -p "127.0.0.1:${PUERTO}:9000" \
+  --memory 64m --cpus 0.5 --pids-limit 50 "$IMAGEN" >/dev/null
+for _ in $(seq 20); do curl -fs -o /dev/null "http://127.0.0.1:${PUERTO}/" && break; sleep 0.5; done
 
 echo "== 1. Borrar un contenedor que está corriendo, sin -f"
 docker rm "$NOMBRE"
@@ -623,13 +663,13 @@ echo
 echo "== 5. Un contenedor con --rm se borra solo al terminar"
 # Lo que va después de la imagen reemplaza al comando por omisión: aquí, en vez
 # de servir, el programa corre su subcomando healthcheck y termina.
-docker run --rm --name curso-docker-efimero curso-docker-prueba:1.0.0 healthcheck
+docker run --rm --name "${PREFIJO}efimero" "$IMAGEN" healthcheck
 echo "código de salida: $?"
-docker ps -a --filter name=curso-docker-efimero --format '{{.Names}}' | wc -l
+docker ps -a --filter name="${PREFIJO}efimero" --format '{{.Names}}' | wc -l
 
 echo
 echo "== 6. La revisión final: ningún contenedor del curso"
-docker ps -a --filter name='^curso-docker-' --format '{{.Names}}' | wc -l
+docker ps -a --filter name="^${PREFIJO}" --format '{{.Names}}' | wc -l
 ```
 
 ```text
@@ -639,7 +679,7 @@ Error response from daemon: cannot remove container "curso-docker-prueba": conta
 código de salida: 1
 
 == 2. Detenerlo, midiendo cuánto tarda
-docker stop tardó 242 ms
+docker stop tardó 414 ms
 curso-docker-prueba Exited (0) Less than a second ago
 servicio-prueba: GET / en modo sano
 servicio-prueba: recibí terminated, apagando
@@ -669,11 +709,67 @@ El primer bloque es una protección: Docker no te deja borrar un contenedor que 
 
 `docker stop` es la forma educada. La documentación dice que le manda al proceso principal la señal `SIGTERM` (salvo que la imagen o el contenedor configuren otra), espera un plazo —por omisión, **10 segundos** en Linux— y, si el contenedor sigue vivo, lo mata con `SIGKILL`. El plazo se cambia con `--timeout` ([docker container stop](https://docs.docker.com/reference/cli/docker/container/stop/)).
 
-El segundo bloque muestra que el servicio de prueba se apaga bien. `docker stop` tardó **242 ms**, mucho menos que los 10 segundos del plazo (en otra corrida del curso tardó 120 ms, y en otra, 199). El estado es `Exited (0)`: el programa terminó por su cuenta y con código 0, que en Linux es «todo bien». Y la bitácora, que sigue ahí después de detenerlo, muestra por qué: `recibí terminated, apagando`. El servicio está escrito para atender `SIGTERM` (*terminated* es como Go nombra esa señal): la recibe, deja de aceptar peticiones y sale. Si el programa ignorara la señal, verías `docker stop` tardar 10 segundos y el estado `Exited (137)`. Por qué un programa a veces no recibe la señal, aunque esté escrito para atenderla, es un problema real con nombre propio, el del proceso número 1, y la Lección 7 lo trata.
+El segundo bloque muestra que el servicio de prueba se apaga bien. `docker stop` tardó **414 ms** en esta corrida (la máquina estaba cargada), mucho menos que los 10 segundos del plazo. El estado es `Exited (0)`: el programa terminó por su cuenta y con código 0, que en Linux es «todo bien». Y la bitácora, que sigue ahí después de detenerlo, muestra por qué: `recibí terminated, apagando`. El servicio está escrito para atender `SIGTERM` (*terminated* es como Go nombra esa señal): la recibe, deja de aceptar peticiones y sale. Si el programa ignorara la señal, verías `docker stop` tardar 10 segundos y el estado `Exited (137)`. Por qué un programa a veces no recibe la señal, aunque esté escrito para atenderla, es un problema real con nombre propio, el del proceso número 1, y las Lecciones 3 y 7 lo tratan.
 
 #### 2.10.4 `docker start`: detenido no es borrado
 
-El tercer bloque arranca otra vez el mismo contenedor con `docker start`. No hace falta repetir las opciones: el nombre, el puerto y los límites quedaron guardados en el contenedor. `docker start` sirve para continuar algo que detuviste; para cambiar una opción (otro puerto, otro límite) hay que borrar el contenedor y crear uno nuevo con `docker run`. El cuarto bloque hace la limpieza en orden: `stop` y luego `rm`, que imprime el nombre de lo que borró.
+El tercer bloque arranca otra vez el mismo contenedor con `docker start`. No hace falta repetir las opciones: el nombre, el puerto y los límites quedaron guardados en el contenedor. `docker start` sirve para continuar algo que detuviste. Los límites de memoria, CPU y procesos sí se pueden cambiar sin recrear el contenedor, con `docker update` ([docker container update](https://docs.docker.com/reference/cli/docker/container/update/)), que este curso no usa en sus guiones pero que `fig02_10.sh` prueba: con el contenedor corriendo, `docker update --memory 128m --memory-swap 128m --cpus 1 --pids-limit 100` dejó `memoria=134217728 cpus(nano)=1000000000 pids=100`, el contenedor siguió corriendo y sin reinicios, y `-p` no existe como opción de `update`. (`--memory-swap` va junto a `--memory` porque, si no, `docker update` se queja cuando el tope de swap ya fijado queda por debajo de la memoria nueva.) Lo que no se puede cambiar es el puerto publicado ni la imagen: para eso hay que borrar el contenedor y crear uno nuevo con `docker run`. Este es `fig02_10.sh`:
+
+```bash
+#!/usr/bin/env bash
+# fig02_10.sh — docker update: cambiar los límites de un contenedor sin recrearlo.
+# El puerto publicado y la imagen, en cambio, sí exigen un contenedor nuevo.
+set -uo pipefail
+# Nombres y puerto por omisión: los del curso. Se pueden cambiar para no chocar
+# con otra corrida en el mismo equipo (PREFIJO=... PUERTO=... ./figNN.sh).
+PREFIJO="${PREFIJO:-curso-docker-}"
+PUERTO="${PUERTO:-9000}"
+IMAGEN="${PREFIJO}prueba:1.0.0"
+NOMBRE="${PREFIJO}prueba"
+trap 'docker rm -f "$NOMBRE" >/dev/null 2>&1 || true' EXIT
+FORMATO='memoria={{.HostConfig.Memory}} cpus(nano)={{.HostConfig.NanoCpus}} pids={{.HostConfig.PidsLimit}} puertos={{json .HostConfig.PortBindings}}'
+
+docker run -d --name "$NOMBRE" -p "127.0.0.1:${PUERTO}:9000" \
+  --memory 64m --cpus 0.5 --pids-limit 50 "$IMAGEN" >/dev/null
+
+echo "== 1. Antes"
+docker inspect --format "$FORMATO" "$NOMBRE"
+
+echo
+echo "== 2. docker update de los tres límites, con el contenedor corriendo"
+docker update --memory 128m --memory-swap 128m --cpus 1 --pids-limit 100 "$NOMBRE"
+echo "código de salida: $?"
+
+echo
+echo "== 3. Después (mismo contenedor, sin reiniciar)"
+docker inspect --format "$FORMATO" "$NOMBRE"
+docker inspect --format 'sigue corriendo: {{.State.Running}}, reinicios: {{.RestartCount}}' "$NOMBRE"
+
+echo
+echo "== 4. El puerto publicado no tiene opción en update"
+docker update -p 127.0.0.1:9002:9000 "$NOMBRE" 2>&1 | head -2
+```
+
+Corrida real:
+
+```text
+$ ./fig02_10.sh
+== 1. Antes
+memoria=67108864 cpus(nano)=500000000 pids=50 puertos={"9000/tcp":[{"HostIp":"127.0.0.1","HostPort":"9000"}]}
+
+== 2. docker update de los tres límites, con el contenedor corriendo
+curso-docker-prueba
+código de salida: 0
+
+== 3. Después (mismo contenedor, sin reiniciar)
+memoria=134217728 cpus(nano)=1000000000 pids=100 puertos={"9000/tcp":[{"HostIp":"127.0.0.1","HostPort":"9000"}]}
+sigue corriendo: true, reinicios: 0
+
+== 4. El puerto publicado no tiene opción en update
+unknown shorthand flag: 'p' in -p
+```
+
+El cuarto bloque hace la limpieza en orden: `stop` y luego `rm`, que imprime el nombre de lo que borró.
 
 #### 2.10.5 `--rm`: contenedores que se borran solos
 
@@ -691,7 +787,7 @@ El sexto bloque de `fig02_07.sh` es la revisión que vas a hacer al final de cad
 docker ps -a --filter name='^curso-docker-' --format '{{.Names}}' | wc -l
 ```
 
-`-a` incluye los detenidos, que son los que se olvidan. El filtro `name=^curso-docker-` deja solo los contenedores cuyo nombre **empieza** con `curso-docker-`: el `^` marca el principio del nombre. La documentación solo dice que el filtro coincide con todo o parte del nombre, así que se midió al escribir esta lección: en un equipo con diez contenedores cuyos nombres llevaban `dev-` en medio, `--filter name=dev-` encontró los diez y `--filter name='^dev'` no encontró ninguno. Sin el `^`, un filtro por `curso-docker-` también atraparía a un contenedor llamado, por ejemplo, `viejo-curso-docker-x`. Y `wc -l` cuenta renglones. Si sale `0`, no dejaste nada.
+`-a` incluye los detenidos, que son los que se olvidan. El filtro `name=^curso-docker-` deja solo los contenedores cuyo nombre **empieza** con `curso-docker-`: el `^` marca el principio del nombre. La documentación solo dice que el filtro coincide con todo o parte del nombre, así que se comprobó al escribir esta lección, con el bloque 4 de `fig02_06.sh`: con tres contenedores (`curso-docker-prueba`, `curso-docker-otro` y un `viejo-curso-docker-x`), `--filter name=prueba` encontró uno, pero `--filter name='^prueba'` no encontró ninguno, aunque el nombre lleva `prueba` en medio: el `^` ancla de verdad al principio. Y `--filter name=curso-docker-` encontró los tres, mientras que `--filter name='^curso-docker-'` solo los dos que empiezan así. Sin el `^`, un filtro por `curso-docker-` atrapa también al `viejo-curso-docker-x` que no es tuyo. Y `wc -l` cuenta renglones. Si sale `0`, no dejaste nada.
 
 Para **borrar** todo lo tuyo de un golpe, la misma lista sirve de entrada a `docker rm -f`:
 
@@ -720,45 +816,64 @@ Son dos, los de la escena del principio, y los dos los provoca `fig02_06.sh`:
 # fig02_06.sh — Los dos errores de todos los días: nombre repetido y puerto ocupado.
 # Ojo con el segundo: el contenedor que falla SÍ queda creado.
 set -uo pipefail
-trap 'docker rm -f curso-docker-prueba curso-docker-otro >/dev/null 2>&1 || true' EXIT
+# Nombres y puerto por omisión: los del curso. Se pueden cambiar para no chocar
+# con otra corrida en el mismo equipo (PREFIJO=... PUERTO=... ./figNN.sh).
+PREFIJO="${PREFIJO:-curso-docker-}"
+PUERTO="${PUERTO:-9000}"
+IMAGEN="${PREFIJO}prueba:1.0.0"
+trap 'docker rm -f "${PREFIJO}prueba" "${PREFIJO}otro" "viejo-${PREFIJO}x" >/dev/null 2>&1 || true' EXIT
 
-docker run -d --name curso-docker-prueba -p 127.0.0.1:9000:9000 \
-  --memory 64m --cpus 0.5 --pids-limit 50 curso-docker-prueba:1.0.0 >/dev/null
+docker run -d --name "${PREFIJO}prueba" -p "127.0.0.1:${PUERTO}:9000" \
+  --memory 64m --cpus 0.5 --pids-limit 50 "$IMAGEN" >/dev/null
 
 echo "== 1. Otro contenedor con el MISMO nombre"
-docker run -d --name curso-docker-prueba curso-docker-prueba:1.0.0
+docker run -d --name "${PREFIJO}prueba" "$IMAGEN"
 echo "código de salida: $?"
 
 echo
 echo "== 2. Otro contenedor en el MISMO puerto"
-docker run -d --name curso-docker-otro -p 127.0.0.1:9000:9000 \
-  --memory 64m --cpus 0.5 --pids-limit 50 curso-docker-prueba:1.0.0 | cut -c1-12
+docker run -d --name "${PREFIJO}otro" -p "127.0.0.1:${PUERTO}:9000" \
+  --memory 64m --cpus 0.5 --pids-limit 50 "$IMAGEN" | cut -c1-12
 echo "código de salida: ${PIPESTATUS[0]}"
 
 echo
 echo "== 3. ¿Qué quedó?"
-docker ps -a --filter name='^curso-docker-' --format 'table {{.Names}}\t{{.Status}}'
+docker ps -a --filter name="^${PREFIJO}" --format 'table {{.Names}}\t{{.Status}}'
+
+echo
+echo "== 4. El filtro name y el ancla ^ (cuántos contenedores encuentra cada uno)"
+docker create --name "viejo-${PREFIJO}x" "$IMAGEN" >/dev/null     # un nombre que lleva el prefijo en medio
+echo "name=prueba           : $(docker ps -aq --filter name=prueba | wc -l)"
+echo "name='^prueba'        : $(docker ps -aq --filter name='^prueba' | wc -l)"
+echo "name=${PREFIJO}      : $(docker ps -aq --filter name="${PREFIJO}" | wc -l)"
+echo "name='^${PREFIJO}'   : $(docker ps -aq --filter name="^${PREFIJO}" | wc -l)"
 ```
 
 ```text
 $ ./fig02_06.sh
 == 1. Otro contenedor con el MISMO nombre
-docker: Error response from daemon: Conflict. The container name "/curso-docker-prueba" is already in use by container "c0117bd0d82f44831263964f4f0c3e80262188eee2be39287f270aef5b82cc4d". You have to remove (or rename) that container to be able to reuse that name.
+docker: Error response from daemon: Conflict. The container name "/curso-docker-prueba" is already in use by container "61860733f6c9d97f75ca78c406e3c29d849500f981d1c8a506de77775199b7c6". You have to remove (or rename) that container to be able to reuse that name.
 
 Run 'docker run --help' for more information
 código de salida: 125
 
 == 2. Otro contenedor en el MISMO puerto
-docker: Error response from daemon: failed to set up container networking: driver failed programming external connectivity on endpoint curso-docker-otro (482400ed3eb7fd3dab4753f6c5bf95038ed4b93f2b80fd70c3ac301e5f8059c2): Bind for 127.0.0.1:9000 failed: port is already allocated
+docker: Error response from daemon: failed to set up container networking: driver failed programming external connectivity on endpoint curso-docker-otro (1de3263e30d85ae5c235769e50302b3a7bba937a5a2d7b88698413e7b62995d3): Bind for 127.0.0.1:9000 failed: port is already allocated
 
 Run 'docker run --help' for more information
-1dad19130213
+ab4acba42a64
 código de salida: 125
 
 == 3. ¿Qué quedó?
 NAMES                 STATUS
 curso-docker-otro     Created
-curso-docker-prueba   Up Less than a second (health: starting)
+curso-docker-prueba   Up 5 seconds (health: starting)
+
+== 4. El filtro name y el ancla ^ (cuántos contenedores encuentra cada uno)
+name=prueba           : 1
+name='^prueba'        : 0
+name=curso-docker-      : 3
+name='^curso-docker-'   : 2
 ```
 
 Los identificadores largos cambian en cada corrida; los mensajes y los códigos salen iguales. `${PIPESTATUS[0]}` es una variable de *bash* que guarda el código de salida del **primer** comando de una tubería; hace falta porque `$?` daría el del `cut`.
@@ -850,10 +965,106 @@ Tu compañero de la escena del principio te dice: «Yo tengo `ufw` activo, así 
 
 1. Falla el **segundo**: el puerto 9000 de `127.0.0.1` ya lo tiene `curso-docker-a`; termina con `port is already allocated` y código 125. El cuarto **no** es un error de Docker, pero sí termina con código **1**: el subcomando `healthcheck` no encuentra a nadie sirviendo dentro de ese contenedor (`connection refused`), igual que en el bloque 5 de `fig02_07.sh`.
 2. Dos: `curso-docker-a` en `Exited (0)`, porque lo detuviste y el servicio se apaga bien con `SIGTERM`; y `curso-docker-b` en `Created`, el contenedor fantasma del puerto ocupado. `curso-docker-c` no aparece: tenía `--rm`, y `docker run` sin `-d` no regresa hasta que lo borró.
-3. **Arranca, pero sin su puerto**, y esta es la respuesta que casi nadie predice. Se midió al escribir la lección, con Docker 29.2.1: `docker start curso-docker-b` terminó con código 0 y `docker ps` lo mostró `Up`, pero la columna PORTS salió **vacía**, `docker port` no imprimió nada y `curl` a `127.0.0.1:9000` no obtuvo respuesta. `docker inspect` mostraba la diferencia: en `.HostConfig.PortBindings` seguía pedido el `127.0.0.1:9000`, pero en `.NetworkSettings.Ports`, lo que de verdad quedó conectado, no había nada. Si predijiste «arranca y usa el 9000, que ya quedó libre», tu razonamiento era el lógico; el contenedor fantasma simplemente no se comporta así. Es una razón más para la regla de «El error que vas a ver»: después de un puerto ocupado, **borra** el contenedor que quedó en `Created` y créalo de nuevo con `docker run`, en vez de rescatarlo con `docker start`.
+3. **Arranca, pero sin su puerto**, y esta es la respuesta que casi nadie predice. Se midió al escribir la lección, con Docker 29.2.1: `docker start curso-docker-b` terminó con código 0 y `docker ps` lo mostró `Up`, pero la columna PORTS salió **vacía**, `docker port` no imprimió nada y `curl` a `127.0.0.1:9000` no obtuvo respuesta. `docker inspect` mostraba la diferencia: en `.HostConfig.PortBindings` seguía pedido el `127.0.0.1:9000`, pero en `.NetworkSettings.Ports`, lo que de verdad quedó conectado, no había nada. Si predijiste «arranca y usa el 9000, que ya quedó libre», tu razonamiento era el lógico; el contenedor fantasma simplemente no se comporta así. Es un comportamiento de la versión medida (29.2.1) y no sé decir si una versión posterior lo corrige; si en la tuya arranca con el puerto, mejor para ti: la regla no cambia, después de un «puerto ocupado» se borra y se crea de nuevo. Es una razón más para la regla de «El error que vas a ver»: después de un puerto ocupado, **borra** el contenedor que quedó en `Created` y créalo de nuevo con `docker run`, en vez de rescatarlo con `docker start`.
 4. Uno para borrar y otro para comprobar: `docker ps -aq --filter name='^curso-docker-' | xargs -r docker rm -f` y después `docker ps -a --filter name='^curso-docker-' --format '{{.Names}}' | wc -l`, que debe imprimir `0`.
 
-Los puntos 1, 2 y 3 se comprobaron corriendo esta misma secuencia en la máquina de las corridas.
+Los puntos 1, 2 y 3 se comprobaron corriendo esta misma secuencia en la máquina de las corridas, con `fig02_08.sh` (con los límites puestos, que no cambian la respuesta):
+
+```bash
+#!/usr/bin/env bash
+# fig02_08.sh — Ejercicio 1: la secuencia de cuatro comandos y qué queda en docker ps -a.
+# Muestra el contenedor fantasma del puerto ocupado y qué pasa si lo rescatas con start.
+set -uo pipefail
+# Nombres y puerto por omisión: los del curso. Se pueden cambiar para no chocar
+# con otra corrida en el mismo equipo (PREFIJO=... PUERTO=... ./figNN.sh).
+PREFIJO="${PREFIJO:-curso-docker-}"
+PUERTO="${PUERTO:-9000}"
+IMAGEN="${PREFIJO}prueba:1.0.0"
+trap 'docker rm -f "${PREFIJO}a" "${PREFIJO}b" "${PREFIJO}c" >/dev/null 2>&1 || true' EXIT
+LIMITES="--memory 64m --cpus 0.5 --pids-limit 50"
+
+echo "== 1. docker run -d --name a -p 127.0.0.1:PUERTO:9000"
+docker run -d --name "${PREFIJO}a" -p "127.0.0.1:${PUERTO}:9000" $LIMITES "$IMAGEN" >/dev/null
+echo "código de salida: $?"
+for _ in $(seq 20); do curl -fs -o /dev/null "http://127.0.0.1:${PUERTO}/" && break; sleep 0.5; done
+
+echo
+echo "== 2. docker run -d --name b -p 127.0.0.1:PUERTO:9000 (el mismo puerto)"
+docker run -d --name "${PREFIJO}b" -p "127.0.0.1:${PUERTO}:9000" $LIMITES "$IMAGEN" | cut -c1-12
+echo "código de salida: ${PIPESTATUS[0]}"
+
+echo
+echo "== 3. docker stop a"
+docker stop "${PREFIJO}a" >/dev/null
+echo "código de salida: $?"
+
+echo
+echo "== 4. docker run --rm --name c … healthcheck"
+docker run --rm --name "${PREFIJO}c" $LIMITES "$IMAGEN" healthcheck
+echo "código de salida: $?"
+
+echo
+echo "== 5. ¿Qué quedó?"
+docker ps -a --filter name="^${PREFIJO}" --format 'table {{.Names}}\t{{.Status}}'
+
+echo
+echo "== 6. Con el puerto ya libre, docker start b"
+docker start "${PREFIJO}b"
+echo "código de salida: $?"
+sleep 1
+docker ps --filter name="${PREFIJO}b" --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'
+echo "docker port: [$(docker port "${PREFIJO}b")]"
+curl -s -o /dev/null --max-time 3 -w 'curl al puerto: código HTTP %{http_code}\n' "http://127.0.0.1:${PUERTO}/"
+echo "pedido:   $(docker inspect --format '{{json .HostConfig.PortBindings}}' "${PREFIJO}b")"
+echo "conectado: $(docker inspect --format '{{json .NetworkSettings.Ports}}' "${PREFIJO}b")"
+
+echo
+echo "== 7. Dejar el equipo limpio"
+docker ps -aq --filter name="^${PREFIJO}" | xargs -r docker rm -f >/dev/null
+docker ps -a --filter name="^${PREFIJO}" --format '{{.Names}}' | wc -l
+```
+
+Corrida real:
+
+```text
+$ ./fig02_08.sh
+== 1. docker run -d --name a -p 127.0.0.1:PUERTO:9000
+código de salida: 0
+
+== 2. docker run -d --name b -p 127.0.0.1:PUERTO:9000 (el mismo puerto)
+docker: Error response from daemon: failed to set up container networking: driver failed programming external connectivity on endpoint curso-docker-b (dc1814c6dd261d5f6ac915d4b103a3e985a4489040144a3ce76dc22e9f918cf0): Bind for 127.0.0.1:9000 failed: port is already allocated
+
+Run 'docker run --help' for more information
+e40dfd88f4b3
+código de salida: 125
+
+== 3. docker stop a
+código de salida: 0
+
+== 4. docker run --rm --name c … healthcheck
+no sano: Get "http://127.0.0.1:9000/": dial tcp 127.0.0.1:9000: connect: connection refused
+código de salida: 1
+
+== 5. ¿Qué quedó?
+NAMES            STATUS
+curso-docker-b   Created
+curso-docker-a   Exited (0) 4 seconds ago
+
+== 6. Con el puerto ya libre, docker start b
+curso-docker-b
+código de salida: 0
+NAMES            STATUS   PORTS
+curso-docker-b   Up 1 second (health: starting)
+docker port: []
+curl al puerto: código HTTP 000
+pedido:   {"9000/tcp":[{"HostIp":"127.0.0.1","HostPort":"9000"}]}
+conectado: {}
+
+== 7. Dejar el equipo limpio
+0
+```
+
+La clave está en el bloque 6: `docker start` terminó con código 0 y el contenedor está `Up`, pero la columna PORTS está vacía, `docker port` no imprime nada, `curl` no obtiene respuesta (`000`), `PortBindings` sigue pidiendo `127.0.0.1:9000` y `NetworkSettings.Ports` está vacío (`{}`).
 
 ### Solución 2
 
@@ -871,7 +1082,7 @@ docker rm -f curso-docker-ejercicio
 1. Lo importante es el `-p 127.0.0.1:9002:9000`: el 9002 es **tuyo**, el 9000 sigue siendo el del servicio dentro del contenedor. Si escribiste `-p 127.0.0.1:9002:9002`, `curl` no obtiene respuesta, porque dentro del contenedor nadie escucha en el 9002.
 2. `memoria=33554432`, que es 32 × 1024 × 1024, y `cpus(nano)=250000000`, un cuarto de mil millones: un cuarto de CPU. Son la misma cuenta de 2.7.1 con otros números.
 3. La columna dirá `… / 32MiB`. Lo que va antes de la diagonal cambia; el límite no.
-4. `Up`, con o sin la marca de salud. Al escribir la lección se midió: justo después de pasarlo a caído, `Up 2 seconds (health: starting)`; doce segundos después, `Up 14 seconds (unhealthy)`. Sigue diciendo `Up` aunque esté marcado como no sano. Docker se entera de la caída gracias a la revisión de salud que trae la imagen, no porque sepa por su cuenta lo que contesta el servicio.
+4. `Up`, con o sin la marca de salud. Al escribir la lección se midió: justo después de pasarlo a caído, `Up 7 seconds (health: starting)`; doce segundos después, `Up 19 seconds (unhealthy)` (está en `fig02_09.salida.txt`). Sigue diciendo `Up` aunque esté marcado como no sano. Docker se entera de la caída gracias a la revisión de salud que trae la imagen, no porque sepa por su cuenta lo que contesta el servicio.
 5. `docker rm -f` está bien aquí: es un contenedor de práctica sin datos.
 
 ### Solución 3
@@ -894,9 +1105,108 @@ docker logs curso-docker-bitacora
 ```
 
 1. Si pegaste el bloque de una vez, los tres últimos renglones son las dos peticiones en modo caído y el cambio a sano: `GET / en modo caido` dos veces y `modo cambiado a sano`. Si escribiste los comandos uno por uno y tardaste más de cinco segundos, entre ellos aparecen renglones `GET / en modo …` de la revisión de salud (2.5): no los pediste tú, los pidió Docker, y tu `--tail 3` va a ser distinto.
-2. Con `--timestamps`, cada renglón empieza con la fecha y hora en que Docker lo recibió, en UTC (la `Z` del final lo indica), con nanosegundos: en la corrida de comprobación, `2026-10-21T08:39:45.967466997Z servicio-prueba: GET / en modo caido`. Con esa columna podrías contestar a qué hora exacta empezó la caída; recuerda convertirla a tu zona (en la Ciudad de México, resta 6 horas).
+2. Con `--timestamps`, cada renglón empieza con la fecha y hora en que Docker lo recibió, en UTC (la `Z` del final lo indica), con nanosegundos: en la corrida de comprobación, `2026-10-21T15:30:46.762332653Z servicio-prueba: GET / en modo caido`. Con esa columna podrías contestar a qué hora exacta empezó la caída; recuerda convertirla a tu zona (en la Ciudad de México, resta 6 horas).
 3. `--since 1m` muestra todo, si hiciste el ejercicio en menos de un minuto: el arranque, cada petición (incluida la del ciclo de espera) y cada cambio de modo, más un renglón por cada revisión de salud que haya ocurrido mientras tanto, así que el total crece con el tiempo que tardaste. Es la herramienta para «qué pasó desde las 10:00», cambiando `1m` por una hora.
 4. Después de `docker stop`, la bitácora sigue ahí, y ahora su último renglón es `servicio-prueba: recibí terminated, apagando`: el apagado también quedó escrito. Después de `docker rm`, `docker logs` falla con `Error response from daemon: No such container: curso-docker-bitacora`: el contenedor ya no existe, y con él se fue su bitácora. Esa es la evidencia que perderías si borraras antes de leer.
+
+Las comprobaciones de las soluciones 2 y 3 están en `fig02_09.sh`, que usa los mismos nombres que los ejercicios con el prefijo y el puerto de las variables:
+
+```bash
+#!/usr/bin/env bash
+# fig02_09.sh — Ejercicios 2 y 3: las comprobaciones de sus soluciones, con salida guardada.
+set -uo pipefail
+# Nombres y puerto por omisión: los del curso. Se pueden cambiar para no chocar
+# con otra corrida en el mismo equipo (PREFIJO=... PUERTO=... ./figNN.sh).
+PREFIJO="${PREFIJO:-curso-docker-}"
+PUERTO="${PUERTO:-9000}"
+IMAGEN="${PREFIJO}prueba:1.0.0"
+EJ="${PREFIJO}ejercicio"
+BIT="${PREFIJO}bitacora"
+trap 'docker rm -f "$EJ" "$BIT" >/dev/null 2>&1 || true' EXIT
+esperar() { for _ in $(seq 20); do curl -fs -o /dev/null "http://127.0.0.1:${PUERTO}/" && return; sleep 0.5; done; }
+
+echo "== Ejercicio 2: 32 MiB, un cuarto de CPU, 20 procesos"
+docker run -d --name "$EJ" -p "127.0.0.1:${PUERTO}:9000" \
+  --memory 32m --cpus 0.25 --pids-limit 20 "$IMAGEN" >/dev/null
+esperar
+curl -s "http://127.0.0.1:${PUERTO}/"
+docker inspect --format 'memoria={{.HostConfig.Memory}} cpus(nano)={{.HostConfig.NanoCpus}} pids={{.HostConfig.PidsLimit}}' "$EJ"
+docker stats --no-stream --format 'table {{.Name}}\t{{.MemUsage}}' "$EJ"
+curl -s -X POST "http://127.0.0.1:${PUERTO}/modo/caido"
+docker ps --filter name="$EJ" --format '{{.Names}} {{.Status}}'
+sleep 12
+docker ps --filter name="$EJ" --format '{{.Names}} {{.Status}}'
+docker rm -f "$EJ" >/dev/null
+
+echo
+echo "== Ejercicio 3: la bitácora como evidencia"
+docker run -d --name "$BIT" -p "127.0.0.1:${PUERTO}:9000" \
+  --memory 64m --cpus 0.5 --pids-limit 50 "$IMAGEN" >/dev/null
+esperar
+for i in 1 2 3; do curl -s "http://127.0.0.1:${PUERTO}/"; done
+curl -s -X POST "http://127.0.0.1:${PUERTO}/modo/caido"
+for i in 1 2; do curl -s "http://127.0.0.1:${PUERTO}/"; done
+curl -s -X POST "http://127.0.0.1:${PUERTO}/modo/sano"
+echo "-- 1. docker logs --tail 3"
+docker logs --tail 3 "$BIT"
+echo "-- 2. docker logs --timestamps"
+docker logs --timestamps "$BIT"
+echo "-- 3. docker logs --since 1m (renglones)"
+docker logs --since 1m "$BIT" | wc -l
+echo "-- 4. detenido: la bitácora sigue"
+docker stop "$BIT" >/dev/null
+docker logs --tail 3 "$BIT"
+echo "-- 4. borrado: ya no"
+docker rm "$BIT" >/dev/null
+docker logs "$BIT"
+echo "código de salida: $?"
+```
+
+Corrida real (los instantes de `--timestamps` y el tiempo hasta `unhealthy` cambian en cada corrida):
+
+```text
+$ ./fig02_09.sh
+== Ejercicio 2: 32 MiB, un cuarto de CPU, 20 procesos
+sano
+memoria=33554432 cpus(nano)=250000000 pids=20
+NAME                     MEM USAGE / LIMIT
+curso-docker-ejercicio   1.594MiB / 32MiB
+modo: caido
+curso-docker-ejercicio Up 7 seconds (health: starting)
+curso-docker-ejercicio Up 19 seconds (unhealthy)
+
+== Ejercicio 3: la bitácora como evidencia
+sano
+sano
+sano
+modo: caido
+caido
+caido
+modo: sano
+-- 1. docker logs --tail 3
+servicio-prueba: GET / en modo caido
+servicio-prueba: GET / en modo caido
+servicio-prueba: modo cambiado a sano
+-- 2. docker logs --timestamps
+2026-10-21T15:30:46.687217878Z servicio-prueba escuchando en :9000 en modo sano
+2026-10-21T15:30:46.712613659Z servicio-prueba: GET / en modo sano
+2026-10-21T15:30:46.727375778Z servicio-prueba: GET / en modo sano
+2026-10-21T15:30:46.734891393Z servicio-prueba: GET / en modo sano
+2026-10-21T15:30:46.744749971Z servicio-prueba: GET / en modo sano
+2026-10-21T15:30:46.751853815Z servicio-prueba: modo cambiado a caido
+2026-10-21T15:30:46.762332653Z servicio-prueba: GET / en modo caido
+2026-10-21T15:30:46.771142826Z servicio-prueba: GET / en modo caido
+2026-10-21T15:30:46.779167498Z servicio-prueba: modo cambiado a sano
+-- 3. docker logs --since 1m (renglones)
+9
+-- 4. detenido: la bitácora sigue
+servicio-prueba: GET / en modo caido
+servicio-prueba: modo cambiado a sano
+servicio-prueba: recibí terminated, apagando
+-- 4. borrado: ya no
+Error response from daemon: No such container: curso-docker-bitacora
+código de salida: 1
+```
 
 ### Solución 4
 
@@ -904,14 +1214,14 @@ Una respuesta posible: «Sin dirección, `-p 9000:9000` publica el puerto en tod
 
 ## Cómo sé que lo logré
 
-Corre los siete guiones de [`programas/02-contenedores-dia-a-dia/`](../programas/02-contenedores-dia-a-dia) en tu Mint, en orden (el `fig02_01.sh` construye la imagen que usan los demás; su bloque 1 solo muestra el error si la imagen todavía no existe), y compara tus salidas con las de esta lección. Lo que **no** se compara, porque cambia en cada corrida: los identificadores de contenedores e imágenes, los tiempos (`Up 2 seconds`, `3.08 s`, `242 ms`, los de la construcción), la memoria en uso que reporta `docker stats` y la memoria total de tu equipo, y `arm64` contra `amd64`. Todo lo demás debe salir igual. Marca cada punto:
+Corre los guiones `fig02_01.sh` a `fig02_07.sh` de [`programas/02-contenedores-dia-a-dia/`](../programas/02-contenedores-dia-a-dia) en tu Mint, en orden (el `fig02_01.sh` construye la imagen que usan los demás; su bloque 1 solo muestra el error si la imagen todavía no existe). `fig02_08.sh` a `fig02_10.sh` son los de los ejercicios 1 a 3 y de la sección 2.10.4 (el ejercicio 4 no lleva guion). Compara tus salidas con las de esta lección. Lo que **no** se compara, porque cambia en cada corrida: los identificadores de contenedores e imágenes, los tiempos (`Up 2 seconds`, `3.00 s`, `414 ms`, los de la construcción), la memoria en uso y la columna PIDS que reporta `docker stats`, la memoria total de tu equipo, el número de renglones de `docker inspect` (depende de la versión del daemon), algún renglón `GET / en modo …` de más en la bitácora que haya pedido la revisión de salud, y `arm64` contra `amd64`. Lo demás debe salir igual. Marca cada punto:
 
-- [ ] `docker image ls curso-docker-prueba:1.0.0 --format '{{.Repository}}:{{.Tag}} {{.Size}}'` imprime `curso-docker-prueba:1.0.0 15.1MB` (o un tamaño muy parecido en `amd64`).
+- [ ] `docker image ls curso-docker-prueba:1.0.0 --format '{{.Repository}}:{{.Tag}} {{.Size}}'` (el bloque 5 de `fig02_01.sh`) imprime `curso-docker-prueba:1.0.0 15.1MB` (o un tamaño muy parecido en `amd64`).
 - [ ] Con el servicio corriendo, `docker ps` muestra `127.0.0.1:9000->9000/tcp` en la columna PORTS, sin `0.0.0.0` ni `[::]`.
 - [ ] `curl -s http://127.0.0.1:9000/` contesta `sano`; en modo caído, `curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:9000/` contesta `503`, y `docker ps` sigue diciendo `Up`.
 - [ ] `docker inspect --format 'memoria={{.HostConfig.Memory}} cpus(nano)={{.HostConfig.NanoCpus}} pids={{.HostConfig.PidsLimit}} usuario={{.Config.User}}' curso-docker-prueba` imprime `memoria=67108864 cpus(nano)=500000000 pids=50 usuario=65532:65532`.
 - [ ] Provocaste y leíste los dos errores de `fig02_06.sh`, y sabes por qué después del segundo hay que borrar un contenedor en estado `Created`.
-- [ ] `docker stop curso-docker-prueba` tarda menos de un segundo y deja `Exited (0)`; la bitácora termina en `recibí terminated, apagando`.
+- [ ] `docker stop curso-docker-prueba` (este servicio atiende `SIGTERM`) tarda menos de un segundo y deja `Exited (0)`; la bitácora termina en `recibí terminated, apagando`.
 - [ ] Explicas, sin mirar, la diferencia entre detenido y borrado, y qué se pierde con cada uno.
 - [ ] Al terminar, `docker ps -a --filter name='^curso-docker-' --format '{{.Names}}' | wc -l` imprime `0`, y la imagen `curso-docker-prueba:1.0.0` **sigue** en `docker image ls`: la vas a necesitar.
 - [ ] Anotaste en tu bitácora qué cambia entre `-p 9000:9000` y `-p 127.0.0.1:9000:9000`, comprobado con `ss -ltn`.
@@ -945,6 +1255,9 @@ Todas consultadas el 21 de octubre de 2026.
 - [docker container stop](https://docs.docker.com/reference/cli/docker/container/stop/): `SIGTERM`, el plazo de 10 segundos, `SIGKILL` y `--timeout`.
 - [docker container rm](https://docs.docker.com/reference/cli/docker/container/rm/): `--force` con `SIGKILL` y la recomendación de `prune`.
 - [docker container prune](https://docs.docker.com/reference/cli/docker/container/prune/): que borra todos los contenedores detenidos, y sus filtros.
+- [docker container update](https://docs.docker.com/reference/cli/docker/container/update/): que los límites de memoria, CPU y procesos se cambian en caliente.
+- [Dockerfile reference, `HEALTHCHECK`](https://docs.docker.com/reference/dockerfile/#healthcheck): cuándo corre la primera revisión y cuándo el estado pasa de `starting` a `healthy` o `unhealthy`.
+- [RFC 9110, §15.6.4](https://www.rfc-editor.org/rfc/rfc9110.html#section-15.6.4): el código 503, *Service Unavailable*.
 - [docker image ls](https://docs.docker.com/reference/cli/docker/image/ls/): la vista de referencia del comando.
 - [Docker, «Port publishing and mapping»](https://docs.docker.com/engine/network/port-publishing/): la publicación en todas las direcciones por omisión, la advertencia de inseguridad y la publicación en `127.0.0.1`.
 - [Docker, «Packet filtering and firewalls»](https://docs.docker.com/engine/network/packet-filtering-firewalls/): por qué el tráfico de un contenedor no pasa por las reglas de `ufw`.

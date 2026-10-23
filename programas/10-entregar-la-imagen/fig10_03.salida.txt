@@ -1,0 +1,36 @@
+$ ./fig10_03.sh
+== 1. Este equipo y lo que su constructor sabe correr
+$ uname -m
+aarch64
+$ docker buildx inspect | grep -E '^Platforms:'
+Platforms:        linux/arm64, linux/amd64, linux/amd64/v2, linux/386
+
+== 2. El Dockerfile de la Lección 8, para linux/amd64: todo corre emulado (QEMU)
+$ docker buildx build --no-cache --platform linux/amd64 --build-arg VERSION=1.6.0 -o type=local,dest=salida-emulada emulada > emulada.log 2>&1; echo "construcción: código $?"
+construcción: código 1
+(tardó 0 s)
+$ { grep -m1 -E 'fatal error|panic:|SIGSEGV|qemu:' emulada.log || echo '(ningún renglón de error fatal)'; } | sed -E 's/^#[0-9]+ ([0-9.]+ )?//' | cut -c1-110
+fatal error: fault
+$ grep -E '^ERROR' emulada.log
+ERROR: failed to build: failed to solve: process "/bin/sh -c go test ./..." did not complete successfully: exit code: 2
+(el mismo intento, dos veces más, para ver si el fallo es siempre el mismo)
+$ for n in 2 3; do docker buildx build --no-cache --platform linux/amd64 --build-arg VERSION=1.6.0 -o type=local,dest=salida-emulada emulada > emulada-$n.log 2>&1; echo "intento $n: código $?"; { grep -m1 -E 'fatal error|panic:|SIGSEGV|qemu:' emulada-$n.log || echo '(ningún renglón de error fatal)'; } | sed -E 's/^#[0-9]+ ([0-9.]+ )?//' | cut -c1-110; done
+intento 2: código 1
+fatal error: found pointer to free object
+intento 3: código 1
+fatal error: fault
+
+== 3. fig10_01.Dockerfile, para las DOS plataformas: compila cruzado
+$ docker buildx build --no-cache --platform linux/amd64,linux/arm64 --build-arg VERSION=1.6.0 -o type=local,dest=salida-cruzada cruzada > cruzada.log 2>&1; echo "construcción: código $?"
+construcción: código 0
+(tardó 65 s)
+$ grep -oE '\[linux/[a-z0-9>-]+ (pruebas|binario) [0-9]/[0-9]\]' cruzada.log | sort -u
+[linux/arm64 binario 1/1]
+[linux/arm64 pruebas 1/1]
+[linux/arm64->amd64 binario 1/1]
+$ ls salida-cruzada
+linux_amd64
+linux_arm64
+$ maquina salida-cruzada/linux_amd64/revisor; maquina salida-cruzada/linux_arm64/revisor
+salida-cruzada/linux_amd64/revisor: 3e 00 = x86-64 (amd64)
+salida-cruzada/linux_arm64/revisor: b7 00 = AArch64 (arm64)

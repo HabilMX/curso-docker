@@ -1,0 +1,3 @@
+$ PREFIJO=curso-docker-l04- ./fig04_07.sh 2>&1
+go: go.mod file not found in current directory or any parent directory; see 'go help modules'
+código: 1

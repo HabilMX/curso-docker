@@ -1,4 +1,5 @@
-# Lo que nunca viaja al daemon al construir.
+# Lo que no entra a la imagen. (El Dockerfile y este archivo sí viajan al
+# constructor porque los necesita, pero COPY no los mete en la imagen.)
 .git
 .env
 *.tar

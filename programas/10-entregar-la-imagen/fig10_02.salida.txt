@@ -1,0 +1,58 @@
+$ ./fig10_02.sh
+== 1. Un registro local, publicado solo en 127.0.0.1
+$ docker run -d --name curso-docker-registro-fig10 -p 127.0.0.1:5000:5000 registry:3.1.2 >/dev/null && echo registro arriba
+registro arriba
+$ curl -s http://127.0.0.1:5000/v2/_catalog
+{"repositories":[]}
+$ docker image inspect registry:3.1.2 --format '{{json .Config.Volumes}}'
+{"/var/lib/registry":{}}
+
+== 2. Construir la 1.6.0 y publicarla con la etiqueta fig10
+$ docker build -q --build-arg VERSION=1.6.0 -t localhost:5000/curso-docker-revisor:fig10 . >/dev/null && docker push -q localhost:5000/curso-docker-revisor:fig10
+localhost:5000/curso-docker-revisor:fig10
+$ docker buildx imagetools inspect localhost:5000/curso-docker-revisor:fig10 --format '{{json .Manifest.Digest}}'; echo
+"sha256:59e431fa44c713637b6d1459ee762bb266764eb80941d7e9aec9109f6bf22b0c"
+$ curl -s http://127.0.0.1:5000/v2/_catalog; curl -s http://127.0.0.1:5000/v2/curso-docker-revisor/tags/list
+{"repositories":["curso-docker-revisor"]}
+{"name":"curso-docker-revisor","tags":["fig10"]}
+
+== 3. Otra construcción (VERSION=1.6.1) con la MISMA etiqueta
+$ docker build -q --build-arg VERSION=1.6.1 -t localhost:5000/curso-docker-revisor:fig10 . >/dev/null && docker push -q localhost:5000/curso-docker-revisor:fig10
+localhost:5000/curso-docker-revisor:fig10
+$ docker buildx imagetools inspect localhost:5000/curso-docker-revisor:fig10 --format '{{json .Manifest.Digest}}'; echo
+"sha256:f60d25f0809179fefc1966ea14609f73dd6caf3db196e40db52d7b55dc7f42a1"
+$ curl -s http://127.0.0.1:5000/v2/curso-docker-revisor/tags/list
+{"name":"curso-docker-revisor","tags":["fig10"]}
+
+== 4. Lo que trae cada referencia
+(la copia local que dejó la construcción)
+$ docker image ls localhost:5000/curso-docker-revisor --format '{{.Repository}}:{{.Tag}}' | grep . || echo '(ninguna)'
+localhost:5000/curso-docker-revisor:fig10
+(y después de borrarla)
+$ docker image ls localhost:5000/curso-docker-revisor --format '{{.Repository}}:{{.Tag}}' | grep . || echo '(ninguna)'
+(ninguna)
+$ docker pull -q localhost:5000/curso-docker-revisor:fig10 && docker run --rm localhost:5000/curso-docker-revisor:fig10 version
+localhost:5000/curso-docker-revisor:fig10
+1.6.1
+$ docker pull -q localhost:5000/curso-docker-revisor@sha256:59e431fa44c713637b6d1459ee762bb266764eb80941d7e9aec9109f6bf22b0c && docker run --rm localhost:5000/curso-docker-revisor@sha256:59e431fa44c713637b6d1459ee762bb266764eb80941d7e9aec9109f6bf22b0c version
+localhost:5000/curso-docker-revisor@sha256:59e431fa44c713637b6d1459ee762bb266764eb80941d7e9aec9109f6bf22b0c
+1.6.0
+
+== 5. La de digest, endurecida como en la Lección 8: sin nada en /datos
+$ docker run -d --name curso-docker-revisor-fig10 -p 127.0.0.1:8080:8080 --read-only --cap-drop ALL --security-opt no-new-privileges --init -e REVISOR_SERVICIOS='propio http://127.0.0.1:8080/salud' localhost:5000/curso-docker-revisor@sha256:59e431fa44c713637b6d1459ee762bb266764eb80941d7e9aec9109f6bf22b0c >/dev/null && echo 'contenedor arriba'
+contenedor arriba
+$ curl -s http://127.0.0.1:8080/salud
+{"estado":"vivo","version":"1.6.0"}
+$ curl -s -w ' [%{http_code}]\n' http://127.0.0.1:8080/api/estados | sed -E 's/reporte-[0-9]+/reporte-<n>/'
+{"error":"no pude guardar el reporte: open /datos/.reporte-<n>.tmp: read-only file system"}
+ [500]
+
+== 6. La misma, con un volumen en /datos (un contenedor no recibe un volumen después: se borra y se crea otro)
+$ docker rm -f curso-docker-revisor-fig10 >/dev/null && echo 'contenedor anterior borrado'
+contenedor anterior borrado
+$ docker run -d --name curso-docker-revisor-fig10 -p 127.0.0.1:8080:8080 --read-only --cap-drop ALL --security-opt no-new-privileges --init -v curso-docker-reportes-fig10:/datos -e REVISOR_SERVICIOS='propio http://127.0.0.1:8080/salud' localhost:5000/curso-docker-revisor@sha256:59e431fa44c713637b6d1459ee762bb266764eb80941d7e9aec9109f6bf22b0c >/dev/null && echo 'contenedor arriba'
+contenedor arriba
+$ curl -s -o /dev/null -w '[%{http_code}]\n' http://127.0.0.1:8080/api/estados
+[200]
+$ docker inspect --format '{{.Config.Image}}' curso-docker-revisor-fig10 | sed -E 's/@sha256:([0-9a-f]{12}).*/@sha256:\1…/'
+localhost:5000/curso-docker-revisor@sha256:59e431fa44c7…

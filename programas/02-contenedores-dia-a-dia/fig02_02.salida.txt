@@ -1,9 +1,9 @@
 == 1. Arrancar en segundo plano
-c516467655b6
+7f01c45325dd
 
 == 2. Lo que está corriendo
-NAMES                 IMAGE                       STATUS                            PORTS
-curso-docker-prueba   curso-docker-prueba:1.0.0   Up 2 seconds (health: starting)   127.0.0.1:9000->9000/tcp
+NAMES                     IMAGE                           STATUS                            PORTS
+curso-docker-l02-prueba   curso-docker-l02-prueba:1.0.0   Up 2 seconds (health: starting)   127.0.0.1:18020->9000/tcp
 
 == 3. Consultarlo en sus tres modos
 sano
@@ -12,7 +12,7 @@ caido
 código HTTP: 503
 modo: lento
 lento
-código HTTP: 200 en 3.081298 s
+código HTTP: 200 en 3.002647 s
 modo: sano
 modo: sano
 

@@ -6,6 +6,7 @@ set -euo pipefail
 # con otra corrida en el mismo equipo (PREFIJO=... PUERTO=... ./figNN.sh).
 PREFIJO="${PREFIJO:-curso-docker-}"
 PUERTO="${PUERTO:-8080}"
+LIMITES="--memory 64m --cpus 0.5 --pids-limit 50"   # los tres límites de la Lección 2
 AQUI="$(cd "$(dirname "$0")" && pwd)"
 TRABAJO="$(mktemp -d)"
 
@@ -37,7 +38,7 @@ trap 'docker rm -f ${PREFIJO}revisor-shell >/dev/null 2>&1; docker rmi -f ${PREF
 
 titulo "docker stop con forma shell"
 docker build -q -t ${PREFIJO}revisor:1.0.0-shell -f Dockerfile.forma-shell . >/dev/null
-docker run -d --name ${PREFIJO}revisor-shell -e REVISOR_SERVICIOS='propio http://127.0.0.1:8080/salud' ${PREFIJO}revisor:1.0.0-shell >/dev/null
+docker run -d --name ${PREFIJO}revisor-shell ${LIMITES} -e REVISOR_SERVICIOS='propio http://127.0.0.1:8080/salud' ${PREFIJO}revisor:1.0.0-shell >/dev/null
 sleep 1
 muestra "docker top ${PREFIJO}revisor-shell -o pid,user,args"
 inicio=$(t); docker stop ${PREFIJO}revisor-shell >/dev/null; fin=$(t)

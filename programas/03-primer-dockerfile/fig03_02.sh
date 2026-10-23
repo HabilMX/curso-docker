@@ -22,3 +22,17 @@ echo
 echo "== 4. ¿Existe ese usuario en /etc/passwd de la imagen?"
 docker run --rm --name "${PREFIJO}quien" "$IMAGEN" \
   sh -c 'grep -q ":10001:" /etc/passwd && echo "sí está" || echo "no está"'
+
+echo
+echo "== 5. ¿Puede ese usuario abrir un puerto bajo? (primer puerto sin privilegios)"
+docker run --rm --name "${PREFIJO}quien" --user 10001:10001 "$IMAGEN" \
+  cat /proc/sys/net/ipv4/ip_unprivileged_port_start
+
+echo
+echo "== 6. Lo mismo con la red del anfitrión (--network host)"
+docker run --rm --name "${PREFIJO}quien" --network host --user 10001:10001 "$IMAGEN" \
+  cat /proc/sys/net/ipv4/ip_unprivileged_port_start
+
+echo
+echo "== 7. Y el valor del propio anfitrión (sin contenedor)"
+cat /proc/sys/net/ipv4/ip_unprivileged_port_start

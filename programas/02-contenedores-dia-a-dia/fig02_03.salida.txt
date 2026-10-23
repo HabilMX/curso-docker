@@ -11,5 +11,5 @@ no sano: GET / respondió 503
 código de salida: 1
 
 == 4. exec en un contenedor detenido
-Error response from daemon: container 78614f9ea0da425237a13924f63235bf6a1e45629efd4000d3764b5c54e23dcb is not running
+Error response from daemon: container 9601e9716cd5e38f75a59d4cfb0b59706907808aaefba701a04fb9244a931c4a is not running
 código de salida: 1

@@ -6,6 +6,7 @@ set -euo pipefail
 # con otra corrida en el mismo equipo (PREFIJO=... PUERTO=... ./figNN.sh).
 PREFIJO="${PREFIJO:-curso-docker-}"
 PUERTO="${PUERTO:-8080}"
+LIMITES="--memory 64m --cpus 0.5 --pids-limit 50"   # los tres límites de la Lección 2
 AQUI="$(cd "$(dirname "$0")" && pwd)"
 TRABAJO="$(mktemp -d)"
 
@@ -39,12 +40,12 @@ titulo "Construir y medir"
 muestra "docker build -q -t ${PREFIJO}revisor:1.0.0 . >/dev/null && docker image ls ${PREFIJO}revisor:1.0.0 --format '{{.Repository}}:{{.Tag}} {{.Size}}'"
 
 titulo "El error: arrancar sin configuración"
-muestra "docker run --name ${PREFIJO}revisor ${PREFIJO}revisor:1.0.0"
+muestra "docker run --name ${PREFIJO}revisor ${LIMITES} ${PREFIJO}revisor:1.0.0"
 muestra "docker ps -a --filter name=${PREFIJO}revisor --format '{{.Names}} {{.Status}}'"
 docker rm ${PREFIJO}revisor >/dev/null
 
 titulo "Correrlo bien"
-muestra "docker run -d --name ${PREFIJO}revisor -p 127.0.0.1:${PUERTO}:8080 -e REVISOR_SERVICIOS='propio http://127.0.0.1:8080/salud' ${PREFIJO}revisor:1.0.0 >/dev/null"
+muestra "docker run -d --name ${PREFIJO}revisor -p 127.0.0.1:${PUERTO}:8080 ${LIMITES} -e REVISOR_SERVICIOS='propio http://127.0.0.1:8080/salud' ${PREFIJO}revisor:1.0.0 >/dev/null"
 esperar_http "http://127.0.0.1:${PUERTO}/salud"
 muestra "curl -s http://127.0.0.1:${PUERTO}/salud"
 muestra "curl -s 'http://127.0.0.1:${PUERTO}/api/estados?formato=tabla' | sed -E 's/[0-9.]+(ms|µs)/<tiempo>/'"

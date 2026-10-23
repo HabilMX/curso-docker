@@ -1,6 +1,6 @@
 == 1. Correr la imagen antes de construirla
-Unable to find image 'curso-docker-prueba:1.0.0' locally
-docker: Error response from daemon: pull access denied for curso-docker-prueba, repository does not exist or may require 'docker login'
+Unable to find image 'curso-docker-l02-prueba:1.0.0' locally
+docker: Error response from daemon: pull access denied for curso-docker-l02-prueba, repository does not exist or may require 'docker login'
 
 Run 'docker run --help' for more information
 código de salida: 125
@@ -9,66 +9,83 @@ código de salida: 125
 #0 building with "default" instance using docker driver
 
 #1 [internal] load build definition from Dockerfile
-#1 transferring dockerfile: 836B done
-#1 DONE 0.0s
+#1 transferring dockerfile: 836B 0.1s done
+#1 DONE 0.1s
 
 #2 resolve image config for docker-image://docker.io/docker/dockerfile:1
-#2 DONE 0.2s
+#2 DONE 0.5s
 
 #3 docker-image://docker.io/docker/dockerfile:1@sha256:4edf897a3ffa55b89f906fc8cc78afdb3f1834cc9c7083565e611a8a7d5fe99e
 #3 resolve docker.io/docker/dockerfile:1@sha256:4edf897a3ffa55b89f906fc8cc78afdb3f1834cc9c7083565e611a8a7d5fe99e 0.0s done
 #3 CACHED
 
 #4 [internal] load metadata for docker.io/library/golang:1.27.3-trixie@sha256:604106102d33b1084e37ca08adf98ac0813624ae8595bd0d7f3965ecebded09c
-#4 DONE 0.3s
+#4 DONE 0.2s
 
 #5 [internal] load metadata for gcr.io/distroless/static-debian13:nonroot@sha256:516757106de35205efb70b91ba03f6f1298424a0678c603255cf2852a7000087
-#5 DONE 0.4s
+#5 DONE 0.2s
 
-#6 [1/4] FROM docker.io/library/golang:1.27.3-trixie@sha256:604106102d33b1084e37ca08adf98ac0813624ae8595bd0d7f3965ecebded09c
-#6 resolve docker.io/library/golang:1.27.3-trixie@sha256:604106102d33b1084e37ca08adf98ac0813624ae8595bd0d7f3965ecebded09c 0.0s done
+#6 [internal] load .dockerignore
+#6 transferring context: 2B done
 #6 DONE 0.0s
 
-#7 [2/4] WORKDIR /src
-#7 CACHED
+#7 [internal] load build context
+#7 DONE 0.0s
 
-#8 [internal] load .dockerignore
-#8 transferring context: 2B done
-#8 DONE 0.0s
+#8 [stage-1 1/2] FROM gcr.io/distroless/static-debian13:nonroot@sha256:516757106de35205efb70b91ba03f6f1298424a0678c603255cf2852a7000087
+#8 resolve gcr.io/distroless/static-debian13:nonroot@sha256:516757106de35205efb70b91ba03f6f1298424a0678c603255cf2852a7000087
+#8 resolve gcr.io/distroless/static-debian13:nonroot@sha256:516757106de35205efb70b91ba03f6f1298424a0678c603255cf2852a7000087 0.2s done
+#8 DONE 0.3s
 
-#9 [internal] load build context
-#9 transferring context: 3.78kB done
-#9 DONE 0.0s
+#9 [compilacion 1/4] FROM docker.io/library/golang:1.27.3-trixie@sha256:604106102d33b1084e37ca08adf98ac0813624ae8595bd0d7f3965ecebded09c
+#9 resolve docker.io/library/golang:1.27.3-trixie@sha256:604106102d33b1084e37ca08adf98ac0813624ae8595bd0d7f3965ecebded09c
+#9 resolve docker.io/library/golang:1.27.3-trixie@sha256:604106102d33b1084e37ca08adf98ac0813624ae8595bd0d7f3965ecebded09c 0.2s done
+#9 DONE 0.3s
 
-#10 [stage-1 1/2] FROM gcr.io/distroless/static-debian13:nonroot@sha256:516757106de35205efb70b91ba03f6f1298424a0678c603255cf2852a7000087
-#10 resolve gcr.io/distroless/static-debian13:nonroot@sha256:516757106de35205efb70b91ba03f6f1298424a0678c603255cf2852a7000087 0.0s done
+#8 [stage-1 1/2] FROM gcr.io/distroless/static-debian13:nonroot@sha256:516757106de35205efb70b91ba03f6f1298424a0678c603255cf2852a7000087
+#8 CACHED
+
+#10 [compilacion 2/4] WORKDIR /src
 #10 CACHED
 
+#7 [internal] load build context
+#7 transferring context: 54B done
+#7 DONE 0.0s
+
 #11 [compilacion 3/4] COPY go.mod main.go ./
-#11 DONE 0.0s
+#11 DONE 0.9s
 
 #12 [compilacion 4/4] RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/servicio-prueba .
-#12 DONE 32.9s
+#12 DONE 236.8s
 
 #13 [stage-1 2/2] COPY --from=compilacion /out/servicio-prueba /servicio-prueba
-#13 DONE 0.1s
+#13 DONE 2.4s
 
 #14 exporting to image
 #14 exporting layers
-#14 exporting layers 0.3s done
-#14 exporting manifest sha256:67794985f70fd1a05e0340557dc2cde6eea79552eeef2a49419327110e2d9dc0 done
-#14 exporting config sha256:8e3796fe420d4e3b9ea5f63f5ea053ba35603373fbd4563dba638dd6baf708ee done
-#14 exporting attestation manifest sha256:efb90a758b7498517579434d8a262502596b2fce6d9a4b001803ee9cc6197d3b 0.0s done
-#14 exporting manifest list sha256:06306fe8744c50b1edb90e56702b9f4406d2db03305f7e1b7c9320d923fa3907 done
-#14 naming to docker.io/library/curso-docker-prueba:1.0.0 done
-#14 unpacking to docker.io/library/curso-docker-prueba:1.0.0 0.1s done
-#14 DONE 0.5s
+#14 exporting layers 2.1s done
+#14 exporting manifest sha256:1c8afd3011b1b78feb6d6d666f8a3a56ccbc28376efb6a2c55cc183e80eb0892
+#14 exporting manifest sha256:1c8afd3011b1b78feb6d6d666f8a3a56ccbc28376efb6a2c55cc183e80eb0892 0.3s done
+#14 exporting config sha256:b03af2ba3fc5b02668360cfc0bb63d0f5758ff2496551c7a2c485cf54248228b
+#14 exporting config sha256:b03af2ba3fc5b02668360cfc0bb63d0f5758ff2496551c7a2c485cf54248228b 0.7s done
+#14 exporting attestation manifest sha256:3778b6997c36ad7bb01ffbb377dac3ec6247a963973b239c70470e4895c2bbec
+#14 exporting attestation manifest sha256:3778b6997c36ad7bb01ffbb377dac3ec6247a963973b239c70470e4895c2bbec 1.2s done
+#14 exporting manifest list sha256:56406ca1d7618b9c684cd0ce7569234d6c95c5f956dbe109b766d78b0eda4ccd
+#14 exporting manifest list sha256:56406ca1d7618b9c684cd0ce7569234d6c95c5f956dbe109b766d78b0eda4ccd 0.4s done
+#14 naming to docker.io/library/curso-docker-l02-prueba:1.0.0
+#14 naming to docker.io/library/curso-docker-l02-prueba:1.0.0 0.2s done
+#14 unpacking to docker.io/library/curso-docker-l02-prueba:1.0.0
+#14 unpacking to docker.io/library/curso-docker-l02-prueba:1.0.0 0.3s done
+#14 DONE 6.1s
 código de salida: 0
 
 == 3. La imagen ya está en tu equipo
 WARNING: This output is designed for human readability. For machine-readable output, please use --format.
-IMAGE                       ID             DISK USAGE   CONTENT SIZE   EXTRA
-curso-docker-prueba:1.0.0   06306fe8744c       15.1MB         3.37MB        
+IMAGE                           ID             DISK USAGE   CONTENT SIZE   EXTRA
+curso-docker-l02-prueba:1.0.0   56406ca1d761       15.1MB         3.37MB        
 
 == 4. Y el intento fallido no dejó contenedores
 0
+
+== 5. El tamaño, con un formato propio
+curso-docker-l02-prueba:1.0.0 15.1MB

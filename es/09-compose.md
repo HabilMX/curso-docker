@@ -8,7 +8,7 @@ Es jueves, 5:40 de la tarde. Mañana a las 9:00 entra una practicante nueva al e
 
 **Qué aprendes:** qué es Compose y qué es un proyecto; cómo se traduce cada opción de `docker run` a una clave del archivo; `docker compose config` para validar y para ver lo que Compose entendió; `up`, `ps`, `logs`, `stop` y `down`, y por qué pedir `up` dos veces no hace nada la segunda; cómo nombra Compose sus contenedores, redes y volúmenes; `depends_on` con `service_healthy` y por qué «arrancado» no es «listo»; los secretos de Compose y la trampa de sus permisos; las anclas de YAML y los campos `x-` para no repetir; `pull_policy: never`; el error de tres servicios que construyen la misma imagen y el de `--wait` con un servicio que falla a propósito; y qué es `docker init` y por qué no lo usamos.
 
-**De dónde vienes.** De la [Lección 8](08-volumenes-y-redes.md) traes el estado final que esta lección pasa a un archivo: la imagen `curso-docker-revisor:1.5.0`, que guarda su reporte en `/datos` por omisión y trae esa carpeta con dueño `65532`; el volumen del reporte; la red normal por donde se publica el puerto y la red interna sin salida donde vive el servicio de prueba. De la [Lección 7](07-salud-y-ciclo-de-vida.md) traes las opciones endurecidas (`--read-only`, `--cap-drop ALL`, `no-new-privileges`, `--init`, límites), la política de reinicio `unless-stopped` y una promesa: usar la salud para ordenar el arranque de varios servicios. De la [Lección 6](06-configuracion-y-secretos.md) traes el token en `secretos/revisor_token.txt`, con permisos `644`, y otra promesa: los secretos de Compose. Y de la [Lección 2](02-contenedores-dia-a-dia.md), la imagen `curso-docker-prueba:1.0.0` y la costumbre de publicar puertos solo en `127.0.0.1`. Tu carpeta tiene `revisor/` (con su `Dockerfile`, su `.dockerignore` y `secretos/`) y, al lado, `servicio-prueba/`.
+**De dónde vienes.** De la [Lección 8](08-volumenes-y-redes.md) traes el estado final que esta lección pasa a un archivo: la imagen `curso-docker-revisor:1.5.0`, que guarda su reporte en `/datos` por omisión y trae esa carpeta con dueño `65532`; el volumen del reporte; la red normal por donde se publica el puerto y la red interna sin salida donde vive el servicio de prueba. De la [Lección 7](07-salud-y-ciclo-de-vida.md) traes las opciones endurecidas (`--read-only`, `--cap-drop ALL`, `no-new-privileges`, `--init`, límites), la política de reinicio `unless-stopped` y una promesa: usar la salud para ordenar el arranque de varios servicios. De la [Lección 6](06-configuracion-y-secretos.md) traes el token en `secretos/revisor_token.txt`, con permisos `644` (un permiso que solo vale para un token de mentira: en 9.8.3 mides quién puede leerlo y en 9.8.4 lo cierras), y otra promesa: los secretos de Compose. Y de la [Lección 2](02-contenedores-dia-a-dia.md), la imagen `curso-docker-prueba:1.0.0` y la costumbre de publicar puertos solo en `127.0.0.1`. Tu carpeta tiene `revisor/` (con su `Dockerfile`, su `.dockerignore` y `secretos/`) y, al lado, `servicio-prueba/`.
 
 **Qué no hace esta lección.** No cambia el Dockerfile: la imagen es la misma 1.5.0 de la Lección 8, solo que ahora la construye Compose. No enseña Docker Swarm ni los campos de `deploy` que solo tienen sentido en un clúster: este curso trabaja en un equipo, y el paso a varios equipos es el curso de Kubernetes. No usa perfiles, archivos de anulación (`compose.override.yaml`) ni `include`: son útiles cuando un proyecto crece, y con un solo archivo se aprende primero lo que todos ellos combinan. No usa `docker compose watch` ni montajes de código para desarrollo, porque el `revisor` aquí se entrega, no se programa. Y no publica la imagen en ningún registro: eso es la [Lección 10](10-entregar-la-imagen.md).
 
@@ -22,6 +22,7 @@ Es jueves, 5:40 de la tarde. Mañana a las 9:00 entra una practicante nueva al e
 - Provocar y explicar el `500` de `read-only file system` cuando el `revisor` endurecido no tiene nada montado en `/datos`.
 - Ordenar el arranque con `depends_on` y `condition: service_healthy`, y explicar por qué el `revisor` espera solo a la copia sana.
 - Entregar el token como secreto de Compose, comprobar que no aparece en `docker inspect` ni en `docker compose config`, y diagnosticar el `permission denied` de un archivo en `600`.
+- Medir quién puede leer el archivo del token con `644`, `600` y `640` (con `ls -l`, `stat` y una cuenta sin privilegios), y dejarlo con el permiso mínimo que aún deja trabajar al `revisor`.
 - Reconocer el choque de tres servicios que construyen la misma etiqueta y el fallo de `up --wait` con un servicio caído a propósito, y elegir la alternativa correcta.
 
 ## El porqué antes del cómo
@@ -62,7 +63,7 @@ Lo que va dentro del archivo no lo inventa Docker cada año: lo define la **espe
 
 #### 9.1.2 Un servicio no es un contenedor
 
-Aquí está la primera idea nueva, y conviene no pasarla rápido. En la Lección 8 creabas **contenedores**: `curso-docker-revisor`, `curso-docker-prueba`. En Compose describes **servicios**: `revisor`, `prueba`. Un servicio es la receta («corre esta imagen, con estas opciones, en estas redes»); el contenedor es lo que sale de aplicar la receta. Normalmente un servicio da un contenedor, pero la diferencia importa por dos razones que vas a ver en la lección. Una: el nombre que usan los otros contenedores para encontrarlo por DNS es el del **servicio** (`prueba`), no el del contenedor. Dos: cuando cambias la receta, Compose tira el contenedor viejo y crea uno nuevo; el servicio sigue siendo el mismo.
+Aquí está la primera idea nueva, y conviene no pasarla rápido. En la Lección 8 creabas **contenedores**: `curso-docker-revisor`, `curso-docker-prueba`. En Compose describes **servicios**: `revisor`, `prueba`. Un servicio es la receta («corre esta imagen, con estas opciones, en estas redes»); el contenedor es lo que sale de aplicar la receta. Normalmente un servicio da un contenedor, pero la diferencia importa por dos razones que vas a ver en la lección. Una: el nombre que conviene usar para encontrarlo por DNS es el del **servicio** (`prueba`), no el del contenedor. El nombre del contenedor también resuelve dentro de la red (se comprobó), pero lleva el nombre del proyecto y un número de réplica, que cambian de una carpeta a otra. Dos: cuando cambias la receta, Compose tira el contenedor viejo y crea uno nuevo; el servicio sigue siendo el mismo.
 
 #### 9.1.3 El proyecto: el apellido de todo
 
@@ -160,7 +161,7 @@ Hay dos claves de la tabla que merecen una frase más. La primera, `security_opt
 
 #### 9.2.3 Sin `version:`
 
-El archivo no empieza con `version: "3.8"` ni nada parecido, y no es descuido. La especificación dice que el elemento `version` existe solo por compatibilidad, que «es solo informativo» y que si lo usas vas a recibir «un aviso de que es obsoleto» ([especificación, `version` y `name`](https://docs.docker.com/reference/compose-file/version-and-name/)). Lo vas a ver en casi todos los tutoriales de hace unos años, porque el Compose antiguo lo exigía para saber qué claves aceptar. El de hoy siempre aplica la especificación vigente. Si lo encuentras, bórralo.
+El archivo no empieza con `version: "3.8"` ni nada parecido, y no es descuido. La especificación dice que el elemento `version` existe solo por compatibilidad, que «es solo informativo» y que si lo usas vas a recibir «un aviso de que es obsoleto» ([especificación, `version` y `name`](https://docs.docker.com/reference/compose-file/version-and-name/)). Lo vas a ver en casi todos los tutoriales de hace unos años, porque el Compose antiguo lo exigía para saber qué claves aceptar. El de hoy aplica la especificación vigente en la versión que tengas instalada y no necesita ese campo. Si lo encuentras, bórralo.
 
 ### 9.3 Validar y leer lo que Compose entendió
 
@@ -196,7 +197,7 @@ mkdir -p "$TRABAJO/revisor"
 cp -R "$AQUI/../revisor/." "$TRABAJO/revisor/"
 cp -R "$AQUI/../servicio-prueba" "$TRABAJO/servicio-prueba"
 cp -R "$AQUI/estado/Dockerfile" "$AQUI/estado/.dockerignore" "$AQUI/estado/secretos" "$TRABAJO/revisor/"
-chmod 644 "$TRABAJO/revisor/secretos/revisor_token.txt"
+chmod 644 "$TRABAJO/revisor/secretos/revisor_token.txt"   # 644: solo porque el token es de mentira (9.8.4)
 sed -e "s/curso-docker-revisor:1.5.0/${PREFIJO}revisor:fig09/" \
     -e "s/curso-docker-prueba:1.0.0/${PREFIJO}prueba:fig09/" \
     -e "s/127.0.0.1:8080:8080/127.0.0.1:${PUERTO}:8080/" \
@@ -368,7 +369,7 @@ Mira los nombres con cuidado, porque los vas a escribir en `docker inspect`, en 
 
 Como el proyecto empieza con `curso-docker`, todo sigue teniendo el prefijo del curso, y la costumbre de la Lección 2 (poder borrar lo del curso sin tocar lo demás) se mantiene. Además, Compose pone en cada cosa que crea la etiqueta `com.docker.compose.project=<proyecto>`. Es la forma limpia de preguntar «qué es de este proyecto», y el bloque 5 la usa: `docker volume ls --filter label=com.docker.compose.project=…`.
 
-Y una pregunta que seguramente te estás haciendo: si el contenedor se llama `curso-docker-fig09-prueba-1`, ¿por qué el `revisor` lo busca como `http://prueba:9000/`? Porque en las redes de un proyecto, cada contenedor se registra en el DNS integrado (el `127.0.0.11` de la Lección 8) con el nombre de su **servicio**. La documentación lo explica con su ejemplo: el contenedor del servicio `web` se une a la red «con el nombre `web`» ([Docker, «Networking in Compose»](https://docs.docker.com/compose/how-tos/networking/)). Eso te permite escribir `REVISOR_SERVICIOS` sin saber cómo se va a llamar el proyecto: el mismo archivo funciona en tu carpeta, en la de la practicante y en el guion.
+Y una pregunta que seguramente te estás haciendo: si el contenedor se llama `curso-docker-fig09-prueba-1`, ¿por qué el `revisor` lo busca como `http://prueba:9000/`? Porque en las redes de un proyecto, cada contenedor se registra en el DNS integrado (el `127.0.0.11` de la Lección 8) con el nombre de su **servicio** y también con el suyo propio; en una prueba aparte, los dos nombres resolvieron a la misma dirección. El del servicio es el que conviene escribir, porque es el único que no depende del proyecto ni del número de réplica. La documentación lo explica con su ejemplo: el contenedor del servicio `web` se une a la red «con el nombre `web`» ([Docker, «Networking in Compose»](https://docs.docker.com/compose/how-tos/networking/)). Eso te permite escribir `REVISOR_SERVICIOS` sin saber cómo se va a llamar el proyecto: el mismo archivo funciona en tu carpeta, en la de la practicante y en el guion.
 
 La misma página dice qué pasa si no declaras redes: Compose crea **una** red, `<proyecto>_default`, y conecta ahí a todos los servicios. Tu archivo declara las suyas, y por eso en la salida no hay ninguna `_default`. No es un detalle: con la red por omisión de Compose, el servicio de prueba tendría salida a internet, y la Lección 8 decidió que no la necesita.
 
@@ -483,6 +484,8 @@ Queda una decisión: ¿quién construye la imagen `curso-docker-prueba:1.0.0`? S
 
 Y para que esas dos no salgan a buscarla a internet, el ancla lleva `pull_policy: never`. La referencia lo define así: con `never`, Compose «no descarga la imagen de un registro y se basa en la imagen guardada en la plataforma» ([referencia de los servicios de Compose](https://docs.docker.com/reference/compose-file/services/)). ¿Qué pasa sin esa línea? Lo vas a medir en el bloque 2 de `fig09_07.sh` (sección 9.11): en una máquina donde la imagen aún no existe, Compose primero va a buscarla a Docker Hub por cada servicio que no la construye, recibe dos veces el `pull access denied` de la Lección 2, y entonces, como otro servicio del proyecto sí la construye, sigue adelante, la construye y levanta todo. Funciona, pero hace consultas a internet que no necesitas, llena la salida de errores que no lo son, y deja el resultado en manos de lo que alguien haya publicado con ese nombre. Con `pull_policy: never`, el nombre de la imagen deja de ser una pregunta a internet y se vuelve una referencia a algo que tú construiste.
 
+Una consecuencia que conviene saber: como solo `prueba-sano` construye, pedir un servicio suelto en un equipo donde la imagen aún no existe (por ejemplo, `docker compose up prueba-lento` recién clonado el proyecto) no tiene quién la construya. En una prueba aparte con una imagen inexistente y `pull_policy: never`, Compose terminó con código `1` y el mensaje `No such image`. Levanta el proyecto completo con `docker compose up -d --build`, o construye primero con `docker compose build prueba-sano`.
+
 ### 9.7 «Arrancado» no es «listo»: `depends_on` con condición
 
 #### 9.7.1 Lo que `depends_on` hace por omisión
@@ -515,7 +518,7 @@ Aquí está la decisión más fina del archivo, y merece leerse despacio. El `re
         condition: service_started
 ```
 
-Piensa qué pasaría si las tres fueran `service_healthy`. `prueba-caido` responde `503` siempre: su revisión de salud **nunca** pasa, así que Compose esperaría para siempre (o hasta rendirse) y el `revisor` nunca arrancaría. Y `prueba-lento` tampoco: su revisión exige respuesta en menos de 2 segundos, y en modo lento tarda 3. Los servicios que fallan a propósito no pueden ser sanos, porque fallar es su trabajo. Lo que el `revisor` necesita es que **existan** (para que su nombre esté en el DNS) y que al menos uno esté listo para que el primer reporte tenga algo que decir. Por eso: la sana, `service_healthy`; las otras, `service_started`.
+Piensa qué pasaría si las tres fueran `service_healthy`. `prueba-caido` responde `503` siempre: su revisión de salud **nunca** pasa, así que Compose esperaría a que Docker la declare `unhealthy` (con 2 reintentos cada 5 s, unos diez segundos) y entonces se rendiría: en una prueba aparte con una dependencia que siempre falla (revisión cada 2 s, 2 reintentos), `docker compose up -d` terminó a los 5 s con código `1` y el mensaje `dependency failed to start: container ... is unhealthy`, y el servicio que dependía de ella quedó en `Created`, sin arrancar. Es el mismo error que verás en 9.11.3. El resultado es el mismo: el `revisor` nunca arrancaría. Y `prueba-lento` tampoco: su revisión exige respuesta en menos de 2 segundos, y en modo lento tarda 3. Los servicios que fallan a propósito no pueden ser sanos, porque fallar es su trabajo. Lo que el `revisor` necesita es que **existan** (para que su nombre esté en el DNS) y que al menos uno esté listo para que el primer reporte tenga algo que decir. Por eso: la sana, `service_healthy`; las otras, `service_started`.
 
 Esa es la regla general, y la vas a usar en todos tus proyectos: **`service_healthy` para lo que tu servicio necesita sano para arrancar (una base de datos, por ejemplo), y `service_started` para lo que solo necesita que exista**. Y una advertencia honesta: `depends_on` solo ordena el **arranque**. Si una dependencia se cae una hora después, Compose no detiene ni reinicia al que dependía de ella. El `revisor` lo maneja bien porque su trabajo es justamente reportar a quien no responde.
 
@@ -540,13 +543,323 @@ Y en el servicio, quién lo recibe:
       - revisor_token
 ```
 
-Esa segunda parte importa: «los servicios solo pueden acceder a los secretos cuando se les concede explícitamente con un atributo `secrets`» ([Docker, «Secrets in Compose»](https://docs.docker.com/compose/how-tos/use-secrets/)). Las tres copias del servicio de prueba no lo reciben, y por eso no lo ven. El valor nunca se escribe en el archivo: el `compose.yaml` dice **dónde** está el token, no **cuál** es. Así el archivo puede ir al repositorio y `secretos/` no (el `.dockerignore` ya lo deja fuera de la imagen desde la Lección 6, y en un repositorio de verdad también iría en el `.gitignore`).
+Esa segunda parte importa: «los servicios solo pueden acceder a los secretos cuando se les concede explícitamente con un atributo `secrets`» ([Docker, «Secrets in Compose»](https://docs.docker.com/compose/how-tos/use-secrets/)). Las tres copias del servicio de prueba no lo reciben, y por eso no lo ven. El valor nunca se escribe en el archivo: el `compose.yaml` dice **dónde** está el token, no **cuál** es. Así el archivo puede ir al repositorio y `secretos/` no: son dos archivos de exclusión, uno por destino. El `.dockerignore` lo deja fuera de la imagen (ya lo hace desde la Lección 6) y el `.gitignore` lo deja fuera del repositorio (9.8.4). El material de este curso sí lleva su carpeta `secretos/` dentro del repositorio, a propósito, porque su token es de mentira; la tuya, con un token de verdad, no.
 
 #### 9.8.2 La trampa: los permisos son los del archivo
 
 Lo siguiente es lo más importante de esta sección, porque es un error que la documentación explica en una nota y que casi nadie lee. La forma larga de un secreto en el servicio acepta `uid`, `gid` y `mode`, y parecen la solución perfecta: «que el archivo dentro del contenedor sea del usuario 65532, con permiso `0400`». Pero **cuando el secreto sale de un archivo, Compose los ignora**. La referencia lo dice así: con un archivo como fuente, Compose usa por debajo un montaje que no permite cambiar el dueño, «y estos atributos se ignoran en silencio»; solo funcionan cuando el secreto sale de una variable de entorno ([referencia de los servicios de Compose](https://docs.docker.com/reference/compose-file/services/)).
 
-En la práctica, eso quiere decir que el secreto de Compose es **el mismo montaje de la Lección 6**, con el dueño y los permisos que el archivo tenga en tu equipo. Si el archivo está en `600`, solo tu usuario lo lee; el `revisor` corre como `65532`; el resultado es `permission denied` y el `revisor` sale con código 1. Si está en `644`, lo lee. Lo vas a provocar en 9.10, con `uid`, `gid` y `mode` declarados, para que veas que no cambian nada. Por eso el curso usa `644` y la forma corta (`- revisor_token`): escribir `uid`, `gid` y `mode` con un secreto de archivo no sirve más que para dar una falsa sensación de seguridad. La sección 6.5.4 de la Lección 6 discute cuándo `644` está bien (tu computadora) y cuál es el arreglo en un servidor compartido (que el archivo sea del dueño correcto).
+En la práctica, eso quiere decir que el secreto de Compose es **el mismo montaje de la Lección 6**, con el dueño y los permisos que el archivo tenga en tu equipo. Si el archivo está en `600`, solo tu usuario lo lee; el `revisor` corre como `65532`; el resultado es `permission denied` y el `revisor` sale con código 1. Si está en `644`, lo lee. Lo vas a provocar en 9.10, con `uid`, `gid` y `mode` declarados, para que veas que no cambian nada. Por eso el curso usa la forma corta (`- revisor_token`): escribir `uid`, `gid` y `mode` con un secreto de archivo no sirve más que para dar una falsa sensación de seguridad.
+
+La consecuencia práctica es que **el permiso del archivo en tu equipo es una decisión de seguridad que tomas tú**, no Compose. `644` hace que el `revisor` arranque, pero también deja leer el token a cualquier otra cuenta de tu equipo. Las dos secciones que siguen lo miden y muestran la forma segura; la sección 6.5.4 de la Lección 6 dice lo mismo, con otras palabras.
+
+#### 9.8.3 Medir quién puede leer el token
+
+Un permiso como `644` son tres cifras, una por cada grupo de personas: el **dueño** del archivo, el **grupo** del archivo y **todos los demás**. Cada cifra suma `4` (leer), `2` (escribir) y `1` (ejecutar). Así, `644` es «el dueño lee y escribe (`6 = 4 + 2`), el grupo lee (`4`) y todos los demás leen (`4`)». «Todos los demás» no es una forma de decir «tú»: es **cualquier cuenta de tu equipo**, la de otra persona que tenga sesión abierta en un servidor compartido, la de un servicio que corre con su propio usuario, o la de un programa que alguien logró hacer correr como otro usuario. Con `600` solo el dueño lo lee, y con `640` lo leen el dueño y el grupo, y nadie más.
+
+Se comprueba con dos comandos. `ls -l secretos/` muestra los permisos en letras: `-rw-r--r--` es `644`, `-rw-------` es `600` y `-rw-r-----` es `640`. Y `stat -c '%a %U:%G' secretos/revisor_token.txt` los muestra en número, junto con el dueño y el grupo. Cuando el número de un dueño no corresponde a ninguna cuenta de tu equipo (el `65532` del `revisor` no es una cuenta), `stat` escribe `UNKNOWN`; para ver el número, pídelo con `%u:%g` o usa `ls -ln`.
+
+Pero mirar los permisos no es lo mismo que **probarlos**. El guion `fig09_11.sh` hace las dos cosas y en cada caso pregunta lo mismo: ¿lo lee otro usuario sin privilegios?, ¿lo lees tú?, ¿lo lee el `revisor`, que corre como `65532`? Para «otro usuario» usa `sudo -u nobody`: `nobody` es una cuenta sin privilegios que viene en todo Linux, y sirve para hacerse pasar por cualquier otro usuario. Antes de cada `Permission denied` de `nobody` hay un control: `sudo -u nobody stat` demuestra que `nobody` **sí llega hasta el archivo** (la carpeta está abierta), de modo que si el `cat` siguiente falla es por el permiso del archivo y no por otra cosa. (En la máquina de pruebas, la carpeta personal está en `750`, y eso solo frena a quien intente entrar en ella; no cuentes con eso: el proyecto puede estar en otra ruta, o alguien puede abrir la carpeta algún día.) El guion necesita `sudo`, para hacerse pasar por `nobody` y para cambiar el dueño del archivo. Los casos 3 y 4 siguen **tal cual** las opciones B y A de 9.8.4, partiendo del `644` con el que llegas de la Lección 6. La parte que cambia, con el archivo del token de mentira:
+
+```bash
+# La cuenta sin privilegios: «nobody» existe en todo Linux y sirve para hacerse
+# pasar por «otro usuario cualquiera de tu equipo». El nombre de tu usuario y de tu
+# grupo se tapa con sed, porque depende del equipo.
+SUBE="docker compose up -d --force-recreate revisor 2>&1 | eventos | grep -E 'revisor-1 (Started|Error)'"
+PS_REV="docker compose ps revisor --format '{{.Name}} | {{.Status}}' | sed -E 's/Up [0-9]+ (seconds|minutes)/Up N/'"
+STAT="stat -c '%a %U:%G' secretos/revisor_token.txt"
+TAPA_TODO="sed -E 's/ .*/ <tu usuario>:<tu grupo>/'"
+TAPA_DUENO="sed -E 's/ [^:]+:/ <tu usuario>:/'"
+# El control de cada negativa: «nobody» sí llega hasta el archivo (la carpeta está
+# abierta); si el cat siguiente falla, es por el permiso del archivo.
+CONTROL="sudo -u nobody stat -c '%a %n' secretos/revisor_token.txt"
+OTRO="sudo -u nobody cat secretos/revisor_token.txt"
+
+echo "== 1. Permisos 644, dueño tu usuario"
+muestra "chmod 644 secretos/revisor_token.txt"
+muestra "$STAT | $TAPA_TODO"
+muestra "$CONTROL"
+muestra "$OTRO"
+muestra "cat secretos/revisor_token.txt"
+muestra "docker compose up -d --build 2>&1 | eventos | grep -E 'revisor-1 (Started|Error)'"
+esperar revisor healthy
+muestra "$PS_REV"
+
+echo
+echo "== 2. Permisos 600, dueño tu usuario"
+muestra "chmod 600 secretos/revisor_token.txt"
+muestra "$STAT | $TAPA_TODO"
+muestra "$CONTROL"
+muestra "$OTRO"
+muestra "cat secretos/revisor_token.txt"
+muestra "$SUBE"
+sleep 4
+muestra "docker compose logs --no-log-prefix revisor | sort -u"
+muestra "[ \"\$(docker inspect --format '{{.RestartCount}}' ${COMPOSE_PROJECT_NAME}-revisor-1)\" -ge 1 ] && echo 'el revisor se reinició: no pudo leer su token'"
+
+echo
+echo "== 3. Opción B de la lección, partiendo de 644: primero se cierra y luego se regala"
+muestra "chmod 644 secretos/revisor_token.txt"   # el estado con el que llegas de la Lección 6
+muestra "chmod 600 secretos/revisor_token.txt"
+muestra "sudo chown 65532:65532 secretos/revisor_token.txt"
+muestra "$STAT"
+muestra "stat -c '%a %u:%g' secretos/revisor_token.txt"
+muestra "$CONTROL"
+muestra "$OTRO"
+muestra "cat secretos/revisor_token.txt"
+muestra "sudo cat secretos/revisor_token.txt"
+muestra "$SUBE"
+esperar revisor healthy
+muestra "$PS_REV"
+muestra "tabla"
+
+echo
+echo "== 4. Opción A de la lección, partiendo de 644: tu usuario, grupo 65532, 640"
+muestra "sudo chown \"\$(id -un)\" secretos/revisor_token.txt"   # el archivo vuelve a ser tuyo
+muestra "chmod 644 secretos/revisor_token.txt"
+muestra "sudo chgrp +65532 secretos/revisor_token.txt"
+muestra "chmod 640 secretos/revisor_token.txt"
+muestra "$STAT | $TAPA_DUENO"
+muestra "stat -c '%a %u:%g' secretos/revisor_token.txt | sed -E 's/ [0-9]+:/ <tu uid>:/'"
+muestra "$CONTROL"
+muestra "$OTRO"
+muestra "cat secretos/revisor_token.txt"
+muestra "$SUBE"
+esperar revisor healthy
+muestra "$PS_REV"
+muestra "tabla"
+
+echo
+echo "== 5. Lo mismo, más la carpeta secretos/ cerrada con 700"
+muestra "chmod 700 secretos"
+muestra "stat -c '%a' secretos"
+muestra "$SUBE"
+esperar revisor healthy
+muestra "$PS_REV"
+muestra "tabla"
+muestra "chmod 755 secretos"
+
+echo
+echo "== 6. El orden equivocado, partiendo de 644: primero se regala y luego se cierra"
+muestra "sudo chown \"\$(id -un)\" secretos/revisor_token.txt"
+muestra "chmod 644 secretos/revisor_token.txt"
+muestra "sudo chown 65532:65532 secretos/revisor_token.txt"
+muestra "chmod 600 secretos/revisor_token.txt"
+muestra "stat -c '%a %u:%g' secretos/revisor_token.txt"
+muestra "$CONTROL"
+muestra "$OTRO"
+
+echo
+echo "== 7. ¿El grupo 65532 es de alguien en este equipo?"
+muestra "getent group 65532"
+```
+
+```text
+$ ./fig09_11.sh
+== 1. Permisos 644, dueño tu usuario
+$ chmod 644 secretos/revisor_token.txt
+$ stat -c '%a %U:%G' secretos/revisor_token.txt | sed -E 's/ .*/ <tu usuario>:<tu grupo>/'
+644 <tu usuario>:<tu grupo>
+$ sudo -u nobody stat -c '%a %n' secretos/revisor_token.txt
+644 secretos/revisor_token.txt
+$ sudo -u nobody cat secretos/revisor_token.txt
+curso-docker-token-de-mentira-7f3a9c
+$ cat secretos/revisor_token.txt
+curso-docker-token-de-mentira-7f3a9c
+$ docker compose up -d --build 2>&1 | eventos | grep -E 'revisor-1 (Started|Error)'
+Container curso-docker-fig09-revisor-1 Started
+$ docker compose ps revisor --format '{{.Name}} | {{.Status}}' | sed -E 's/Up [0-9]+ (seconds|minutes)/Up N/'
+curso-docker-fig09-revisor-1 | Up N (healthy)
+
+== 2. Permisos 600, dueño tu usuario
+$ chmod 600 secretos/revisor_token.txt
+$ stat -c '%a %U:%G' secretos/revisor_token.txt | sed -E 's/ .*/ <tu usuario>:<tu grupo>/'
+600 <tu usuario>:<tu grupo>
+$ sudo -u nobody stat -c '%a %n' secretos/revisor_token.txt
+600 secretos/revisor_token.txt
+$ sudo -u nobody cat secretos/revisor_token.txt
+cat: secretos/revisor_token.txt: Permission denied
+[código de salida: 1]
+$ cat secretos/revisor_token.txt
+curso-docker-token-de-mentira-7f3a9c
+$ docker compose up -d --force-recreate revisor 2>&1 | eventos | grep -E 'revisor-1 (Started|Error)'
+Container curso-docker-fig09-revisor-1 Started
+$ docker compose logs --no-log-prefix revisor | sort -u
+revisor: leyendo el token de REVISOR_TOKEN_ARCHIVO: open /run/secrets/revisor_token: permission denied
+$ [ "$(docker inspect --format '{{.RestartCount}}' curso-docker-fig09-revisor-1)" -ge 1 ] && echo 'el revisor se reinició: no pudo leer su token'
+el revisor se reinició: no pudo leer su token
+
+== 3. Opción B de la lección, partiendo de 644: primero se cierra y luego se regala
+$ chmod 644 secretos/revisor_token.txt
+$ chmod 600 secretos/revisor_token.txt
+$ sudo chown 65532:65532 secretos/revisor_token.txt
+$ stat -c '%a %U:%G' secretos/revisor_token.txt
+600 UNKNOWN:UNKNOWN
+$ stat -c '%a %u:%g' secretos/revisor_token.txt
+600 65532:65532
+$ sudo -u nobody stat -c '%a %n' secretos/revisor_token.txt
+600 secretos/revisor_token.txt
+$ sudo -u nobody cat secretos/revisor_token.txt
+cat: secretos/revisor_token.txt: Permission denied
+[código de salida: 1]
+$ cat secretos/revisor_token.txt
+cat: secretos/revisor_token.txt: Permission denied
+[código de salida: 1]
+$ sudo cat secretos/revisor_token.txt
+curso-docker-token-de-mentira-7f3a9c
+$ docker compose up -d --force-recreate revisor 2>&1 | eventos | grep -E 'revisor-1 (Started|Error)'
+Container curso-docker-fig09-revisor-1 Started
+$ docker compose ps revisor --format '{{.Name}} | {{.Status}}' | sed -E 's/Up [0-9]+ (seconds|minutes)/Up N/'
+curso-docker-fig09-revisor-1 | Up N (healthy)
+$ tabla
+SERVICIO  ESTADO    TIEMPO  DETALLE
+caido     FALLA        <t>  codigo 503
+lento     LENTO     <t>  200
+sano      OK           <t>  200
+
+== 4. Opción A de la lección, partiendo de 644: tu usuario, grupo 65532, 640
+$ sudo chown "$(id -un)" secretos/revisor_token.txt
+$ chmod 644 secretos/revisor_token.txt
+$ sudo chgrp +65532 secretos/revisor_token.txt
+$ chmod 640 secretos/revisor_token.txt
+$ stat -c '%a %U:%G' secretos/revisor_token.txt | sed -E 's/ [^:]+:/ <tu usuario>:/'
+640 <tu usuario>:UNKNOWN
+$ stat -c '%a %u:%g' secretos/revisor_token.txt | sed -E 's/ [0-9]+:/ <tu uid>:/'
+640 <tu uid>:65532
+$ sudo -u nobody stat -c '%a %n' secretos/revisor_token.txt
+640 secretos/revisor_token.txt
+$ sudo -u nobody cat secretos/revisor_token.txt
+cat: secretos/revisor_token.txt: Permission denied
+[código de salida: 1]
+$ cat secretos/revisor_token.txt
+curso-docker-token-de-mentira-7f3a9c
+$ docker compose up -d --force-recreate revisor 2>&1 | eventos | grep -E 'revisor-1 (Started|Error)'
+Container curso-docker-fig09-revisor-1 Started
+$ docker compose ps revisor --format '{{.Name}} | {{.Status}}' | sed -E 's/Up [0-9]+ (seconds|minutes)/Up N/'
+curso-docker-fig09-revisor-1 | Up N (healthy)
+$ tabla
+SERVICIO  ESTADO    TIEMPO  DETALLE
+caido     FALLA       <t>  codigo 503
+lento     LENTO     <t>  200
+sano      OK          <t>  200
+
+== 5. Lo mismo, más la carpeta secretos/ cerrada con 700
+$ chmod 700 secretos
+$ stat -c '%a' secretos
+700
+$ docker compose up -d --force-recreate revisor 2>&1 | eventos | grep -E 'revisor-1 (Started|Error)'
+Container curso-docker-fig09-revisor-1 Started
+$ docker compose ps revisor --format '{{.Name}} | {{.Status}}' | sed -E 's/Up [0-9]+ (seconds|minutes)/Up N/'
+curso-docker-fig09-revisor-1 | Up N (healthy)
+$ tabla
+SERVICIO  ESTADO    TIEMPO  DETALLE
+caido     FALLA        <t>  codigo 503
+lento     LENTO     <t>  200
+sano      OK           <t>  200
+$ chmod 755 secretos
+
+== 6. El orden equivocado, partiendo de 644: primero se regala y luego se cierra
+$ sudo chown "$(id -un)" secretos/revisor_token.txt
+$ chmod 644 secretos/revisor_token.txt
+$ sudo chown 65532:65532 secretos/revisor_token.txt
+$ chmod 600 secretos/revisor_token.txt
+chmod: changing permissions of 'secretos/revisor_token.txt': Operation not permitted
+[código de salida: 1]
+$ stat -c '%a %u:%g' secretos/revisor_token.txt
+644 65532:65532
+$ sudo -u nobody stat -c '%a %n' secretos/revisor_token.txt
+644 secretos/revisor_token.txt
+$ sudo -u nobody cat secretos/revisor_token.txt
+curso-docker-token-de-mentira-7f3a9c
+
+== 7. ¿El grupo 65532 es de alguien en este equipo?
+$ getent group 65532
+[código de salida: 2]
+```
+
+Resumen de lo que mostró, caso por caso:
+
+| Permisos y dueño | ¿Lo lee otro usuario? | ¿Lo lees tú? | ¿Lo lee el `revisor`? |
+|---|---|---|---|
+| `644`, tu usuario | **sí** | sí | sí |
+| `600`, tu usuario | no | sí | **no** (`permission denied`) |
+| `600`, dueño `65532` (opción B) | no | no, salvo con `sudo` | sí |
+| `640`, tu usuario, grupo `65532` (opción A) | no | sí | sí |
+
+1. **`644`: lo lee cualquiera.** El primer bloque es el hallazgo: `sudo -u nobody cat` imprime el token completo. El `revisor` arranca sano, y por eso `644` parece «la solución»: funciona. Pero funciona porque abre el archivo a todos, no solo al `revisor`.
+2. **`600` de tu usuario: se cierra, y también se cierra al `revisor`.** `nobody` recibe `Permission denied`, pero el `revisor` también: es el error de la Lección 6 y de 9.10. El archivo es de tu usuario, el `revisor` es el usuario `65532`, y para el núcleo el `revisor` es «otro usuario» como `nobody`. El renglón `se reinició` confirma que el `revisor` entra y sale en un bucle.
+3. **`600` con dueño `65532` (opción B): cerrado a todos, menos al `revisor`.** Solo el dueño del archivo (el `revisor`) y `root` pueden leerlo. `nobody` recibe `Permission denied`, y tú también, porque ya no eres el dueño; para verlo o cambiarlo necesitas `sudo cat`. El `revisor` llega a `(healthy)` y la tabla sale con el token. El precio: tu comodidad. Y el `UNKNOWN:UNKNOWN` del primer `stat` no es un error: el número `65532` no tiene nombre de cuenta en tu equipo. Fíjate en el **orden**: primero `chmod 600` y después `sudo chown`.
+4. **`640` con grupo `65532` (opción A): la salida cómoda.** Tú sigues siendo el dueño (lo lees y lo editas sin `sudo`), y el **grupo** del archivo es el `65532`. El `revisor` corre como `65532:65532` (usuario y grupo, que vienen de la imagen: `docker inspect --format '{{.Config.User}}'`), así que para el núcleo entra por la cifra del grupo. `nobody` no está en ese grupo y no lee nada. Es el permiso mínimo que deja trabajar a las dos partes. Vale lo mismo que en la Lección 6: los números de dentro y de fuera deben ser los mismos (instalación normal de la Lección 1). Con Docker sin `root` o con remapeo de usuarios, el `65532` de dentro corresponde fuera a otro número (el inicio de tu rango en `/etc/subuid` y `/etc/subgid` más 65532; ese inicio cambia de una instalación a otra, y se lee en esos archivos. Como ejemplo, la [documentación de `userns-remap`](https://docs.docker.com/engine/security/userns-remap/) cuenta que, con un rango que empieza en `231072`, el `231073` es el usuario `1` de dentro; el `231072` es solo el valor de ese ejemplo), y esta receta no aplica tal cual: el `revisor` dará `permission denied`, y no hay fuga, pero tampoco hay solución rápida; el diagnóstico es el de `ls -ln` de la Lección 6.
+5. **La carpeta `secretos/` en `700` no estorba.** El bloque 5 la cierra (`chmod 700 secretos`) y el `revisor` se recrea y sigue `(healthy)`: el montaje de un solo archivo lo establece el daemon, no tu usuario. Cierra la carpeta además del archivo: quien no puede entrar en ella ni siquiera ve que el token existe.
+6. **El orden equivocado deja el token abierto.** El bloque 6 hace la opción B al revés: `sudo chown 65532:65532` primero y `chmod 600` después. El `chmod` falla con `Operation not permitted`, porque ya no eres el dueño y el núcleo solo deja cambiar los permisos al dueño (o a `root`). El archivo se queda en `644`, ahora de `65532`, y `nobody` imprime el token. Siempre se **cierra primero y se regala después**, y se comprueba al final.
+7. **El grupo `65532` no es exclusivo del `revisor`.** Es el usuario y grupo `nonroot` de las imágenes *distroless* (la imagen final del `revisor` es `gcr.io/distroless/static-debian13:nonroot`) y de las de Chainguard, así que cualquier contenedor de esas imágenes al que montes este archivo lo lee por la cifra del grupo. Y si en tu equipo existiera un grupo real con ese número, sus miembros también. Por eso el último bloque pregunta `getent group 65532`: si no imprime nada (como aquí, con código de salida 2), el número no es de nadie en tu equipo.
+
+Lo que ningún permiso impide: `root` lee todo, y quien pueda hablarle al daemon de Docker (el grupo `docker` de la Lección 1) puede montar tu carpeta en un contenedor y leerla. Por eso se cuida quién está en ese grupo; es otro motivo para no regalar el archivo a «todos los demás».
+
+#### 9.8.4 La forma segura en tu carpeta
+
+Hay dos formas de dejar el archivo cerrado, de la más cómoda a la más estricta. Las dos dejan leer al `revisor` y dejan fuera a los demás. **Elige una**; no las apliques seguidas.
+
+**Opción A**: tú eres el dueño y el grupo del `revisor` puede leer.
+
+```bash
+cd revisor
+sudo chgrp +65532 secretos/revisor_token.txt
+chmod 640 secretos/revisor_token.txt
+```
+
+El `+` le dice a `chgrp` que `65532` es un número de grupo y no un nombre (sin el `+`, también lo toma como número si no existe un grupo con ese nombre).
+
+**Opción B**: el dueño es el propio `revisor`. Tú necesitas `sudo` para leerlo.
+
+```bash
+cd revisor
+chmod 600 secretos/revisor_token.txt               # primero se cierra, mientras aún eres el dueño
+sudo chown 65532:65532 secretos/revisor_token.txt  # después se regala; ya no podrás cambiarlo sin sudo
+```
+
+El orden importa: si regalas primero, el `chmod` falla y el archivo se queda como estaba (bloque 6 de 9.8.3).
+
+Sea cual sea la que elijas, **compruébalo siempre**:
+
+```bash
+ls -l secretos/revisor_token.txt
+stat -c '%a %U:%G' secretos/revisor_token.txt
+sudo -u nobody cat secretos/revisor_token.txt   # debe decir: Permission denied
+chmod 700 secretos                              # y cierra también la carpeta
+```
+
+Después, `docker compose up -d --force-recreate revisor` (cambiar el permiso de un archivo no es un cambio de configuración para Compose, y el `revisor` solo lee su token al arrancar).
+
+**Las copias también cuentan.** Cada copia del token nace con sus propios permisos: un `cp` sin `-p` deja el archivo a tu nombre, con tu grupo y tu `umask`; y la copia de respaldo de un editor (`revisor_token.txt~`), el respaldo de tu carpeta personal o una copia a una memoria USB o a la nube no conservan el `640`. Revísalas con el mismo `stat`, o no las hagas.
+
+**Para crear un secreto nuevo**, que nazca cerrado en vez de abrirse y cerrarse después. Mira tu `umask` con `umask`: es la «resta» de permisos que el sistema aplica a todo archivo nuevo. En Ubuntu y Linux Mint suele valer `0002` (medido en la máquina de pruebas, Ubuntu 24.04), y un archivo nuevo sale en `664`: lo lee cualquiera, igual que con `644`. El `644` que viste en la Lección 6 no lo puso el `umask`: lo puso el `chmod` del curso. Dos formas de crear un archivo cerrado:
+
+```bash
+install -m 600 /dev/null secretos/token.txt                              # crea el archivo vacío, ya en 600
+(umask 077; read -rs VALOR; printf '%s' "$VALOR" > secretos/token2.txt)  # pegas el valor sin que se vea
+```
+
+Tres advertencias. Las dos formas son para un archivo que **no existe todavía**: si ya existe, `umask` no le cambia el permiso (ciérralo con `chmod 600`) e `install` lo reemplaza por uno vacío, sin avisar. Las dos lo dejan en `600` **a tu nombre**, que es el caso 2 de 9.8.3: el `revisor` todavía no lo puede leer, así que termina con la opción A o la B. Y **no escribas el valor en la línea de comandos** (`VALOR=... ` o `echo ... >`): queda en el historial de tu terminal; por eso el ejemplo usa `read -rs`, o pégalo desde un editor.
+
+**¿Y cuándo sí `644`?** Solo en una situación: un token de mentira, en una computadora que es solo tuya, para una práctica. Los guiones de esta lección lo usan dentro de una carpeta temporal que se borra al terminar, y por eso lo dejan en `644`. Tres advertencias, sin letra chica:
+
+- **El token del curso es ficticio** (`curso-docker-token-de-mentira-7f3a9c`); no abre nada.
+- **`644` deja que cualquier cuenta local lo lea**, como acabas de medir.
+- **Nunca uses `644` con un secreto real**: ni en tu laptop, ni en un servidor, ni «un ratito mientras pruebo».
+
+Y la otra mitad de la higiene del secreto: **que no llegue al repositorio**. En tu proyecto, `secretos/` va en el `.gitignore` desde el primer día, y se comprueba:
+
+```bash
+echo 'secretos/' >> .gitignore
+git check-ignore -v secretos/revisor_token.txt
+```
+
+```text
+.gitignore:1:secretos/	secretos/revisor_token.txt
+```
+
+Si `git check-ignore` no imprime nada, el archivo **no** está ignorado. (Una excepción: si `git` ya sigue el archivo desde antes de que lo ignoraras, el `.gitignore` no lo suelta; se retira con `git rm --cached` y el token ya publicado se da por perdido y se cambia, igual que en la Lección 6.) Lo de Compose que ya viste en 9.8.1 queda así: el `compose.yaml` dice dónde está el token, el `.gitignore` lo mantiene fuera del repositorio, el `.dockerignore` lo mantiene fuera de la imagen, y el permiso del archivo lo mantiene fuera del alcance del resto de tu equipo.
 
 ### 9.9 El archivo final
 
@@ -780,18 +1093,21 @@ volume /datos ro=false
 
 #### 9.9.4 En tu carpeta
 
-Con el archivo final en `revisor/compose.yaml`, `servicio-prueba/` al lado y `secretos/revisor_token.txt` en `644`:
+Con el archivo final en `revisor/compose.yaml`, `servicio-prueba/` al lado y `secretos/revisor_token.txt` con permisos `640` y grupo `65532` (9.8.4):
 
 ```bash
 cd revisor
-chmod 644 secretos/revisor_token.txt
+sudo chgrp +65532 secretos/revisor_token.txt   # el grupo del revisor puede leerlo...
+chmod 640 secretos/revisor_token.txt          # ...y ningún otro usuario (9.8.4)
 docker compose config --quiet && echo 'compose.yaml válido'
 docker compose up -d --build
 docker compose ps
 curl -s -H "Authorization: Bearer $(cat secretos/revisor_token.txt)" 'http://127.0.0.1:8080/api/estados?formato=tabla'
 ```
 
-El `644` hace que cualquier usuario de tu computadora pueda leer el token; aquí es de mentira y el equipo es tuyo. En un servidor compartido, el arreglo es que el archivo sea del usuario correcto (sección 6.5.4 de la Lección 6), no abrirlo a todos.
+Una nota sobre ese `curl`: mientras corre, el token va en su línea de comandos y cualquier cuenta lo puede ver con `ps`, aunque el archivo esté en `640`. Con el token de mentira no importa; con uno real, pásalo desde un archivo de cabeceras (`curl -H @cabeceras.txt`, que debe tener sus propios permisos cerrados).
+
+Los guiones de esta lección usan `644` en una carpeta temporal, con el token de mentira; tu carpeta no lo necesita. Con `644`, cualquier usuario de tu computadora puede leer el token (9.8.3), y en un servidor compartido eso no se acepta: el arreglo es el grupo o el dueño correcto (sección 6.5.4 de la Lección 6), no abrirlo a todos.
 
 Los nombres serán `curso-docker-revisor-1`, `curso-docker-prueba-sano-1` y así, con redes `curso-docker_publica` y `curso-docker_interna` y el volumen `curso-docker_reportes`. Si la Lección 8 te dejó corriendo `curso-docker-revisor` con el puerto 8080, apágalo antes (`docker rm -f curso-docker-revisor curso-docker-prueba`), o el `up` chocará con el puerto ocupado de la Lección 2. Y si conservaste el volumen `curso-docker-reportes` de la Lección 8, no estorba: el de Compose es otro, `curso-docker_reportes`, con guion bajo.
 
@@ -799,7 +1115,7 @@ Los nombres serán `curso-docker-revisor-1`, `curso-docker-prueba-sano-1` y así
 
 #### 9.10.1 Provocarlo con `uid`, `gid` y `mode` escritos
 
-El guion `fig09_06.sh` toma el archivo final, cambia el secreto a la forma larga con `uid: "65532"`, `gid: "65532"` y `mode: 0400` (lo que «debería» arreglar el permiso), pone el archivo del token en `600` y levanta. Después lo arregla como lo hace el curso. La parte que cambia:
+El guion `fig09_06.sh` toma el archivo final, cambia el secreto a la forma larga con `uid: "65532"`, `gid: "65532"` y `mode: 0400` (lo que «debería» arreglar el permiso), pone el archivo del token en `600` y levanta. Después lo arregla con `644`, que es lo que sus guiones usan en su carpeta temporal con el token de mentira (en tu carpeta, el arreglo es el de 9.8.4). La parte que cambia:
 
 ```bash
 cp compose.yaml compose.final.yaml
@@ -829,7 +1145,7 @@ muestra "docker inspect --format '{{range .Mounts}}{{if eq .Destination \"/run/s
 echo
 echo "== 2. El arreglo: 644 (y el compose.yaml de la lección, en forma corta)"
 cp compose.final.yaml compose.yaml
-chmod 644 secretos/revisor_token.txt
+chmod 644 secretos/revisor_token.txt   # 644: solo porque el token es de mentira (9.8.4)
 muestra "stat -c '%a %n' secretos/revisor_token.txt"
 muestra "docker compose up -d --force-recreate revisor 2>&1 | eventos | grep -E 'revisor-1 (Started|Error)'"
 esperar revisor healthy
@@ -880,9 +1196,9 @@ sano      OK           <t>  200
 2. **`Started`.** Compose dice que el `revisor` arrancó, y es verdad: el proceso arrancó. Pero los registros cuentan el resto: `leyendo el token de REVISOR_TOKEN_ARCHIVO: open /run/secrets/revisor_token: permission denied`. El `revisor` no pudo leer su token y prefirió morir con código 1 antes que quedar escuchando sin protección (Lección 6). El `sort -u` del guion junta los renglones repetidos, porque el mensaje sale una vez por cada intento.
 3. **`Status=restarting ExitCode=1`.** ¿Intentos? Sí: el archivo final lleva `restart: unless-stopped`, así que el daemon lo vuelve a arrancar cada vez que muere, con esperas cada vez más largas, y cada vez muere igual. Esto es lo que vas a ver en un sistema real cuando un secreto tiene mal los permisos: un contenedor que entra y sale, y un `docker compose ps` que dice `Restarting`. La política de reinicio atiende la muerte del proceso, como viste en la Lección 7; no puede arreglar su causa.
 4. **El montaje.** El secreto es un `bind` de solo lectura, con todo y `uid`, `gid` y `mode` declarados. Los tres atributos no hicieron nada. Es exactamente lo que dice la referencia, medido.
-5. **El arreglo**: `644` y el archivo de la lección, con la forma corta. `--force-recreate revisor` le pide a Compose recrear ese servicio aunque su configuración sea la misma que la del contenedor que existe; aquí hace falta porque lo único que cambió fue el permiso de un archivo en tu equipo, y eso Compose no lo compara. El `revisor` llega a `(healthy)` y la tabla vuelve.
+5. **El arreglo del guion**: `644` y el archivo de la lección, con la forma corta. Es el arreglo más corto, no el mejor: abre el token a todo el equipo (9.8.3). En tu carpeta usa el de 9.8.4. `--force-recreate revisor` le pide a Compose recrear ese servicio aunque su configuración sea la misma que la del contenedor que existe; aquí hace falta porque lo único que cambió fue el permiso de un archivo en tu equipo, y eso Compose no lo compara. El `revisor` llega a `(healthy)` y la tabla vuelve.
 
-Si esto te pasa en tu carpeta: `ls -l secretos/`, y si dice `-rw-------`, `chmod 644 secretos/revisor_token.txt` y `docker compose up -d --force-recreate revisor`. Lo que **no** es un arreglo: quitar el `USER` de la imagen o poner `user: "0"` en el servicio para que `root` lo lea. Eso cambia un problema de permisos de un archivo por un contenedor entero corriendo como `root`.
+Si esto te pasa en tu carpeta: `ls -l secretos/`, y si dice `-rw-------`, dale lectura **solo** al grupo del `revisor` (`sudo chgrp +65532 secretos/revisor_token.txt` y `chmod 640 secretos/revisor_token.txt`, 9.8.4) y `docker compose up -d --force-recreate revisor`. `chmod 644` también lo arregla, pero deja el token a la vista de todo tu equipo: solo con un token de mentira. Lo que **no** es un arreglo: quitar el `USER` de la imagen o poner `user: "0"` en el servicio para que `root` lo lea. Eso cambia un problema de permisos de un archivo por un contenedor entero corriendo como `root`.
 
 ### 9.11 Dos errores de Compose que conviene conocer antes
 
@@ -1150,7 +1466,7 @@ Es un buen punto de partida, y un archivo muy distinto del tuyo. El Ejercicio 4 
 ### 9.14 Lo que vas a encontrar en tutoriales viejos
 
 - **`docker-compose`, con guion.** Es Compose «V1», un programa aparte escrito en Python. Docker lo declara retirado: «Compose v1 ya no se mantiene, y los usuarios deben migrar a Compose v2» ([Docker, «Retired features»](https://docs.docker.com/retired/)). Hoy es `docker compose`, con espacio. Si un tutorial dice `docker-compose up`, tradúcelo.
-- **Nombres de contenedor con guion bajo**, como `proyecto_web_1`. Eran los de V1. El anuncio de Compose V2 lo dice así: los nombres de contenedor «ahora usan guiones como separadores en lugar de guiones bajos», y si un guion depende de esos nombres, se va a romper; por eso recomienda, en general, no depender de los nombres de los contenedores ([Docker, «Announcing Compose V2 General Availability»](https://www.docker.com/blog/announcing-compose-v2-general-availability/)). Si un guion viejo busca `curso-docker_revisor_1`, no lo va a encontrar.
+- **Nombres de contenedor con guion bajo**, como `proyecto_web_1`. Eran los de V1. El anuncio de Compose V2 lo dice así: los nombres de contenedor «ahora usan guiones como separadores en lugar de guiones bajos», y si un guion depende de esos nombres, se va a romper; por eso recomienda, en general, no depender de los nombres de los contenedores ([Docker, «Announcing Compose V2 General Availability»](https://www.docker.com/blog/announcing-compose-v2-general-availability/)). Si un guion viejo busca `curso-docker_revisor_1` (el nombre que tendría en V1 el `curso-docker-revisor-1` de esta lección), no lo va a encontrar.
 - **`version: "3.8"`** (o `"2"`, o `"3"`) al principio del archivo. Obsoleto; solo produce un aviso (9.2.3).
 - **`docker-compose.yml`** como nombre de archivo. Todavía se acepta por compatibilidad, pero el preferido es `compose.yaml`.
 - **`links:`** dentro de un servicio. Es el `--link` de la Lección 8 en forma de clave; en las redes de un proyecto, los servicios ya se encuentran por nombre.
@@ -1175,7 +1491,7 @@ El contenedor está `healthy` y el reporte falla. Se lee de derecha a izquierda,
 revisor: leyendo el token de REVISOR_TOKEN_ARCHIVO: open /run/secrets/revisor_token: permission denied
 ```
 
-Y en `docker compose ps`, un `revisor` que dice `Restarting`. `Started` en la salida de `up` no te va a avisar: el proceso sí arrancó, y murió después. Se diagnostica con `docker compose logs revisor` y `ls -l secretos/`. Si el archivo está en `600`, el usuario `65532` del contenedor no lo puede leer, y `uid`, `gid` y `mode` en el `compose.yaml` no lo cambian, porque con un secreto de archivo Compose los ignora. Arreglo: `chmod 644` (en tu equipo) o que el archivo sea del dueño correcto (en un servidor compartido), y `docker compose up -d --force-recreate revisor`.
+Y en `docker compose ps`, un `revisor` que dice `Restarting`. `Started` en la salida de `up` no te va a avisar: el proceso sí arrancó, y murió después. Se diagnostica con `docker compose logs revisor` y `ls -l secretos/`. Si el archivo está en `600`, el usuario `65532` del contenedor no lo puede leer, y `uid`, `gid` y `mode` en el `compose.yaml` no lo cambian, porque con un secreto de archivo Compose los ignora. Arreglo: que el grupo del archivo sea `65532` y el permiso `640` (`sudo chgrp +65532 secretos/revisor_token.txt` y `chmod 640 secretos/revisor_token.txt`), o que el dueño sea `65532` con `600`, y `docker compose up -d --force-recreate revisor`. `chmod 644` también lo arregla, pero abre el token a todo el equipo: solo con un token de mentira (9.8.4).
 
 **En el comando: `--wait` que no termina bien.**
 
@@ -1368,7 +1684,7 @@ Medido (bloques «Ejercicio 2» de `fig09_10.sh`):
 
 1. **Solo el `revisor` se recrea.** `REVISOR_SERVICIOS` es parte de su configuración; los servicios de prueba no cambian y dicen `Running`. Es lo mismo que viste en el bloque 2 de `fig09_03.sh`, con otro cambio.
 2. **Se recrean las tres copias del servicio de prueba**, y el `revisor` queda en `Running`. Para Compose, lo que cuenta es el resultado de copiar el ancla en los tres servicios, así que cambiar el ancla es cambiar los tres. `docker compose config | grep mem_limit` lo confirma antes de levantar: tres veces `25165824` (24 MB en bytes) y una `67108864` (el `revisor`). El último renglón, `mem_limit: 24m` sin comillas y con menos sangría, es el propio `x-prueba`: `config` conserva los campos `x-` en su salida, aunque no los use para crear nada.
-3. **Nada se recrea**: los cuatro en `Running`, y la tabla sigue saliendo. El permiso de un archivo de tu equipo no es parte de la configuración que Compose compara, y el `revisor` ya leyó su token al arrancar, así que sigue funcionando. Para ver el error de 9.10 hay que obligarlo a arrancar de nuevo: `docker compose restart revisor` dice `Started`, y tres segundos después `docker inspect` dice `Status=restarting ExitCode=1`. Lo deshaces con `chmod 644 secretos/revisor_token.txt` seguido del mismo `--force-recreate`. La lección de este caso: un error de permisos puede estar **dormido** días, hasta el siguiente reinicio.
+3. **Nada se recrea**: los cuatro en `Running`, y la tabla sigue saliendo. El permiso de un archivo de tu equipo no es parte de la configuración que Compose compara, y el `revisor` ya leyó su token al arrancar, así que sigue funcionando. Para ver el error de 9.10 hay que obligarlo a arrancar de nuevo: `docker compose restart revisor` dice `Started`, y tres segundos después `docker inspect` dice `Status=restarting ExitCode=1`. Lo deshaces devolviendo el permiso anterior (en la carpeta temporal del guion, `644` con el token de mentira; en la tuya, el `640` con grupo `65532` de 9.8.4) seguido de `docker compose up -d --force-recreate revisor`, el mismo comando de 9.10. La lección de este caso: un error de permisos puede estar **dormido** días, hasta el siguiente reinicio.
 
 ### Solución 3
 
@@ -1401,6 +1717,7 @@ Marca cada punto solo si puedes hacerlo **sin volver a ver el texto**:
 - [ ] `docker inspect curso-docker-revisor-1 | grep -c "$(cat secretos/revisor_token.txt)"` da `0`, y lo mismo con `docker compose config`.
 - [ ] Explicas por qué el `revisor` espera con `service_healthy` solo a `prueba-sano`, usando las palabras *salud*, *503* y *2 segundos*.
 - [ ] Provocas el `read-only file system` quitando el volumen de `/datos`, y el `permission denied` del secreto con `chmod 600`, y explicas por qué `uid`, `gid` y `mode` no lo evitan.
+- [ ] Con `stat -c '%a %U:%G'` y `sudo -u nobody cat` compruebas que tu `secretos/revisor_token.txt` **no** lo lee otra cuenta, y que el `revisor` sí (`640` con grupo `65532`, o `600` con dueño `65532`); y `git check-ignore -v secretos/revisor_token.txt` dice que el `.gitignore` de tu proyecto lo cubre.
 - [ ] Después de `docker compose down` (sin `--volumes`), `docker run --rm -v curso-docker_reportes:/datos:ro alpine:3.24.2 ls -ln /datos` muestra `reporte.json` de `65532`.
 - [ ] `docker compose stop revisor` tarda menos de un segundo y deja `ExitCode=0`.
 - [ ] Corres los guiones de [`programas/09-compose/`](../programas/09-compose) (con tu proyecto apagado, o con otro puerto: `PUERTO=18080 ./fig09_05.sh`; la función `nombres` reescribe el puerto en la salida) y tus salidas coinciden con las de esta lección, salvo los tiempos, las fechas, el número del archivo temporal, el orden de los eventos simultáneos, el servicio que nombra el error del Ejercicio 1 y los intentos y servicios del choque de 9.11. Y al terminar, `docker ps -a --filter name=fig09`, `docker volume ls --filter name=fig09` y `docker network ls --filter name=fig09` no muestran nada.
@@ -1416,7 +1733,7 @@ Responde sin mirar la lección:
 5. ¿Por qué el `revisor` con `read_only: true` necesita siempre algo montado en `/datos`?
 6. ¿Para qué sirven juntos un campo `x-` y un ancla de YAML?
 7. ¿Qué diferencia hay entre `service_started` y `service_healthy`, y por qué no se puede pedir `service_healthy` a `prueba-caido`?
-8. ¿Dónde aparece un secreto de Compose dentro del contenedor, y por qué un archivo en `600` da `permission denied` aunque declares `uid`, `gid` y `mode`?
+8. ¿Dónde aparece un secreto de Compose dentro del contenedor, y por qué un archivo en `600` da `permission denied` aunque declares `uid`, `gid` y `mode`? ¿Quién puede leer el mismo archivo con `644`, y cómo lo dejas para que lo lean el `revisor` y tú, pero nadie más?
 9. ¿Por qué solo un servicio de prueba lleva `build`, y qué hace `pull_policy: never` en los otros dos?
 10. ¿Qué borra `docker compose down`, qué agrega `--volumes`, y por qué `up --wait` falla en este proyecto aunque todo funcione?
 
@@ -1434,7 +1751,8 @@ Todas consultadas el 21 de octubre de 2026.
 - [Docker, «Specify a project name»](https://docs.docker.com/compose/how-tos/project-name/): el orden en que se decide el nombre del proyecto, los caracteres que admite y que sirve para aislar entornos.
 - [Docker, «Networking in Compose»](https://docs.docker.com/compose/how-tos/networking/): la red `<proyecto>_default`, el nombre de servicio en el DNS y las redes propias con `networks`.
 - [Docker, «Control startup order»](https://docs.docker.com/compose/how-tos/startup-order/): que Compose no espera a que un contenedor esté listo, solo corriendo; `service_healthy`; el orden de borrado por dependencias; `restart: true` dentro de `depends_on`.
-- [Docker, «Secrets in Compose»](https://docs.docker.com/compose/how-tos/use-secrets/): qué es un secreto, la ruta `/run/secrets/<nombre>` y que solo lo recibe el servicio al que se le concede.
+- [Docker, «Secrets in Compose»](https://docs.docker.com/compose/how-tos/use-secrets/): qué es un secreto, la ruta `/run/secrets/<nombre>`, que Docker crea un montaje (`bind mount`) en esa ruta, que el acceso se controla con los permisos normales del sistema de archivos y que solo lo recibe el servicio al que se le concede.
+- [Especificación, `secrets` de primer nivel](https://docs.docker.com/reference/compose-file/secrets/): que el secreto se crea con el contenido del archivo de `file` (o con una variable de entorno de `environment`).
 - [Referencia de `docker compose config`](https://docs.docker.com/reference/cli/docker/compose/config/): que muestra el modelo que se aplicará, en forma canónica; `--quiet`, `--services`, `--volumes`.
 - [Referencia de `docker compose up`](https://docs.docker.com/reference/cli/docker/compose/up/): qué hace `up`; que recrea al cambiar configuración o imagen y conserva los volúmenes; `-d`, `--build`, `--wait`, `--wait-timeout`, `--no-recreate`.
 - [Referencia de `docker compose down`](https://docs.docker.com/reference/cli/docker/compose/down/): qué borra por omisión y qué agrega `--volumes`.

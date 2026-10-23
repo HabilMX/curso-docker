@@ -4,7 +4,9 @@ Il est 9 h 40 un lundi, et la démonstration devant l'équipe a lieu à 11 h. C'
 
 **Durée :** 90 min
 
-**Ce que tu construis :** l'environnement du cours. Docker Engine installé sur ton Linux Mint depuis le dépôt officiel de Docker, ton utilisateur dans le groupe `docker` en sachant ce que cela signifie, et ton premier conteneur, `hello-world`. La leçon apporte sept courts programmes, de diagnostic et de vérification, dans [`programas/01-instalacion/`](../programas/01-instalacion).
+**Ce que tu construis :** l'environnement du cours. Docker Engine installé sur ton Linux Mint depuis le dépôt officiel de Docker, ton utilisateur dans le groupe `docker` en sachant ce que cela signifie, et ton premier conteneur, `hello-world`. La leçon apporte huit programmes courts dans [`programas/01-instalacion/`](../programas/01-instalacion) : cinq se contentent de lire et de vérifier (`fig01_01.sh`, `fig01_05.sh`, `fig01_06.sh`, `fig01_07.sh` et `fig01_08.sh` ; ceux de vérification téléchargent, au plus, une image de test), un supprime les paquets en conflit si tu en as (`fig01_02.sh`) et deux modifient bel et bien ta machine, parce qu'ils écrivent la source `apt` du dépôt de Docker (`fig01_03.sh` et `fig01_04.sh`). La leçon te prévient avant chacun de ces trois.
+
+**Avant de commencer : récupère le dépôt du cours.** Les programmes de cette leçon et des suivantes se trouvent dans le dossier `programas/` du dépôt du cours. Si tu ne l'as pas encore sur ton Mint, télécharge-le depuis la page du cours (ou clone-le avec `git clone` à l'adresse qui y est indiquée) et place-toi dans `programas/01-instalacion/` : les scripts s'exécutent depuis ce dossier. Ils ont déjà le droit d'exécution, donc `./fig01_01.sh` suffit ; si tu préfères ne pas dépendre de ce droit, `bash fig01_01.sh` fait la même chose.
 
 **Ce que tu apprends :** quelles pièces tu installes et à quoi sert chacune ; pourquoi Linux Mint n'est pas une plateforme officielle de Docker et que faire à ce sujet (le mot-clé est `UBUNTU_CODENAME`) ; supprimer les paquets qui entrent en conflit avec les paquets officiels ; comment ajouter un dépôt à `apt` avec sa clé ; comment vérifier que l'installation fonctionne ; et pourquoi entrer dans le groupe `docker` équivaut à avoir `root`.
 
@@ -20,7 +22,7 @@ Il est 9 h 40 un lundi, et la démonstration devant l'équipe a lieu à 11 h. C'
 | **Exécution réelle · machine virtuelle** | Exécuté pour de vrai, le même jour, dans la machine virtuelle Ubuntu 24.04.4 (arm64) que [Colima](https://github.com/abiosoft/colima) démarre sur le Mac. Sur cette machine, Docker 29.2.1 est installé **avec les mêmes paquets officiels** que ceux que tu installes (`docker-ce`, `containerd.io` et les autres, depuis `download.docker.com`), si bien que les vérifications après l'installation sont identiques. Ce qui change sur ta machine : les versions, et `arm64` deviendra `amd64`. |
 | **Extrait de la documentation** | Non exécuté : c'est le texte du [guide officiel d'installation pour Ubuntu](https://docs.docker.com/engine/install/ubuntu/) ou des [étapes post-installation](https://docs.docker.com/engine/install/linux-postinstall/), consultés le 21 octobre 2026. Utilisé uniquement là où il n'y avait aucun moyen honnête de l'exécuter. |
 
-Les versions : le cours a été planifié avec Docker Engine 29.8.2 et Compose v5.6.0 (mesurées le 7 octobre 2026). Le jour de ces exécutions, le dépôt officiel proposait la **29.9.2**, du 20 octobre 2026 ([notes de version](https://docs.docker.com/engine/release-notes/29/)), avec Compose 5.6.0 et Buildx 0.38.1, et c'est ce que tu aurais installé ce jour-là ; la machine virtuelle des exécutions avait la 29.2.1. Rien de ce qu'enseigne cette leçon ne change entre ces versions, et à la section 1.7 tu apprends à voir la tienne. Les programmes se trouvent dans [`programas/01-instalacion/`](../programas/01-instalacion), chacun avec sa sortie enregistrée à côté.
+Les versions : le cours a été planifié avec Docker Engine 29.8.2 et Compose v5.6.0 (mesurées le 7 octobre 2026). Le jour de ces exécutions, le dépôt officiel proposait la **29.9.2**, du 20 octobre 2026 ([notes de version](https://docs.docker.com/engine/release-notes/29/)), avec Compose 5.6.0 et Buildx 0.38.1, et c'est ce que tu aurais installé ce jour-là ; la machine virtuelle des exécutions avait la 29.2.1. Rien de ce qu'enseigne cette leçon ne dépend de la différence entre ces versions : ce sont les numéros que tu vois qui changent, pas les étapes ni les messages que tu apprends à lire ; quand un texte a été mesuré avec une version précise, on le dit. À la section 1.7, tu apprends à voir la tienne. Les programmes se trouvent dans [`programas/01-instalacion/`](../programas/01-instalacion), chacun avec sa sortie enregistrée à côté.
 
 ## À la fin, tu seras capable de
 
@@ -28,7 +30,8 @@ Les versions : le cours a été planifié avec Docker Engine 29.8.2 et Compose v
 - Supprimer les paquets qui entrent en conflit avec Docker Engine et expliquer pourquoi ils entrent en conflit.
 - Ajouter le dépôt officiel de Docker à `apt`, en expliquant à quoi sert chaque ligne, y compris la clé.
 - Installer les cinq paquets de Docker Engine et dire ce que fait chacun.
-- Vérifier avec quatre commandes que le service tourne, quelle version tu as et que tu peux créer un conteneur.
+- Vérifier, avec un script de six blocs, que le service tourne et démarrera tout seul, quelle version tu as et que tu peux créer un conteneur.
+- Repérer et supprimer les restes qu'un tutoriel précédent a laissés dans `apt`, avant qu'ils ne fassent échouer l'installation avec une erreur qui ressemble à la classique.
 - Lire l'erreur `permission denied while trying to connect to the docker API` et la corriger en ajoutant ton utilisateur au groupe `docker`.
 - Démontrer avec une commande pourquoi le groupe `docker` équivaut à `root`, et citer deux alternatives.
 
@@ -36,7 +39,7 @@ Les versions : le cours a été planifié avec Docker Engine 29.8.2 et Compose v
 
 Installer un programme sous Linux tient d'habitude en une ligne : `sudo apt install quelquechose`. Avec Docker, on peut faire ainsi — ton Mint propose un paquet nommé `docker.io` — et le guide officiel de Docker te demande exactement le contraire : **le supprimer**. Pourquoi tant de cérémonie ?
 
-Parce qu'il existe deux sources de paquets Docker, et qu'elles ne sont pas équivalentes. La première est ta distribution : Ubuntu (et donc Mint) empaquette Docker sous ses propres noms, à son propre rythme, et souvent dans une version qui prend du retard. La seconde est Docker, l'entreprise, qui publie ses paquets dans son propre dépôt, `download.docker.com`, le jour même où elle publie chaque version. Le guide officiel qualifie les premiers de « non officiels » et te demande les seconds ([Docker, installer sur Ubuntu](https://docs.docker.com/engine/install/ubuntu/)). Ce cours utilise les paquets officiels pour une raison pratique : tout ce qu'il enseigne — le *plugin* Compose, le constructeur Buildx, les versions mentionnées — a été mesuré avec eux, et ce que tu lis dans la documentation de Docker s'y rapporte.
+Parce qu'il existe deux sources de paquets Docker, et qu'elles ne sont pas équivalentes. La première est ta distribution : Ubuntu (et donc Mint) empaquette Docker sous ses propres noms, à son propre rythme, et souvent dans une version qui prend du retard. La seconde est Docker, l'entreprise, qui publie ses paquets dans son propre dépôt, `download.docker.com`, avec chaque version qu'elle publie : la 29.9.2, du 20 octobre 2026, y était déjà le 21 (la section 1.5.3 le montre). Le guide officiel qualifie les premiers de « non officiels » et te demande les seconds ([Docker, installer sur Ubuntu](https://docs.docker.com/engine/install/ubuntu/)). Ce cours utilise les paquets officiels pour une raison pratique : tout ce qu'il enseigne — le *plugin* Compose, le constructeur Buildx, les versions mentionnées — a été mesuré avec eux, et ce que tu lis dans la documentation de Docker s'y rapporte.
 
 La deuxième raison de cette cérémonie, c'est Mint lui-même. Mint est construit sur Ubuntu, mais ce n'est pas Ubuntu, et Docker ne le prend pas officiellement en charge. Cela ne veut pas dire que ça ne fonctionne pas : cela veut dire qu'à un moment précis de l'installation, tu dois dire à `apt` de se comporter comme si tu étais Ubuntu. C'est une seule ligne, et c'est celle qui a fait échouer le premier tutoriel de la scène.
 
@@ -103,13 +106,15 @@ Chaque distribution Linux décrit son identité dans un fichier texte, `/etc/os-
 ```bash
 #!/usr/bin/env bash
 # fig01_01.sh — ¿Qué sistema tengo y qué nombre en clave le toca en el
-# repositorio de Docker? Solo lee archivos: no cambia nada en tu equipo.
+# repositorio de Docker? Solo lee archivos de configuración (os-release): no
+# cambia nada en tu equipo.
 # Uso: ./fig01_01.sh            (lee /etc/os-release, el de tu sistema)
 #      ./fig01_01.sh ARCHIVO    (lee otro archivo con el mismo formato)
 set -euo pipefail
 ARCHIVO="${1:-/etc/os-release}"
 
-# os-release es un archivo de variables de shell: «.» lo carga en este guion.
+# os-release es un archivo de variables de shell: «.» lo carga en este guion, y
+# cargar es EJECUTAR: pásale solo archivos os-release (puras asignaciones).
 . "$ARCHIVO"
 
 echo "== Lo que dice $ARCHIVO"
@@ -148,7 +153,7 @@ Suites: noble
 amd64
 ```
 
-Sur ta machine, si tu as Mint 22, 22.1 ou 22.2, `VERSION` et `VERSION_CODENAME` indiqueront `wilma`, `xia` ou `zara` ; tout le reste sera identique. Avant de lire la sortie, voici les lignes du script qui ne sont pas évidentes. Le point seul (`. "$ARCHIVO"`) charge le fichier dans le script, exactement comme `source` : après cette ligne, `$NAME` ou `$UBUNTU_CODENAME` contiennent les valeurs du fichier. `${VERSION:-}` signifie « la valeur de `VERSION`, ou rien si elle n'existe pas » ; sans cela, `set -u` arrêterait le script en rencontrant une variable absente. Et `dpkg --print-architecture` demande au gestionnaire de paquets pour quel processeur ton système est conçu ; comme il interroge ton système et non le fichier, si tu lui passes un autre `os-release` en argument, ce dernier bloc continue d'afficher l'architecture de ta propre machine.
+Sur ta machine, si tu as Mint 22, 22.1 ou 22.2, `VERSION` et `VERSION_CODENAME` indiqueront `wilma`, `xia` ou `zara` ; tout le reste sera identique. Avant de lire la sortie, voici les lignes du script qui ne sont pas évidentes. Le point seul (`. "$ARCHIVO"`) charge le fichier dans le script, exactement comme `source` : après cette ligne, `$NAME` ou `$UBUNTU_CODENAME` contiennent les valeurs du fichier. Et charger veut dire **exécuter** : toute commande qui se trouverait dans ce fichier s'exécuterait ([manuel de Bash, `source`](https://www.gnu.org/software/bash/manual/html_node/Bourne-Shell-Builtins.html)). `/etc/os-release` ne contient que des affectations et il est inoffensif, mais comme le script accepte n'importe quel fichier en argument, ne lui passe que des fichiers `os-release`. `${VERSION:-}` signifie « la valeur de `VERSION`, ou rien si elle n'existe pas » ; sans cela, `set -u` arrêterait le script en rencontrant une variable absente. Et `dpkg --print-architecture` demande au gestionnaire de paquets pour quel processeur ton système est conçu ; comme il interroge ton système et non le fichier, si tu lui passes un autre `os-release` en argument, ce dernier bloc continue d'afficher l'architecture de ta propre machine.
 
 Maintenant la sortie, qui contient la clé de toute la leçon :
 
@@ -290,6 +295,74 @@ L'avertissement `WARNING: apt does not have a stable CLI interface` apparaît pa
 
 Le guide signale quelque chose d'important si tu as déjà eu Docker : les images, conteneurs, volumes et réseaux qui vivent dans `/var/lib/docker/` **ne sont pas effacés** lors de la désinstallation. Désinstaller le paquet supprime les programmes ; les données restent. Si tu veux vraiment repartir de zéro, la section 1.10 explique comment. Sinon, les nouveaux paquets trouveront ces données et les utiliseront.
 
+#### 1.4.4 Ce qu'un tutoriel précédent a pu laisser
+
+Supprimer les paquets ne supprime pas ce qu'un autre tutoriel a écrit dans `apt`. La scène du début décrit quelqu'un qui a déjà essayé cinq commandes d'un autre guide ; s'il t'est arrivé quelque chose de semblable, il est probable que tu aies un `docker.list` portant le nom de Mint (`zena`), une clé dans `/usr/share/keyrings/` ou `/etc/apt/keyrings/`, ou une clé dans l'ancien trousseau d'`apt-key`. `apt` lit **tous** les fichiers de `/etc/apt/sources.list.d/`, et un vieux `docker.list` continue de demander `zena` même si tu écris correctement `docker.sources` à la section 1.5.3 : le symptôme est la même erreur qu'en 1.5.2, avec la mauvaise cause, et tu conclus que « la correction n'a pas marché » ([sources.list(5)](https://manpages.debian.org/trixie/apt/sources.list.5.en.html) ; la désinstallation officielle supprime la source et la clé comme une étape à part).
+
+`fig01_08.sh` cherche ces restes. Il ne fait que lire, donc tu peux l'exécuter sans crainte sur n'importe quelle machine :
+
+```bash
+#!/usr/bin/env bash
+# fig01_08.sh — ¿Te dejó otro tutorial restos de Docker en apt?
+# Solo lee: no cambia nada en tu equipo. Córrelo ANTES de fig01_03.sh.
+set -uo pipefail
+
+echo "== 1. Archivos de apt que apuntan a download.docker.com"
+grep -rl download.docker.com /etc/apt/sources.list /etc/apt/sources.list.d/ 2>/dev/null \
+  || echo "(ninguno)"
+
+echo
+echo "== 2. Llaves de Docker sueltas en las carpetas de llaves"
+ls -l /etc/apt/keyrings/ /usr/share/keyrings/ 2>/dev/null | grep -i docker \
+  || echo "(ninguna)"
+
+echo
+echo "== 3. Llaves de Docker en el llavero viejo (apt-key)"
+apt-key list 2>/dev/null | grep -i -B1 -A1 docker \
+  || echo "(ninguna)"
+```
+
+Si tu n'avais jamais touché à Docker, la sortie est celle-ci (exécution réelle · Mint simulé ; elle se trouve dans `fig01_08.salida-limpio.txt`) :
+
+```text
+$ ./fig01_08.sh
+== 1. Archivos de apt que apuntan a download.docker.com
+(ninguno)
+
+== 2. Llaves de Docker sueltas en las carpetas de llaves
+(ninguna)
+
+== 3. Llaves de Docker en el llavero viejo (apt-key)
+(ninguna)
+```
+
+Pour voir le cas inverse, on a préparé, manuellement, la machine de quelqu'un qui a suivi un vieux tutoriel : une clé dans `/usr/share/keyrings/docker-archive-keyring.gpg`, la même clé ajoutée avec `apt-key add` et un `docker.list` d'une ligne avec `zena`. C'est un scénario monté de toutes pièces, pas une machine réelle, et la sortie est celle-ci (exécution réelle · Mint simulé ; elle se trouve dans `fig01_08.salida.txt` ; la date de la clé change) :
+
+```text
+$ ./fig01_08.sh
+== 1. Archivos de apt que apuntan a download.docker.com
+/etc/apt/sources.list.d/docker.list
+
+== 2. Llaves de Docker sueltas en las carpetas de llaves
+-rw-r--r-- 1 root root 2760 Oct 21 15:05 docker-archive-keyring.gpg
+
+== 3. Llaves de Docker en el llavero viejo (apt-key)
+      9DC8 5822 9FC7 DD38 854A  E2D8 8D81 803C 0EBF CD88
+uid           [ unknown] Docker Release (CE deb) <docker@docker.com>
+sub   rsa4096 2017-02-22 [S]
+```
+
+Elle se lit ainsi : le bloc 1 montre quels fichiers pointent vers Docker (ici, le vieux `docker.list`) ; le 2, les clés restées en vrac ; le 3, celle qui a été ajoutée au trousseau commun. Avec cette machine, on a ensuite écrit le bon `docker.sources` de la section 1.5.3 (`Suites: noble`) **sans** supprimer le `docker.list`, et l'on a lancé `apt-get update`. Ce qui s'est passé dépend de ce que disait le `docker.list` (tout se trouve dans `fig01_08.efectos-esperado.txt`) :
+
+| Le vieux `docker.list` disait | Ce qui s'est passé avec `apt update` |
+|---|---|
+| `zena` | la même erreur qu'en 1.5.2 : `E: The repository '… zena Release' does not have a Release file.`, code 100, alors que `docker.sources` était déjà correct |
+| `noble`, avec une **autre** clé | une erreur différente : `E: Conflicting values set for option Signed-By regarding source …/ubuntu/ noble`, et `E: The list of sources could not be read.` |
+| `noble`, avec la **même** clé | pas d'échec, mais un avertissement : `W: Target Packages … is configured multiple times in …/docker.list:1 and …/docker.sources:1` |
+
+Une fois le `docker.list` supprimé (`sudo rm /etc/apt/sources.list.d/docker.list`), `apt update` est de nouveau ressorti propre (`Hit … noble InRelease`, code 0). Donc : si `fig01_08.sh` montre un `docker.list` ou un autre fichier qui pointe vers `download.docker.com`, supprime-le avec `sudo rm` avant de continuer. Les vieilles clés (`docker.gpg`, `docker-archive-keyring.gpg`) gênent moins, mais supprime-les aussi, pour que la seule clé de Docker sur ta machine soit celle de 1.5.1. Si le tutoriel a utilisé `apt-key add`, `sudo apt-key list` te l'a montrée dans le bloc 3 ; on la retire avec `sudo apt-key del` et les huit derniers caractères de son empreinte (ici, `0EBF CD88`). Attention : le manuel marque aussi `list` comme obsolète et `del` comme « presque » obsolète (il ne fait d'exception que pour `del` dans les scripts de maintenance de paquets). Ici, on ne s'en sert pas pour ajouter quoi que ce soit, seulement pour nettoyer manuellement ce qu'un autre a laissé, et il n'existe pas d'autre façon de le faire avec le trousseau commun.
+
+
 ### 1.5 Le dépôt officiel
 
 #### 1.5.1 Ce qu'est un dépôt `apt`
@@ -299,7 +372,7 @@ Le guide signale quelque chose d'important si tu as déjà eu Docker : les image
 - **La clé.** Docker signe son index avec une clé cryptographique. `apt` a besoin de la partie publique de cette clé pour vérifier que ce qu'il télécharge vient bien de Docker et que personne ne l'a modifié en chemin.
 - **La source.** Un fichier dans `/etc/apt/sources.list.d/` qui indique à `apt` où se trouve le dépôt, quelle partie te correspond et avec quelle clé on la vérifie.
 
-Voici la partie du guide officiel, complète (extrait de la documentation). **Ne la tape pas encore** : dans cette leçon, tu vas l'exécuter en deux temps. `fig01_03.sh` fait la partie de la clé comme le guide et écrit la source avec l'erreur de Mint ; `fig01_04.sh` réécrit correctement la source. Si tu préfères ne pas provoquer l'erreur sur ta machine, tape ce bloc tel quel, saute la section 1.5.2 et, à la section 1.5.3, lis la sortie au lieu d'exécuter le script :
+Voici la partie du guide officiel, complète (extrait de la documentation). **Ne la tape pas encore** : dans cette leçon, tu vas l'exécuter en deux temps. `fig01_03.sh` fait la partie de la clé comme le guide et écrit la source avec l'erreur de Mint ; `fig01_04.sh` réécrit correctement la source. Si tu préfères ne pas provoquer l'erreur sur ta machine, tape ce bloc tel quel et saute la section 1.5.2. À la section 1.5.3, tu peux quand même exécuter `fig01_04.sh` : il écrit le même fichier que tu viens d'écrire et te montre d'où viendrait `docker-ce`, ce que l'Exercice 3 réutilise :
 
 ```bash
 # Add Docker's official GPG key:
@@ -331,7 +404,7 @@ Ligne par ligne :
 - `chmod a+r` rend la clé lisible par tous, car `apt` la lit avec un utilisateur sans privilèges.
 - `sudo tee … <<EOF` écrit le fichier de la source. On utilise `tee` avec `sudo` parce qu'une redirection `>` est effectuée par ton *shell*, qui n'est pas `root`, et qui ne pourrait pas écrire dans `/etc`. Ce qui se trouve entre `<<EOF` et `EOF` est le contenu, et les `$( … )` sont substitués **avant** de l'écrire.
 
-Le fichier `docker.sources` est au format **deb822** : un champ par ligne, avec son nom. Le manuel d'`apt` le décrit à côté de l'ancien format, sur une seule ligne (`deb [options] url version composant`), et indique que l'intention est que deb822 devienne peu à peu le format par défaut ([sources.list(5)](https://manpages.debian.org/trixie/apt/sources.list.5.en.html)). Tu verras des tutoriels avec un fichier `docker.list` d'une ligne ; cela fonctionne de la même façon, c'est l'ancienne forme. Les champs :
+Le fichier `docker.sources` est au format **deb822** : un champ par ligne, avec son nom. Le manuel d'`apt` le décrit à côté de l'ancien format, sur une seule ligne (`deb [options] url version composant`), et indique que l'intention est que deb822 devienne peu à peu le format par défaut ([sources.list(5)](https://manpages.debian.org/trixie/apt/sources.list.5.en.html)). Tu verras des tutoriels avec un fichier `docker.list` d'une ligne : c'est l'ancienne forme, que le même manuel marque comme obsolète (« this format is deprecated and may eventually be removed, but not before 2029 »). Elle fonctionne ; ce qui est nouveau s'écrit en deb822. Les champs :
 
 | Champ | Valeur | Ce qu'il signifie |
 |---|---|---|
@@ -346,13 +419,14 @@ Ce dernier champ mérite une ligne de plus. Autrefois, les clés des dépôts ex
 
 #### 1.5.2 L'erreur de Mint, provoquée
 
-Voici maintenant l'erreur de la scène, exprès. `fig01_03.sh` est la même étape que celle du guide, avec **une seule différence** : dans `Suites`, il utilise `VERSION_CODENAME` au lieu de `${UBUNTU_CODENAME:-$VERSION_CODENAME}`. C'est ainsi que l'écrivent beaucoup d'anciens guides pour Ubuntu, avec `$VERSION_CODENAME` ou avec `$(lsb_release -cs)`, qui dans Mint renvoie aussi le nom de Mint (il le tire de `DISTRIB_CODENAME` dans `/etc/lsb-release`) ; et c'est ainsi que l'écrit le guide officiel **pour Debian**, qui n'a pas le problème parce que Debian n'a pas `UBUNTU_CODENAME` ([Docker, installer sur Debian](https://docs.docker.com/engine/install/debian/)). Qui copie depuis le mauvais guide, sur Mint, tombe ici.
+Voici maintenant l'erreur de la scène, exprès. `fig01_03.sh` est la même étape que celle du guide, avec **une seule différence qui compte** : dans `Suites`, il utilise `VERSION_CODENAME` au lieu de `${UBUNTU_CODENAME:-$VERSION_CODENAME}` (il ajoute en outre `-y` à `apt install`, pour ne pas poser de question). C'est ainsi que l'écrivent beaucoup d'anciens guides pour Ubuntu, avec `$VERSION_CODENAME` ou avec `$(lsb_release -cs)`, qui dans Mint renvoie aussi le nom de Mint (il le tire de `DISTRIB_CODENAME` dans `/etc/lsb-release`) ; et c'est ainsi que l'écrit le guide officiel **pour Debian**, qui n'a pas le problème parce que Debian n'a pas `UBUNTU_CODENAME` ([Docker, installer sur Debian](https://docs.docker.com/engine/install/debian/)). Qui copie depuis le mauvais guide, sur Mint, tombe ici.
 
 ```bash
 #!/usr/bin/env bash
 # fig01_03.sh — EL ERROR DE MINT, provocado a propósito.
-# Es el paso 1 de la guía oficial con UNA sola diferencia: «Suites» sale de
+# Es el paso 1 de la guía oficial con UNA diferencia que importa: «Suites» sale de
 # VERSION_CODENAME (el nombre en clave de Mint) en vez de UBUNTU_CODENAME.
+# (Además lleva -y en «apt install», para no preguntar.)
 # Así lo escriben muchas guías viejas y la guía oficial de Debian.
 set -uo pipefail
 
@@ -505,7 +579,7 @@ docker-compose-plugin 5.6.0-1~ubuntu.24.04~noble
 paquetes en total, contando dependencias: 96
 ```
 
-Ce qui change sur ta machine : les versions (celles de ce bloc sont celles du 21 octobre 2026), le nombre de paquets à mettre à jour et, surtout, le total de la dernière ligne. Le conteneur de la simulation est un Ubuntu minimal, presque vide, auquel manquent des dizaines de pièces que ton Mint de bureau possède déjà (`systemd`, `perl`, `git`…) ; sur ta machine, le total sera bien plus faible. Et ces lignes d'`apt update` proviennent de la **deuxième** exécution du script, avec les index déjà téléchargés (`Hit`). La première fois, ceux de Docker sont apparus comme des téléchargements : `Get:1 https://download.docker.com/linux/ubuntu noble InRelease [48.5 kB]` puis la liste des paquets de `noble/stable amd64`.
+Ce qui change sur ta machine : les versions (celles de ce bloc sont celles du 21 octobre 2026), le nombre de paquets à mettre à jour et, surtout, le total de la dernière ligne. Le conteneur de la simulation est un Ubuntu minimal, presque vide, auquel manquent des dizaines de pièces que ton Mint de bureau possède déjà (`systemd`, `perl`, `git`…) ; sur ta machine, le total sera bien plus faible. Et ces lignes d'`apt update` proviennent de la **deuxième** exécution du script, avec les index déjà téléchargés (`Hit`). La première fois, les lignes de Docker n'apparaissent pas comme `Hit` mais comme `Get`, parce que les index sont téléchargés pour la première fois : d'abord l'index `InRelease` de `noble`, puis la liste des paquets de `noble/stable` pour ton architecture (un exemple réel se trouve dans `fig01_08.efectos-esperado.txt`).
 
 Ce que dit la sortie :
 
@@ -537,13 +611,20 @@ sudo apt install docker-ce=$VERSION_STRING docker-ce-cli=$VERSION_STRING contain
 
 La première commande liste les versions disponibles, comme l'a fait `fig01_04.sh`. La deuxième enregistre dans une variable celle que tu veux, avec son numéro complet, époque comprise. La troisième installe `docker-ce` et `docker-ce-cli` dans cette version exacte : `paquet=version` est la façon dont `apt` demande une version précise. La 29.8.2 de l'exemple est justement la version avec laquelle ce cours a été planifié ; il n'est pas nécessaire de la fixer pour le suivre.
 
+**Attention : demander une version ne la fige pas.** `paquet=version` ne vaut que pour cette installation. Le jour où tu exécuteras `sudo apt upgrade`, `apt` verra que le dépôt contient une version plus récente de `docker-ce` et l'installera. Si tu veux vraiment qu'elle ne change pas, marque-la comme retenue (*hold*) et libère-la quand tu décides de mettre à jour (le guide de Docker ne le dit pas ; cela vient du manuel d'[`apt-mark`](https://manpages.ubuntu.com/manpages/noble/man8/apt-mark.8.html)) :
+
+```bash
+sudo apt-mark hold docker-ce docker-ce-cli
+sudo apt-mark unhold docker-ce docker-ce-cli
+```
+
 **Ce que fait l'installation en plus de copier des fichiers.** Sur Debian et Ubuntu, le service Docker est configuré pour démarrer tout seul, maintenant et à chaque démarrage de la machine : les étapes post-installation le disent, « sur Debian et Ubuntu, le service Docker démarre au lancement du système par défaut » ([Docker, étapes post-installation](https://docs.docker.com/engine/install/linux-postinstall/)). Et le groupe `docker` est créé, vide. Tu vérifies ces deux points aux sections 1.7 et 1.8.
 
 ### 1.7 Vérifier
 
 #### 1.7.1 Ce que demande le guide
 
-Le guide officiel se termine par deux vérifications (extrait de la documentation) :
+Le guide officiel vérifie avec `sudo docker run hello-world` ; `sudo systemctl status docker` figure dans une note, juste après la commande d'installation, avec `sudo systemctl start docker` au cas où il ne tournerait pas. Les deux ensemble (extrait de la documentation) :
 
 ```bash
 sudo systemctl status docker
@@ -655,8 +736,8 @@ Bloc par bloc :
 
 1. **`active` et `enabled`.** `is-active` répond à la question de savoir si le service tourne **maintenant** ; `is-enabled`, s'il démarrera **tout seul** au prochain démarrage de la machine. Ce sont deux questions différentes et il vaut mieux poser les deux : un service peut tourner parce que tu l'as démarré manuellement et ne pas revenir après un redémarrage.
 2. **Les cinq paquets**, chacun avec sa version et le suffixe `ubuntu.24.04~noble`, qui indique qu'ils proviennent du dépôt officiel pour Noble. `dpkg-query -W` interroge les paquets installés avec le format que tu lui demandes.
-3. **Les versions.** `docker version` en rapporte deux, celle du client et celle du daemon, car ce sont deux programmes (Leçon 0, section 0.6). `API: 1.53` est la version de la langue dans laquelle ils communiquent. `docker compose version` et `docker buildx version` confirment que les deux *plugins* sont en place : si `docker compose` répondait `docker: unknown command: docker compose`, il manquerait `docker-compose-plugin` (avec Docker 29.2.1, c'est ainsi que le client répond à une sous-commande qu'il ne connaît pas : `docker noexiste` a affiché `docker: unknown command: docker noexiste`).
-4. **Le premier conteneur.** Le daemon n'a pas trouvé l'image `hello-world` sur ta machine (`Unable to find image … locally`), il l'a téléchargée depuis Docker Hub, a créé un conteneur, l'a exécuté et, comme tu as demandé `--rm`, l'a supprimé à la fin. Le texte qu'affiche le conteneur décrit, en quatre étapes, le chemin de la carte de la Leçon 0 : le client parle au daemon, le daemon télécharge l'image, crée un conteneur et te renvoie sa sortie. `hello-world` est la seule image de ce cours utilisée sans version fixe (`latest`), car c'est le seul tag qu'elle publie.
+3. **Les versions.** `docker version` en rapporte deux, celle du client et celle du daemon, car ce sont deux programmes (Leçon 0, section 0.6). `API: 1.53` est la version de la langue dans laquelle ils communiquent. `docker compose version` et `docker buildx version` confirment que les deux *plugins* sont en place : si `docker compose` répondait `docker: unknown command: docker compose`, il manquerait `docker-compose-plugin` (c'est ainsi que le client répond à une sous-commande qu'il ne connaît pas ; mesuré avec le client 29.8.2 du Mac des exécutions, `docker noexiste` affiche `docker: unknown command: docker noexiste`, et cela se trouve dans `fig01_05.unknown-command.txt`).
+4. **Le premier conteneur.** Le daemon n'a pas trouvé l'image `hello-world` sur ta machine (`Unable to find image … locally`), il l'a téléchargée depuis Docker Hub, a créé un conteneur, l'a exécuté et, comme tu as demandé `--rm`, l'a supprimé à la fin. Le texte qu'affiche le conteneur décrit, en quatre étapes, le chemin de la carte de la Leçon 0 : le client parle au daemon, le daemon télécharge l'image, crée un conteneur et te renvoie sa sortie. `hello-world` est la seule image de ce cours utilisée sans version fixe (`latest`), car c'est la seule qui ne publie pas de tags avec un numéro de version : ses tags sont `latest` et `linux` (la même image) et des variantes pour Windows (`nanoserver-…`), qui ne servent pas ici ([Docker Hub](https://hub.docker.com/_/hello-world)).
 5. **Le *socket*.** `srw-rw----` : le `s` indique que c'est un *socket* ; `rw-` pour le propriétaire, `root` ; `rw-` pour le groupe, `docker` ; et `---` pour tous les autres. C'est cette dernière colonne de tirets qui empêche un utilisateur hors du groupe de parler au daemon (1.8).
 6. **Zéro conteneur du cours.** `--rm` a fait son travail. Tous les noms de ce cours commencent par `curso-docker-` pour que tu puisses trouver et supprimer ce qui t'appartient sans toucher à rien d'autre ; c'est une habitude qu'il vaut mieux prendre dès le premier conteneur.
 
@@ -664,12 +745,13 @@ Bloc par bloc :
 
 #### 1.8.1 L'erreur de permissions
 
-Juste après l'installation de Docker, si tu tapes `docker ps` sans `sudo`, tu vas voir l'erreur de cette section. `fig01_06.sh` la provoque sans te retirer du groupe : il utilise l'utilisateur `nobody`, qui existe sur n'importe quel Linux et n'appartient à aucun groupe utile :
+Juste après l'installation de Docker, si tu tapes `docker ps` sans `sudo`, tu vas voir l'erreur de cette section. `fig01_06.sh` la provoque sans te retirer du groupe : il utilise l'utilisateur `nobody`, qui existe sur pratiquement toutes les distributions (Mint et Ubuntu l'ont) et n'appartient à aucun groupe utile. Le `sudo` du script ne sert qu'à changer d'utilisateur, pas à donner des permissions à `nobody` : c'est précisément pour cela que le script continue de fonctionner comme démonstration même si tu fais déjà partie du groupe `docker` :
 
 ```bash
 #!/usr/bin/env bash
 # fig01_06.sh — El error de permisos: un usuario que NO está en el grupo docker.
-# Usa al usuario «nobody», que existe en todo Linux y no pertenece a ningún
+# Usa al usuario «nobody», que existe en prácticamente toda distribución (Mint y
+# Ubuntu lo traen) y no pertenece a ningún
 # grupo útil, para mostrar el error sin tener que sacarte a ti del grupo.
 set -uo pipefail
 
@@ -722,8 +804,8 @@ newgrp docker
 ```
 
 - `groupadd docker` crée le groupe. Le guide prévient que, sur certaines distributions, le paquet le crée déjà à l'installation ; c'est le cas sur Ubuntu et sur Mint, et la commande te dira `groupadd: group 'docker' already exists`. Ce n'est pas une vraie erreur : le groupe existait déjà.
-- `usermod -aG docker $USER` t'ajoute au groupe. Le `-a` (*append*) est important : sans lui, `-G` **remplace** tous tes groupes par `docker`, et tu te retrouverais exclu de `sudo`, entre autres. `$USER` est ton nom d'utilisateur.
-- Le changement ne s'applique pas aux sessions déjà ouvertes, car les groupes d'un processus sont fixés à l'ouverture de session. Le guide demande de **fermer la session et de te reconnecter** (et, si ton Linux tourne dans une machine virtuelle, peut-être de la redémarrer). `newgrp docker` est le raccourci : il ouvre un nouveau *shell* avec le groupe déjà appliqué, uniquement dans ce terminal.
+- `usermod -aG docker $USER` t'ajoute au groupe. Le `-a` (*append*) est important : sans lui, `-G` **remplace** tous tes groupes supplémentaires par `docker` : il ne te resterait que ton groupe principal et `docker`, et tu serais exclu de `sudo`, entre autres. `$USER` est ton nom d'utilisateur.
+- Le changement ne s'applique pas aux sessions déjà ouvertes, car les groupes d'un processus sont fixés à l'ouverture de session. Le guide demande de **fermer la session et de te reconnecter** (et, si ton Linux tourne dans une machine virtuelle, peut-être de la redémarrer). `newgrp docker` est le raccourci : il ouvre un nouveau *shell* avec le groupe déjà appliqué, uniquement dans ce terminal. Il a trois limites qu'il faut connaître : il n'atteint ni les autres onglets de terminal ni les programmes graphiques que tu avais déjà ouverts (un éditeur avec terminal intégré, par exemple), si bien que tu y verras encore `permission denied` ; si tu tapes `exit`, tu reviens au *shell* précédent, où le groupe n'est pas actif ; et le groupe `docker` devient le groupe principal de ce *shell*, de sorte que les fichiers que tu y crées auront `docker` comme groupe. Pour que le changement vaille dans tout ton environnement, ferme la session et reconnecte-toi.
 
 Ensuite, `id -nG` doit inclure le mot `docker`, et `docker run hello-world` doit fonctionner sans `sudo`. C'est le moment d'exécuter `fig01_05.sh`.
 
@@ -739,9 +821,11 @@ stat /home/user/.docker/config.json: permission denied
 Le client enregistre sa configuration dans le dossier `.docker` de ton répertoire personnel. Quand tu l'as exécuté avec `sudo`, ce dossier a été créé avec `root` comme propriétaire, et maintenant tu ne peux plus le lire. Le guide propose deux corrections : supprimer `~/.docker/` (il se recrée tout seul, mais tu perds la configuration qu'il contenait), ou te rendre la propriété du dossier :
 
 ```bash
-sudo chown "$USER":"$USER" /home/"$USER"/.docker -R
-sudo chmod g+rwx "$HOME/.docker" -R
+sudo chown -R "$USER":"$USER" "$HOME/.docker"
+sudo chmod -R g+rwx "$HOME/.docker"
 ```
+
+Le guide les écrit avec `-R` à la fin et avec le chemin `/home/$USER/.docker` dans la première ; ici, ils sont écrits avec l'option avant les arguments (l'ordre que demande le standard POSIX) et avec `$HOME` dans les deux, pour qu'ils fonctionnent aussi si ton dossier personnel n'est pas sous `/home`.
 
 C'est un bon exemple de la raison pour laquelle `sudo docker` n'est pas si innocent : il ne donne pas plus de pouvoir que le groupe, mais il laisse des traces de `root` là où elles ne devraient pas être.
 
@@ -755,13 +839,13 @@ Un avertissement s'oublie ; une démonstration, non. C'est pourquoi ce cours ne 
 
 #### 1.9.2 Le voir de tes propres yeux
 
-`/etc/shadow` est le fichier où Linux conserve les mots de passe chiffrés des utilisateurs. Seul `root` peut le lire. `fig01_07.sh` essaie de le lire deux fois : d'abord en tant que toi, sans `sudo` ; ensuite, en le demandant au daemon de Docker. Pour ne rien afficher de secret, il se contente de compter les lignes et de montrer le premier **nom** d'utilisateur :
+`/etc/shadow` est le fichier où Linux conserve les mots de passe chiffrés des utilisateurs. Seuls `root` et le groupe `shadow` peuvent le lire (permissions `0640`) ; toi, en tant qu'utilisateur normal, non. `fig01_07.sh` essaie de le lire deux fois : d'abord en tant que toi, sans `sudo` ; ensuite, en le demandant au daemon de Docker. Pour ne rien afficher de secret, il se contente de compter les lignes et de montrer le premier **nom** d'utilisateur :
 
 ```bash
 #!/usr/bin/env bash
 # fig01_07.sh — Por qué el grupo docker equivale a root.
 # Córrelo SIN sudo, como tu usuario normal (que ya está en el grupo docker).
-# Lee /etc/shadow, el archivo de contraseñas cifradas que solo root puede leer,
+# Lee /etc/shadow, el archivo de contraseñas cifradas que solo root y el grupo shadow pueden leer,
 # y solo imprime cuántos renglones tiene y el primer NOMBRE de usuario: nada secreto.
 set -uo pipefail
 IMAGEN=debian:13.7-slim
@@ -811,7 +895,7 @@ Lis les deux moitiés ensemble :
 1. **En tant que toi, le système te dit non.** `/etc/shadow` appartient à `root` et au groupe `shadow`, et les autres n'ont aucune permission (`---`). `cat` échoue avec `Permission denied`, comme il se doit.
 2. **En le demandant au daemon, il te dit oui.** `-v /etc:/anfitrion-etc:ro` monte le dossier `/etc` de ta machine à l'intérieur du conteneur, dans `/anfitrion-etc`. À l'intérieur, le processus est `uid=0(root)`, et comme l'espace de noms des utilisateurs n'est pas isolé par défaut (Leçon 0, section 0.3), c'est le **même** utilisateur 0 que sur ta machine. Il lit le fichier sans difficulté : 26 lignes, en commençant par celle de `root`.
 
-Tu n'as pas utilisé `sudo`. Tu n'as tapé aucun mot de passe. Il a suffi d'être dans le groupe `docker`. Et le `:ro` du montage (lecture seule) n'est pas une protection : c'est toi qui l'as mis, et rien ne t'empêchait de l'enlever et de monter `/` en entier avec permission d'écriture. Voilà ce que signifie « équivaut à `root` » : non pas que le groupe `docker` ait une permission spéciale, mais qu'il donne accès à un programme qui s'exécute en tant que `root` et qui fait ce que tu lui demandes.
+Tu n'as pas utilisé `sudo`. Tu n'as tapé aucun mot de passe. Il a suffi d'être dans le groupe `docker`. Et le `:ro` du montage (lecture seule) ne te protège pas, toi : la restriction, c'est toi qui l'as posée, et rien ne t'empêchait de la retirer et de monter `/` en entier avec permission d'écriture. (C'est en revanche une vraie protection contre un processus qui tourne déjà dans le conteneur et ne peut pas changer la façon dont il a été monté ; ce qu'elle n'arrête pas, c'est celui qui tient les commandes du daemon.) Voilà ce que signifie « équivaut à `root` » : non pas que le groupe `docker` ait une permission spéciale, mais qu'il donne accès à un programme qui s'exécute en tant que `root` et qui fait ce que tu lui demandes.
 
 La même logique explique les deux autres interdits de la scène. Donner les permissions `777` au *socket*, c'est mettre **tous** les utilisateurs et programmes de la machine dans le groupe `docker` sans leur demander leur avis. Et monter le *socket* à l'intérieur d'un conteneur, c'est donner cette clé à ce qui s'exécute dedans.
 
@@ -843,7 +927,7 @@ sudo rm /etc/apt/sources.list.d/docker.sources
 sudo rm /etc/apt/keyrings/docker.asc
 ```
 
-La première supprime les programmes (`purge`, contrairement à `remove`, supprime aussi leur configuration). Remarque que la liste inclut `docker-ce-rootless-extras`, le sixième paquet que tu as vu dans la simulation de la section 1.5.3. La deuxième paire **efface toutes tes images, conteneurs et volumes**, que la première a laissés intacts : c'est irréversible, alors avant de l'exécuter, assure-toi qu'il n'y a rien là-dedans que tu veuilles garder. La troisième paire supprime la source et la clé, pour qu'`apt` cesse de consulter le dépôt de Docker. Le guide ajoute que les fichiers de configuration que tu as modifiés manuellement doivent être supprimés manuellement.
+La première supprime les programmes (`purge`, contrairement à `remove`, supprime aussi leur configuration). Remarque que la liste inclut `docker-ce-rootless-extras`, le sixième paquet que tu as vu dans la simulation de la section 1.5.3. La deuxième paire **efface toutes tes images, conteneurs et volumes**, que la première a laissés intacts : c'est irréversible, alors avant de l'exécuter, assure-toi qu'il n'y a rien là-dedans que tu veuilles garder. La troisième paire supprime la source et la clé, pour qu'`apt` cesse de consulter le dépôt de Docker. Le guide ajoute que les fichiers de configuration que tu as modifiés manuellement doivent être supprimés manuellement. Le cas typique est `/etc/docker/daemon.json`, si tu l'as un jour créé pour changer la configuration du daemon : `purge` n'y touche pas, et si tu réinstalles Docker « de zéro », le nouveau daemon le lit et hérite de cette configuration. Vérifie avec `ls /etc/docker` et supprime manuellement ce que tu ne veux plus.
 
 ## L'erreur que tu vas voir
 
@@ -857,7 +941,7 @@ Err:2 https://download.docker.com/linux/ubuntu zena Release
 E: The repository 'https://download.docker.com/linux/ubuntu zena Release' does not have a Release file.
 ```
 
-Elle se lit ainsi : `apt` a demandé au dépôt de Docker la version `zena` et le serveur a répondu qu'elle n'existe pas (404). Le mot qui compte est celui qui se trouve entre l'adresse et `Release` : si un nom de Mint y apparaît (`wilma`, `xia`, `zara`, `zena`), le problème vient de la ligne `Suites` de `/etc/apt/sources.list.d/docker.sources`. On corrige en réécrivant ce fichier avec la ligne du guide officiel, qui utilise `UBUNTU_CODENAME` (1.5.3), puis en relançant `sudo apt update`. Si, au lieu du nom de Mint, c'est `noble` qui apparaît et que cela échoue quand même, le problème est ailleurs (le réseau, ou l'URL mal écrite) ; et si c'est le nom d'une version d'Ubuntu que Docker ne prend pas en charge, revois la liste de la section 1.2.1.
+Elle se lit ainsi : `apt` a demandé au dépôt de Docker la version `zena` et le serveur a répondu qu'elle n'existe pas (404). Le mot qui compte est celui qui se trouve entre l'adresse et `Release` : si un nom de Mint y apparaît (`wilma`, `xia`, `zara`, `zena`), le problème vient de la ligne `Suites` de `/etc/apt/sources.list.d/docker.sources`. On corrige en réécrivant ce fichier avec la ligne du guide officiel, qui utilise `UBUNTU_CODENAME` (1.5.3), puis en relançant `sudo apt update`. Si tu l'as déjà réécrit et que l'erreur persiste **avec le nom de Mint**, un autre fichier pointe vers le dépôt : `./fig01_08.sh` te dit lequel (1.4.4). Si, au lieu du nom de Mint, c'est `noble` qui apparaît et que cela échoue quand même, le problème est ailleurs (le réseau, l'URL mal écrite, ou un vieux `docker.list` avec une autre clé, 1.4.4) ; et si c'est le nom d'une version d'Ubuntu que Docker ne prend pas en charge, revois la liste de la section 1.2.1.
 
 **L'erreur de permissions : « permission denied while trying to connect to the docker API ».** C'est celle de `fig01_06.sh` (1.8.1) :
 
@@ -897,7 +981,7 @@ Avec cette habitude en vient une autre, plus modeste, que cette leçon installe 
 
 **Exécuter le script de `get.docker.com` sans le lire.** Le guide lui-même demande de vérifier les scripts téléchargés avant de les exécuter, et ne le recommande pas pour la production. Un script téléchargé puis exécuté avec `sudo` a `root` sur ta machine, tout comme le groupe `docker`.
 
-**Oublier `-a` dans `usermod -aG`.** `usermod -G docker` te laisse **uniquement** dans le groupe `docker`, et hors de `sudo`.
+**Oublier `-a` dans `usermod -aG`.** `usermod -G docker` remplace tes groupes supplémentaires par `docker` : il te laisse avec ton groupe principal et `docker`, et hors de `sudo`.
 
 **Considérer l'installation comme terminée sans la vérifier.** Qu'`apt` n'ait pas renvoyé d'erreur ne dit pas que le service tourne, ni qu'il démarre tout seul, ni que ton utilisateur peut l'utiliser. Les vérifications de `fig01_05.sh` prennent deux secondes.
 
@@ -965,7 +1049,7 @@ arm64
 2. **L'utilisateur n'est pas dans le groupe `docker`.** Le daemon tourne ; il manque la permission sur le *socket*. `sudo usermod -aG docker $USER`, fermer la session et se reconnecter (ou `newgrp docker`), en sachant que cela équivaut à lui donner `root` (1.8 et 1.9).
 3. **Le daemon ne tourne pas.** Il n'y a pas de *socket* à ce chemin. `systemctl is-active docker` le confirme ; `sudo systemctl start docker` le démarre, `sudo journalctl -u docker` dit pourquoi il s'était arrêté et `sudo systemctl enable docker` le fait démarrer tout seul.
 
-Si tu as confondu le 2 et le 3, relis la fin de chaque message : `permission denied` contre `no such file or directory`. La cause se trouve toujours dans les derniers mots.
+Si tu as confondu le 2 et le 3, relis la fin de chaque message : `permission denied` contre `no such file or directory`. Dans ces deux messages du client Docker, la cause se trouve dans les derniers mots ; ce n'est pas une règle générale (certaines traces placent l'origine au début), alors habitue-toi à te demander qui parle et quelle est la condition exacte qui a échoué.
 
 ### Solution 3
 
@@ -990,7 +1074,7 @@ Coche chaque point uniquement s'il est vérifié sur **ta** machine :
 - [ ] `fig01_05.sh`, sans `sudo`, se termine avec `Hello from Docker!` dans le bloc 4, `srw-rw---- root docker /var/run/docker.sock` dans le bloc 5 et `0` dans le bloc 6. Ce qui ne se compare pas, parce que cela change : les versions, les identifiants et le *digest* du téléchargement, et l'architecture entre parenthèses.
 - [ ] `fig01_06.sh` affiche le `permission denied` pour `nobody` et `sí` pour toi.
 - [ ] `fig01_07.sh` affiche `Permission denied` dans le bloc 1 et `uid=0(root)` dans le bloc 2, et tu peux expliquer à voix haute pourquoi.
-- [ ] À la fin, `docker ps -a --filter name=curso-docker-` n'affiche rien.
+- [ ] À la fin, `docker ps -a --filter name=curso-docker-` n'affiche rien. Deux images restent, `hello-world` et `debian:13.7-slim` ; elles ne gênent pas, et à la Leçon 2 tu apprends à les voir (`docker image ls`) et à les supprimer.
 - [ ] Tu as noté dans ton journal de bord quelle version de Docker tu as installée et à quelle date.
 
 ## Résumé

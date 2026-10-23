@@ -20,7 +20,7 @@ São 7h50 da manhã e a filial abre às 9h. O `revisor` precisa ficar instalado 
 - Escrever um Dockerfile de vários estágios com nome (`FROM ... AS`), passar um arquivo de um estágio para outro com `COPY --from` e construir só até um estágio com `--target`.
 - Colocar os testes dentro do build de modo que um teste quebrado o interrompa, e demonstrar com uma execução por que o estágio do binário deve sair do estágio de testes e não do de compilação.
 - Mostrar com `docker exec`, `docker inspect` e `docker top` que a imagem final não tem *shell* e não roda como `root`, e listar todos os seus arquivos sem entrar nela.
-- Fixar uma imagem base por tag e por *digest*, e dizer o que cada um garante.
+- Fixar uma imagem base por tag e por *digest*, e dizer o que cada um assegura.
 - Ler a mensagem `exec /revisor: no such file or directory`, explicar qual é o arquivo que falta e corrigir isso com `CGO_ENABLED=0`.
 
 ## O porquê antes do como
@@ -156,7 +156,7 @@ Coloque os números em uma única frase e o problema aparece sozinho: **o `revis
 - **Um Debian quase completo**: 208 pacotes instalados (`dpkg-query -W` lista um por linha e `wc -l` os conta), com suas bibliotecas em `/usr/lib` e seus programas em `/usr/bin`.
 - **As ferramentas que preocupavam a pessoa de segurança da cena**: um *shell* (`sh` e `bash`), um gerenciador de pacotes (`apt-get`), um compilador de C (`gcc`), `git` e `curl`. Cada uma está ali por um bom motivo para **construir**: a imagem oficial do Go as traz para que compilar funcione com quase qualquer projeto. Para **rodar** o `revisor`, nenhuma.
 
-A última linha é um bom lembrete de que a Lição 3 não foi em vão: a imagem roda com o usuário `10001`, não com `root`. Mas esse usuário tem à mão `curl` para baixar o que quiser e `sh` para executar. Sem privilégios, sim; desarmado, não.
+A última linha é um bom lembrete de que a Lição 3 não foi em vão: a imagem roda com o usuário `10001`, não com `root`. Mas esse usuário tem `curl` disponível para baixar o que quiser e `sh` para executar. Sem privilégios, sim; desarmado, não.
 
 Repare também no que **não** está na lista: nada disso se resolve apagando arquivos. Acrescentando ao Dockerfile um `RUN rm -rf /usr/local/go`, a imagem não diminui nem um byte: a Lição 4 ensinou que cada instrução acrescenta uma camada por cima das anteriores, e que o que uma camada apaga continua guardado na camada de baixo. Apagar em uma camada nova só esconde. Para que o compilador não viaje, a imagem final precisa **nascer sem ele**.
 
@@ -262,7 +262,7 @@ O binário fica em `/out/revisor`, uma pasta que só existe para isso: ter um lu
 
 **O estágio `final`.** Começa do zero sobre `gcr.io/distroless/static-debian13:nonroot`, fixada por *digest*. De tudo o que veio antes, só traz um arquivo: `COPY --from=binario /out/revisor /revisor`. Depois:
 
-- `USER 65532:65532` é o usuário `nonroot` que a própria imagem *distroless* traz em seu `/etc/passwd`; isso vai aparecer em 5.4. A partir daqui, o curso deixa o `10001` das imagens de um único estágio e usa o `65532`, porque é o que a base já conhece.
+- `USER 65532:65532` é o usuário `nonroot` que a própria imagem *distroless* traz em seu `/etc/passwd`; isso vai aparecer em 5.4. A partir daqui, o curso deixa o `10001` das imagens de um único estágio e usa o `65532`, porque é o que a base já conhece. Repare que o `COPY --from=binario` não leva `--chown`: o arquivo `/revisor` fica com o `root` como dono (será visto como `0/0` em 5.4) e com permissões `rwxr-xr-x`. É de propósito. O usuário `65532` pode executá-lo, mas não pode modificá-lo nem substituí-lo; se alguém assumisse o controle do processo, não poderia reescrever o programa no disco da imagem.
 - `EXPOSE 8080` continua sendo só uma anotação, igual à Lição 3.
 - **`ENTRYPOINT ["/revisor"]`** substitui o `CMD ["revisor"]` das lições anteriores. A diferença é prática. A referência explica: os argumentos escritos depois do nome da imagem em `docker run` «são acrescentados depois de todos os elementos» de um `ENTRYPOINT` na forma *exec*, e por outro lado «substituem tudo o que o `CMD` disser» ([referência, `ENTRYPOINT`](https://docs.docker.com/reference/dockerfile/#entrypoint)). Com `ENTRYPOINT`, `docker run curso-docker-revisor:1.2.0 version` executa `/revisor version`: a imagem se comporta como o programa, e seus subcomandos (`version`, e na Lição 7 `healthcheck`) são pedidos do mesmo jeito que no terminal. Com o `CMD` de antes, esse `version` teria substituído o programa inteiro e o Docker teria tentado executar um arquivo chamado `version`. Continua na forma *exec*, por tudo o que foi medido na Lição 3. E o caminho vai completo, `/revisor`, porque o arquivo está na raiz do sistema de arquivos, `/`, que não é nenhuma das pastas onde o `PATH` da imagem procura programas.
 
@@ -407,7 +407,7 @@ O primeiro bloco mostra os passos com seu estágio entre colchetes: `[compilacio
 
 O segundo bloco é o que justifica a lição: **de 1.32 GB para 16.1 MB**, umas oitenta vezes menos. A imagem nova cabe dezessete vezes no que antes ocupava só o compilador do Go (277 MB em `/usr/local/go`, em 5.1). E o terceiro bloco, `docker history`, diz o que há dentro: a camada grande é `COPY /out/revisor /revisor`, de **6.69 MB**, o binário; as demais são da base *distroless* e somam uns 5,8 MB, a maior de 2.24 MB (os fusos horários, `tzdata`). As camadas da base dizem `bazel build`: é a ferramenta com que o Google constrói essas imagens, e no histórico delas não há nem um `RUN apt-get`, porque não foram montadas instalando pacotes com um gerenciador. Compare com a Lição 4, em que `docker history` mostrava camadas de 290 MB, 281 MB e 208 MB.
 
-Somando essas camadas manualmente, não se chega a 16.1 MB, e vale a pena saber por quê antes que isso confunda. O quarto bloco as soma: **12.468.224 bytes**, uns 12,5 MB. Faltam 3,6 MB. E a segunda consulta desse bloco os encontra: `docker image inspect` informa **3.679.492 bytes**, e 12.468.224 + 3.679.492 = 16.147.716 bytes, os 16.1 MB de `docker image ls`. A explicação está em como o Docker Engine 29 guarda as imagens, com o armazenamento do containerd: segundo sua documentação, esse armazenamento «guarda as imagens em formato compactado e descompactado»: mantém as camadas compactadas tal como chegaram do registry **e além disso** as descompacta no disco ([Docker, «containerd image store»](https://docs.docker.com/engine/storage/containerd/)). O número de `docker image ls` conta as duas cópias; `docker history` conta só as camadas descompactadas, e `docker image inspect`, nesta máquina, a parte compactada, que é o que se baixa. Para o que importa nesta lição, nada muda: compare sempre imagens com o **mesmo** comando, e as duas cifras de `docker image ls` (1.32 GB e 16.1 MB) foram medidas do mesmo jeito.
+Somando essas camadas manualmente, não se chega a 16.1 MB, e vale a pena saber por quê antes que isso confunda. O quarto bloco as soma: **12.468.224 bytes**, uns 12,5 MB. Faltam 3,6 MB. E a segunda consulta desse bloco os encontra: `docker image inspect` informa **3.679.492 bytes**, e 12.468.224 + 3.679.492 = 16.147.716 bytes, os 16.1 MB de `docker image ls`. A explicação está em como o Docker Engine 29 guarda as imagens, com o armazenamento do containerd: segundo sua documentação, esse armazenamento «guarda as imagens em formato compactado e descompactado»: mantém as camadas compactadas tal como chegaram do registry **e além disso** as descompacta no disco ([Docker, «containerd image store»](https://docs.docker.com/engine/storage/containerd/)). O número de `docker image ls` conta as duas cópias; `docker history` conta só as camadas descompactadas, e `docker image inspect`, nesta máquina, a parte compactada, que é o que se baixa. Tudo isto vale para um Docker Engine 29 recém-instalado, que usa por padrão o armazenamento do containerd; a documentação esclarece que um Docker atualizado a partir de uma versão anterior continua com o armazenamento clássico, `overlay2`, até que o do containerd seja ativado manualmente. Nesse caso, `docker image ls` mostrará uns 12,5 MB em vez de 16.1 MB, e `docker image inspect` também: não é um erro de quem está seguindo a lição, é outro armazenamento contando uma única cópia. Para o que importa nesta lição, nada muda: compare sempre imagens com o **mesmo** comando, e as duas cifras de `docker image ls` (1.32 GB e 16.1 MB) foram medidas do mesmo jeito.
 
 Uma pergunta natural é onde ficaram os estágios `compilacion`, `pruebas` e `binario`. Ficaram no cache de build da máquina, que é o que torna rápido o build seguinte, mas **não fazem parte da imagem**: o `docker history` da `1.2.0` não tem nenhuma camada deles. A única coisa que passou de um lado para o outro é o arquivo que o `COPY --from` nomeia.
 
@@ -420,7 +420,7 @@ O que ele diz:
 - **1.301 arquivos** no total (`grep -v '/$'` tira as pastas da conta). Parece muito, até se ver o que são: quase todos são os fusos horários e os certificados das autoridades da internet, de que um serviço que consulta outros por HTTPS precisa.
 - **As pastas de primeiro nível** são as de qualquer Linux (`bin`, `etc`, `usr`, `var`…), mais `revisor` e `.dockerenv`, um arquivo vazio que o Docker acrescenta a todo contêiner. Existir uma pasta `bin` não significa que haja programas dentro.
 - **A busca por *shells*** pedia, em qualquer pasta, um arquivo chamado `sh`, `bash`, `dash`, `ash` ou `busybox`, além de `revisor` e `passwd` como controle: se o padrão estivesse mal escrito, esses dois também não sairiam. Saíram os dois de controle e nenhum *shell*. Não há *shell*, e em 5.6 isso é confirmado de outra forma: tentando executá-lo. O `revisor` mede 6.684.832 bytes, os 6.69 MB da camada.
-- **A data de `/etc/passwd`**, `1969-12-31 18:00`, é a data zero do relógio do Unix (1º de janeiro de 1970 em tempo universal) vista no fuso horário da máquina das execuções. Os arquivos da base levam essa data de propósito: assim dois builds da mesma base dão exatamente os mesmos bytes. O `revisor`, por outro lado, leva a data em que foi compilado. A que aparece aqui é da madrugada desse mesmo dia: o binário saiu do cache de build, porque nada do que o produz tinha mudado desde a execução anterior nessa máquina. Na máquina de cada um aparecerá outra data.
+- **A data de `/etc/passwd`**, `1969-12-31 18:00`, é a data zero do relógio do Unix (1º de janeiro de 1970 em tempo universal) vista no fuso horário da máquina das execuções. Os arquivos da base levam essa data de propósito: assim a data do dia em que a base foi construída não altera os arquivos, e dois builds da mesma base não se distinguem por esse dado. (Um build reproduzível byte a byte exige mais do que fixar a data, como uma ordem fixa dos arquivos e uma compressão determinista; aqui a data é apenas uma dessas peças.) O `revisor`, por outro lado, leva a data em que foi compilado. A que aparece aqui é da madrugada desse mesmo dia: o binário saiu do cache de build, porque nada do que o produz tinha mudado desde a execução anterior nessa máquina. Na máquina de cada um aparecerá outra data.
 - **O conteúdo de `/etc/passwd`** tem três usuários, e o terceiro é o que o estágio final usa: `nonroot`, com número **65532**. Ali está o motivo do `USER 65532:65532`. Repare também na última coluna dos três: `/sbin/nologin`. Nem `root` tem um *shell* atribuído.
 
 > [!NOTE]
@@ -780,7 +780,7 @@ Esta saída é a de 21 de outubro de 2026. **É a que mais pode mudar em toda a 
 
 #### 5.7.4 Tag **e** *digest*
 
-O Dockerfile escreve as duas coisas juntas: `golang:1.27.3-trixie@sha256:6041…`. A sintaxe é permitida pela referência: `FROM <imagen>[@<digest>] [AS <nombre>]` ([referência, `FROM`](https://docs.docker.com/reference/dockerfile/#from)). Quando há *digest*, quem manda é o *digest*: o Docker baixa exatamente esses bytes, diga o que disser hoje a tag. Então, para que a tag? Para as pessoas: `@sha256:6041…` não diz a ninguém que versão do Go é; `1.27.3-trixie` diz. A tag documenta; o *digest* garante.
+O Dockerfile escreve as duas coisas juntas: `golang:1.27.3-trixie@sha256:6041…`. A sintaxe é permitida pela referência: `FROM <imagen>[@<digest>] [AS <nombre>]` ([referência, `FROM`](https://docs.docker.com/reference/dockerfile/#from)). Quando há *digest*, quem manda é o *digest*: o Docker baixa exatamente esses bytes, diga o que disser hoje a tag. Então, para que a tag? Para as pessoas: `@sha256:6041…` não diz a ninguém que versão do Go é; `1.27.3-trixie` diz. A tag documenta; o *digest* fixa o conteúdo: assegura que o Docker baixe sempre os mesmos bytes, mesmo que alguém tenha movido a tag no registry. Não assegura que o registry conserve essa imagem para sempre, nem que a imagem não tenha falhas ou vulnerabilidades.
 
 O guia de boas práticas explica a garantia e também seu preço. A garantia: com o *digest*, «garante-se usar sempre a mesma versão da imagem, mesmo que quem publica substitua a tag por uma imagem nova». O preço: um *digest* fixado **não se atualiza sozinho**, então as correções de segurança da base também não chegam sozinhas ([boas práticas](https://docs.docker.com/build/building/best-practices/#pin-base-image-versions)). Fixar não é esquecer: é decidir quando trocar de base, revisando, em vez de deixar que ela mude sem aviso no meio de um build. O mesmo guia menciona ferramentas que abrem pedidos de mudança automáticos quando sai um *digest* novo. E a Lição 10 ensina a fazer a varredura da base fixada para saber quando é hora de renová-la.
 
@@ -810,7 +810,7 @@ FROM compilacion AS pruebas
 RUN --mount=type=cache,id=curso-docker-go-build,target=/root/.cache/go-build \
     go test ./...
 
-# --- Etapa 3: el binario, estático (CGO_ENABLED=0), sale DESPUÉS de las pruebas ---
+# --- Etapa 3: el binario, SIN CGO_ENABLED=0 (el binario sale dinámico), sale DESPUÉS de las pruebas ---
 FROM pruebas AS binario
 RUN --mount=type=cache,id=curso-docker-go-build,target=/root/.cache/go-build \
     go build -trimpath -ldflags="-s -w" -o /out/revisor ./cmd/revisor
@@ -823,7 +823,7 @@ EXPOSE 8080
 ENTRYPOINT ["/revisor"]
 ```
 
-O comentário do estágio 3 continua dizendo «estático», de propósito: é assim que esses erros aparecem na vida real, com um comentário que já não diz a verdade. `fig05_08.sh` constrói essa imagem, roda-a e depois examina os dois binários, o desta imagem e o da lição, a partir do estágio `binario`, que tem ferramentas:
+O comentário do estágio 3 aqui de fato diz a verdade (sem `CGO_ENABLED=0` o binário sai dinâmico), mas na vida real esse comentário costuma continuar dizendo «estático» sem que isso seja mais verdade: o Dockerfile não avisa de nada e o erro só aparece quando a imagem roda. `fig05_08.sh` constrói essa imagem, roda-a e depois examina os dois binários, o desta imagem e o da lição, a partir do estágio `binario`, que tem ferramentas:
 
 ```bash
 #!/usr/bin/env bash
@@ -960,7 +960,7 @@ Lê-se assim: o contêiner não conseguiu **iniciar** o programa, e o programa n
 
 **Tirar o binário do estágio de compilação e deixar os testes em um estágio separado de que ninguém precisa.** Parece que há testes, e não há (5.5). O binário sai **do** estágio de testes.
 
-**Fixar a base só pela tag, ou usar a tag `nonroot` da *distroless* sem *digest*.** É usar `latest` com outro nome. Tag para ler, *digest* para garantir.
+**Fixar a base só pela tag, ou usar a tag `nonroot` da *distroless* sem *digest*.** É usar `latest` com outro nome. Tag para ler, *digest* para fixar o conteúdo.
 
 **Copiar o *digest* de uma plataforma em vez do do índice.** A base fica amarrada a uma única arquitetura, e quem construir em outra não recebe a que lhe corresponde. O *digest* que vai no `FROM` é o da linha `Digest:` de cima, a do índice.
 
@@ -1026,7 +1026,7 @@ Na pasta `~/curso-docker/revisor`, com a imagem `curso-docker-revisor:1.2.0` con
 3. Que ela não roda como `root`, de duas formas diferentes: uma que leia a configuração da imagem e outra que olhe o processo a partir do host.
 4. Que o binário da imagem é estático, sem entrar na imagem final.
 
-O exercício se autocorrige: terminou quando há quatro comandos cujas saídas dizem, respectivamente, uns 16 MB, `executable file not found`, `65532` (duas vezes) e `not a dynamic executable`.
+O exercício se autocorrige: terminou quando há quatro comandos cujas saídas dizem, respectivamente, uns 16 MB (ou uns 12,5 MB se o Docker usa o armazenamento clássico, ver 5.4.3), `executable file not found`, o usuário `65532` (como `65532:65532` no `inspect` e como `65532` no `top`) e `not a dynamic executable`.
 
 ## Soluções
 
@@ -1044,7 +1044,7 @@ A pergunta extra: **não**. O estágio `pruebas` só roda `go test`; o binário 
 1. **`golang:latest`.** A base pode mudar em qualquer build, e com ela a versão do Go: o mesmo código compila diferente de um dia para outro. O certo é `golang:1.27.3-trixie@sha256:…`.
 2. **O estágio do binário não sai do de testes.** É um `FROM golang:latest` separado, então o estágio de testes não está no caminho do final e o BuildKit **não o roda**: um teste quebrado não interrompe nada (o erro que não se vê, 5.5). O estágio do binário deve sair do de testes.
 3. **Falta `CGO_ENABLED=0`.** O binário sai dinâmico e na *distroless* `static` falha com `exec /revisor: no such file or directory` (o erro principal, 5.8).
-4. **`COPY --from=1` com número.** No dia em que alguém acrescentar ou tirar um estágio no início, o número aponta para outro estágio e copia-se o que não é, sem aviso. Com nomes (`COPY --from=binario`), isso não acontece.
+4. **`COPY --from=1` com número.** No dia em que alguém acrescentar ou tirar um estágio no início, o número aponta para outro estágio e copia-se o que não é, sem aviso. Com nomes (`COPY --from=binario`), isso não acontece em silêncio: a instrução continua apontando para o estágio que o nome indica, e se alguém apagar esse estágio, o build falha com um erro em vez de copiar de outro.
 5. **A base final sem *digest*.** A tag `nonroot` sem *digest* é `latest` com outro nome: a base pode mudar sem que ninguém decida (5.7).
 6. **`CMD` em vez de `ENTRYPOINT`.** Com `CMD ["/revisor"]`, `docker run imagen version` substitui o programa inteiro e o Docker tenta executar um arquivo chamado `version`, que não existe (5.3.2).
 
@@ -1088,7 +1088,7 @@ Marque cada ponto só se ele puder ser feito **sem voltar a ver o texto**:
 - [ ] Um teste quebrado foi acrescentado à pasta, `docker build -t curso-docker-revisor:rota .` falhou com `exit code: 1` e `docker image ls curso-docker-revisor:rota` não mostra nada; depois o teste foi apagado.
 - [ ] Dá para explicar por que `FROM pruebas AS binario` e não `FROM compilacion AS binario`, com a frase do BuildKit sobre que estágios ele constrói.
 - [ ] Dá para explicar que arquivo falta quando aparece `exec /revisor: no such file or directory`, e como confirmar isso com `ldd` ou `readelf` a partir do estágio `binario`.
-- [ ] Dá para dizer o que a tag garante, o que o *digest* garante e por que o *digest* do `FROM` é o do índice.
+- [ ] Dá para dizer o que a tag assegura, o que o *digest* assegura e por que o *digest* do `FROM` é o do índice.
 - [ ] Os scripts de [`programas/05-multi-stage/`](../programas/05-multi-stage) foram rodados e as saídas coincidem com as desta lição no que cada seção marca como estável. O que não se compara: os números de passo, os PID, os tempos, as datas, os endereços de `ldd`, a arquitetura, os tamanhos em alguns megabytes, e os *digests* de `fig05_09.sh` se a base foi publicada de novo. E ao terminar, `docker ps -a --filter name=curso-docker-` não mostra contêineres desta lição.
 
 ## Resumo

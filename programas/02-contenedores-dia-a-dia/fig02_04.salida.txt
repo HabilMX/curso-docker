@@ -1,14 +1,14 @@
 == 1. inspect, con una plantilla: solo los campos que me importan
-/curso-docker-prueba: memoria=67108864 cpus(nano)=500000000 pids=50 usuario=65532:65532
-/curso-docker-sin-limites: memoria=0 cpus(nano)=0 pids=<no value> usuario=65532:65532
+/curso-docker-l02-prueba: memoria=67108864 cpus(nano)=500000000 pids=50 usuario=65532:65532
+/curso-docker-l02-sin-limites: memoria=0 cpus(nano)=0 pids=<no value> usuario=65532:65532
 
 == 2. inspect: estado, puerto publicado y comando principal
-estado=running pid1=[/servicio-prueba] puertos={"9000/tcp":[{"HostIp":"127.0.0.1","HostPort":"9000"}]}
+estado=running pid1=[/servicio-prueba] puertos={"9000/tcp":[{"HostIp":"127.0.0.1","HostPort":"18020"}]}
 
 == 3. stats: lo que gastan ahora mismo, contra su límite
-NAME                       MEM USAGE / LIMIT     PIDS
-curso-docker-prueba        1.59MiB / 64MiB       8
-curso-docker-sin-limites   1.496MiB / 15.59GiB   7
+NAME                           MEM USAGE / LIMIT    PIDS
+curso-docker-l02-prueba        1.484MiB / 64MiB     7
+curso-docker-l02-sin-limites   1.57MiB / 15.59GiB   8
 
 == 4. Cuántos renglones trae inspect completo
 224

@@ -1,0 +1,156 @@
+$ ./fig10_04.sh
+== 1. Registro local
+$ docker run -d --name curso-docker-registro-fig10 -p 127.0.0.1:5000:5000 registry:3.1.2 >/dev/null && echo registro arriba
+registro arriba
+
+== 2. Construir para dos plataformas, con SBOM y procedencia max, y publicar
+$ docker buildx build --platform linux/amd64,linux/arm64 --build-arg VERSION=1.6.0 --sbom=true --provenance=mode=max -t localhost:5000/curso-docker-revisor:fig10 --push . > ../construccion.log 2>&1; echo "construcción: código $?"
+construcción: código 0
+(tardó 1 s)
+$ grep -E 'exporting (manifest|attestation manifest|manifest list) sha256' ../construccion.log | sed -E 's/^#[0-9]+ //; s/ done$//; s/ [0-9.]+s$//' | sort -u
+exporting attestation manifest sha256:d062f35ed5df81b21edeea621c65531f19c4d4075a27418745ba9b08c2080311
+exporting attestation manifest sha256:d6939a710e122a030ac13e0b68b8aabc87da4d2f5a2eb4214a692e239613f6f0
+exporting manifest list sha256:a4246c5fa0b2cfdfedeed2a5a25cfd6869079d488ba7550e6990939b89420631
+exporting manifest sha256:959af91ef514e97c5bba49bb0a2b31000808ce7c1e15e441487a1659162dd73c
+exporting manifest sha256:b99bf1ad954b261a0574f3128d8beb91a0f839524eefceb0816c1d3e5266180c
+
+== 3. El índice que quedó en el registro
+$ docker buildx imagetools inspect localhost:5000/curso-docker-revisor:fig10
+Name:      localhost:5000/curso-docker-revisor:fig10
+MediaType: application/vnd.oci.image.index.v1+json
+Digest:    sha256:a4246c5fa0b2cfdfedeed2a5a25cfd6869079d488ba7550e6990939b89420631
+           
+Manifests: 
+  Name:        localhost:5000/curso-docker-revisor:fig10@sha256:b99bf1ad954b261a0574f3128d8beb91a0f839524eefceb0816c1d3e5266180c
+  MediaType:   application/vnd.oci.image.manifest.v1+json
+  Platform:    linux/amd64
+               
+  Name:        localhost:5000/curso-docker-revisor:fig10@sha256:959af91ef514e97c5bba49bb0a2b31000808ce7c1e15e441487a1659162dd73c
+  MediaType:   application/vnd.oci.image.manifest.v1+json
+  Platform:    linux/arm64
+               
+  Name:        localhost:5000/curso-docker-revisor:fig10@sha256:d6939a710e122a030ac13e0b68b8aabc87da4d2f5a2eb4214a692e239613f6f0
+  MediaType:   application/vnd.oci.image.manifest.v1+json
+  Platform:    unknown/unknown
+  Annotations: 
+    vnd.docker.reference.digest: sha256:b99bf1ad954b261a0574f3128d8beb91a0f839524eefceb0816c1d3e5266180c
+    vnd.docker.reference.type:   attestation-manifest
+               
+  Name:        localhost:5000/curso-docker-revisor:fig10@sha256:d062f35ed5df81b21edeea621c65531f19c4d4075a27418745ba9b08c2080311
+  MediaType:   application/vnd.oci.image.manifest.v1+json
+  Platform:    unknown/unknown
+  Annotations: 
+    vnd.docker.reference.digest: sha256:959af91ef514e97c5bba49bb0a2b31000808ce7c1e15e441487a1659162dd73c
+    vnd.docker.reference.type:   attestation-manifest
+
+== 4. La lista de materiales (SBOM) de linux/amd64
+$ docker buildx imagetools inspect localhost:5000/curso-docker-revisor:fig10 --format '{{range (index .SBOM "linux/amd64").SPDX.packages}}{{.name}} {{.versionInfo}}{{println}}{{end}}' | sort
+base-files 13.8+deb13u7
+ca-certificates 20250419
+github.com/habil/revisor UNKNOWN
+media-types 13.0.0
+netbase 6.5
+sbom <no value>
+stdlib go1.27.3
+tzdata 2026c-0+deb13u1
+tzdata-legacy 2026c-0+deb13u1
+$ docker buildx imagetools inspect localhost:5000/curso-docker-revisor:fig10 --format '{{(index .SBOM "linux/amd64").SPDX.spdxVersion}} {{(index .SBOM "linux/amd64").SPDX.creationInfo.creators}}'; echo
+SPDX-2.3 [Organization: Anchore, Inc Tool: syft-v1.51.0 Tool: buildkit-v0.27.1]
+
+== 5. La procedencia de linux/amd64
+$ docker buildx imagetools inspect localhost:5000/curso-docker-revisor:fig10 --format 'tipo: {{(index .Provenance "linux/amd64").SLSA.buildType}}{{println}}construida EN: {{(index .Provenance "linux/amd64").SLSA.invocation.environment.platform}}'; echo
+tipo: https://mobyproject.org/buildkit@v1
+construida EN: linux/arm64
+$ docker buildx imagetools inspect localhost:5000/curso-docker-revisor:fig10 --format '{{range (index .Provenance "linux/amd64").SLSA.materials}}{{.uri}}{{println}}{{end}}' | cut -c1-100
+pkg:docker/docker/buildkit-syft-scanner@stable-1?platform=linux%2Farm64
+pkg:docker/docker/dockerfile@1
+pkg:docker/golang@1.27.3-trixie?digest=sha256:604106102d33b1084e37ca08adf98ac0813624ae8595bd0d7f3965
+pkg:docker/gcr.io/distroless/static-debian13@nonroot?digest=sha256:516757106de35205efb70b91ba03f6f12
+$ docker buildx imagetools inspect localhost:5000/curso-docker-revisor:fig10 --format '{{json (index .Provenance "linux/amd64").SLSA.invocation.parameters.args}}'; echo
+{
+  "build-arg:VERSION": "1.6.0",
+  "cmdline": "docker/dockerfile:1",
+  "source": "docker/dockerfile:1"
+}
+
+== 6. Modo min contra modo max, con un argumento que el Dockerfile ni declara
+$ docker buildx imagetools inspect localhost:5000/curso-docker-revisor:fig10-min --format '{{json .Provenance.SLSA.invocation.parameters.args}}'; echo
+{
+  "cmdline": "docker/dockerfile:1",
+  "source": "docker/dockerfile:1"
+}
+$ docker buildx imagetools inspect localhost:5000/curso-docker-revisor:fig10-min --format '{{json .Provenance.SLSA}}' | python3 -c 'import json,sys; d=json.load(sys.stdin); print("campos:", sorted(d)); print("secretos:", d["invocation"]["parameters"].get("secrets", "(no aparecen)"))'
+campos: ['buildType', 'builder', 'invocation', 'materials', 'metadata']
+secretos: (no aparecen)
+$ docker buildx imagetools inspect localhost:5000/curso-docker-revisor:fig10-max --format '{{json .Provenance.SLSA.invocation.parameters.args}}'; echo
+{
+  "build-arg:NOTA": "curso-docker-nota-de-mentira",
+  "build-arg:VERSION": "1.6.0",
+  "cmdline": "docker/dockerfile:1",
+  "source": "docker/dockerfile:1"
+}
+$ docker buildx imagetools inspect localhost:5000/curso-docker-revisor:fig10-max --format '{{json .Provenance.SLSA}}' | python3 -c 'import json,sys; d=json.load(sys.stdin); print("campos:", sorted(d)); print("secretos:", d["invocation"]["parameters"].get("secrets", "(no aparecen)"))'
+campos: ['buildConfig', 'buildType', 'builder', 'invocation', 'materials', 'metadata']
+secretos: [{'id': 'netrc', 'optional': True}]
+$ docker buildx imagetools inspect localhost:5000/curso-docker-revisor:fig10-max --format '{{json .Provenance.SLSA}}' | python3 -c 'import json,sys,base64; d=json.load(sys.stdin); i=d["metadata"]["https://mobyproject.org/buildkit@v1#metadata"]["source"]["infos"][0]; print(i["filename"]); print("\n".join(base64.b64decode(i["data"]).decode().splitlines()[:3]))'
+Dockerfile
+# syntax=docker/dockerfile:1
+# fig10_01.Dockerfile — Lección 10: la imagen que se entrega: la de la Lección 8,
+# construida para varias plataformas SIN emulación. Go compila para otra
+
+== 7. Otra construcción idéntica: ¿qué digest cambia?
+$ docker buildx build -q --platform linux/amd64,linux/arm64 --build-arg VERSION=1.6.0 --sbom=true --provenance=mode=max -t localhost:5000/curso-docker-revisor:fig10 --push . >/dev/null 2>&1; echo "construcción: código $?"
+construcción: código 0
+antes:   índice sha256:a4246c5fa0b2cfdfedeed2a5a25cfd6869079d488ba7550e6990939b89420631
+$ docker buildx imagetools inspect localhost:5000/curso-docker-revisor:fig10 --format '{{json .Manifest.Digest}}'; echo
+"sha256:04c19cbec864dd3ff9ccf5d71d676244acecd31ae1e1d9c363006bfac903c571"
+$ docker buildx imagetools inspect localhost:5000/curso-docker-revisor:fig10 --raw | python3 -c 'import json,sys; [print(m["platform"]["architecture"], m["digest"]) for m in json.load(sys.stdin)["manifests"] if m["platform"]["os"]=="linux"]'
+amd64 sha256:b99bf1ad954b261a0574f3128d8beb91a0f839524eefceb0816c1d3e5266180c
+arm64 sha256:959af91ef514e97c5bba49bb0a2b31000808ce7c1e15e441487a1659162dd73c
+$ docker buildx imagetools inspect localhost:5000/curso-docker-revisor:fig10 --format '{{(index .Provenance "linux/amd64").SLSA.metadata.buildStartedOn}}'; echo
+2026-10-21T18:18:15.739444508-06:00
+
+== 8. Y otra más, ahora SIN caché (--no-cache): ¿siguen iguales los de cada plataforma?
+$ docker buildx build -q --no-cache --platform linux/amd64,linux/arm64 --build-arg VERSION=1.6.0 --sbom=true --provenance=mode=max -t localhost:5000/curso-docker-revisor:fig10 --push . >/dev/null 2>&1; echo "construcción: código $?"
+construcción: código 0
+$ docker buildx imagetools inspect localhost:5000/curso-docker-revisor:fig10 --raw | python3 -c 'import json,sys; [print(m["platform"]["architecture"], m["digest"]) for m in json.load(sys.stdin)["manifests"] if m["platform"]["os"]=="linux"]'
+amd64 sha256:37dd082fe87a0b2779067a9098dab82e3c7d53e9924fa668d41638d8602dccfd
+arm64 sha256:d9875545824d329af2bc6c206f52acc80145926a0cff399591bc1b4d6876e0c3
+
+== 9. Traerla por digest, no por etiqueta
+(copias locales de localhost:5000/curso-docker-revisor que dejó la construcción)
+$ docker image ls localhost:5000/curso-docker-revisor --format '{{.Repository}}:{{.Tag}}' | grep . || echo '(ninguna)'
+localhost:5000/curso-docker-revisor:fig10
+localhost:5000/curso-docker-revisor:fig10-min
+localhost:5000/curso-docker-revisor:fig10-max
+(y después de borrarlas)
+$ docker image ls localhost:5000/curso-docker-revisor --format '{{.Repository}}:{{.Tag}}' | grep . || echo '(ninguna)'
+(ninguna)
+$ docker pull -q localhost:5000/curso-docker-revisor@sha256:6956d5334dc8f4cabfce3b0a0b6bc11270c47bd8ea889078ad646b4a4d546c52
+localhost:5000/curso-docker-revisor@sha256:6956d5334dc8f4cabfce3b0a0b6bc11270c47bd8ea889078ad646b4a4d546c52
+$ docker run --rm localhost:5000/curso-docker-revisor@sha256:6956d5334dc8f4cabfce3b0a0b6bc11270c47bd8ea889078ad646b4a4d546c52 version
+1.6.0
+$ docker image inspect --format '{{json .RepoDigests}}' localhost:5000/curso-docker-revisor@sha256:6956d5334dc8f4cabfce3b0a0b6bc11270c47bd8ea889078ad646b4a4d546c52; echo
+["localhost:5000/curso-docker-revisor@sha256:6956d5334dc8f4cabfce3b0a0b6bc11270c47bd8ea889078ad646b4a4d546c52"]
+
+
+== 10. Lo que bajó a este equipo: solo su plataforma
+$ docker image ls --tree localhost:5000/curso-docker-revisor@sha256:6956d5334dc8f4cabfce3b0a0b6bc11270c47bd8ea889078ad646b4a4d546c52 2>/dev/null | sed -E 's/@sha256:([0-9a-f]{12})[0-9a-f]+/@sha256:\1…/'
+IMAGE                                                                                                              ID             DISK USAGE   CONTENT SIZE   EXTRA
+localhost:5000/curso-docker-revisor@sha256:6956d5334dc8…   6956d5334dc8       16.8MB         4.34MB        
+├─ linux/amd64                                                                                                     37dd082fe87a           0B             0B        
+└─ linux/arm64                                                                                                     d9875545824d       16.2MB         3.68MB        
+
+$ docker save --platform linux/arm64 -o ../propia.tar localhost:5000/curso-docker-revisor@sha256:6956d5334dc8f4cabfce3b0a0b6bc11270c47bd8ea889078ad646b4a4d546c52 && echo 'guardada: linux/arm64'
+guardada: linux/arm64
+$ docker save --platform linux/amd64 -o ../otra.tar localhost:5000/curso-docker-revisor@sha256:6956d5334dc8f4cabfce3b0a0b6bc11270c47bd8ea889078ad646b4a4d546c52
+Error response from daemon: no suitable export target found: image with reference localhost:5000/curso-docker-revisor@sha256:6956d5334dc8f4cabfce3b0a0b6bc11270c47bd8ea889078ad646b4a4d546c52 was found but does not provide the specified platform (linux/amd64)
+[código de salida: 1]
+
+== 11. Traer la OTRA plataforma, guardarla y probar a correrla (linux/amd64)
+$ docker pull -q --platform linux/amd64 localhost:5000/curso-docker-revisor@sha256:6956d5334dc8f4cabfce3b0a0b6bc11270c47bd8ea889078ad646b4a4d546c52
+localhost:5000/curso-docker-revisor@sha256:6956d5334dc8f4cabfce3b0a0b6bc11270c47bd8ea889078ad646b4a4d546c52
+$ docker save --platform linux/amd64 -o ../otra.tar localhost:5000/curso-docker-revisor@sha256:6956d5334dc8f4cabfce3b0a0b6bc11270c47bd8ea889078ad646b4a4d546c52 && echo 'guardada: linux/amd64'
+guardada: linux/amd64
+$ docker run --rm --platform linux/amd64 localhost:5000/curso-docker-revisor@sha256:6956d5334dc8f4cabfce3b0a0b6bc11270c47bd8ea889078ad646b4a4d546c52 version 2>&1 | head -3
+1.6.0

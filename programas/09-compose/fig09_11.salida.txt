@@ -1,0 +1,120 @@
+$ ./fig09_11.sh
+== 1. Permisos 644, dueño tu usuario
+$ chmod 644 secretos/revisor_token.txt
+$ stat -c '%a %U:%G' secretos/revisor_token.txt | sed -E 's/ .*/ <tu usuario>:<tu grupo>/'
+644 <tu usuario>:<tu grupo>
+$ sudo -u nobody stat -c '%a %n' secretos/revisor_token.txt
+644 secretos/revisor_token.txt
+$ sudo -u nobody cat secretos/revisor_token.txt
+curso-docker-token-de-mentira-7f3a9c
+$ cat secretos/revisor_token.txt
+curso-docker-token-de-mentira-7f3a9c
+$ docker compose up -d --build 2>&1 | eventos | grep -E 'revisor-1 (Started|Error)'
+Container curso-docker-fig09-revisor-1 Started
+$ docker compose ps revisor --format '{{.Name}} | {{.Status}}' | sed -E 's/Up [0-9]+ (seconds|minutes)/Up N/'
+curso-docker-fig09-revisor-1 | Up N (healthy)
+
+== 2. Permisos 600, dueño tu usuario
+$ chmod 600 secretos/revisor_token.txt
+$ stat -c '%a %U:%G' secretos/revisor_token.txt | sed -E 's/ .*/ <tu usuario>:<tu grupo>/'
+600 <tu usuario>:<tu grupo>
+$ sudo -u nobody stat -c '%a %n' secretos/revisor_token.txt
+600 secretos/revisor_token.txt
+$ sudo -u nobody cat secretos/revisor_token.txt
+cat: secretos/revisor_token.txt: Permission denied
+[código de salida: 1]
+$ cat secretos/revisor_token.txt
+curso-docker-token-de-mentira-7f3a9c
+$ docker compose up -d --force-recreate revisor 2>&1 | eventos | grep -E 'revisor-1 (Started|Error)'
+Container curso-docker-fig09-revisor-1 Started
+$ docker compose logs --no-log-prefix revisor | sort -u
+revisor: leyendo el token de REVISOR_TOKEN_ARCHIVO: open /run/secrets/revisor_token: permission denied
+$ [ "$(docker inspect --format '{{.RestartCount}}' curso-docker-fig09-revisor-1)" -ge 1 ] && echo 'el revisor se reinició: no pudo leer su token'
+el revisor se reinició: no pudo leer su token
+
+== 3. Opción B de la lección, partiendo de 644: primero se cierra y luego se regala
+$ chmod 644 secretos/revisor_token.txt
+$ chmod 600 secretos/revisor_token.txt
+$ sudo chown 65532:65532 secretos/revisor_token.txt
+$ stat -c '%a %U:%G' secretos/revisor_token.txt
+600 UNKNOWN:UNKNOWN
+$ stat -c '%a %u:%g' secretos/revisor_token.txt
+600 65532:65532
+$ sudo -u nobody stat -c '%a %n' secretos/revisor_token.txt
+600 secretos/revisor_token.txt
+$ sudo -u nobody cat secretos/revisor_token.txt
+cat: secretos/revisor_token.txt: Permission denied
+[código de salida: 1]
+$ cat secretos/revisor_token.txt
+cat: secretos/revisor_token.txt: Permission denied
+[código de salida: 1]
+$ sudo cat secretos/revisor_token.txt
+curso-docker-token-de-mentira-7f3a9c
+$ docker compose up -d --force-recreate revisor 2>&1 | eventos | grep -E 'revisor-1 (Started|Error)'
+Container curso-docker-fig09-revisor-1 Started
+$ docker compose ps revisor --format '{{.Name}} | {{.Status}}' | sed -E 's/Up [0-9]+ (seconds|minutes)/Up N/'
+curso-docker-fig09-revisor-1 | Up N (healthy)
+$ tabla
+SERVICIO  ESTADO    TIEMPO  DETALLE
+caido     FALLA        <t>  codigo 503
+lento     LENTO     <t>  200
+sano      OK           <t>  200
+
+== 4. Opción A de la lección, partiendo de 644: tu usuario, grupo 65532, 640
+$ sudo chown "$(id -un)" secretos/revisor_token.txt
+$ chmod 644 secretos/revisor_token.txt
+$ sudo chgrp +65532 secretos/revisor_token.txt
+$ chmod 640 secretos/revisor_token.txt
+$ stat -c '%a %U:%G' secretos/revisor_token.txt | sed -E 's/ [^:]+:/ <tu usuario>:/'
+640 <tu usuario>:UNKNOWN
+$ stat -c '%a %u:%g' secretos/revisor_token.txt | sed -E 's/ [0-9]+:/ <tu uid>:/'
+640 <tu uid>:65532
+$ sudo -u nobody stat -c '%a %n' secretos/revisor_token.txt
+640 secretos/revisor_token.txt
+$ sudo -u nobody cat secretos/revisor_token.txt
+cat: secretos/revisor_token.txt: Permission denied
+[código de salida: 1]
+$ cat secretos/revisor_token.txt
+curso-docker-token-de-mentira-7f3a9c
+$ docker compose up -d --force-recreate revisor 2>&1 | eventos | grep -E 'revisor-1 (Started|Error)'
+Container curso-docker-fig09-revisor-1 Started
+$ docker compose ps revisor --format '{{.Name}} | {{.Status}}' | sed -E 's/Up [0-9]+ (seconds|minutes)/Up N/'
+curso-docker-fig09-revisor-1 | Up N (healthy)
+$ tabla
+SERVICIO  ESTADO    TIEMPO  DETALLE
+caido     FALLA       <t>  codigo 503
+lento     LENTO     <t>  200
+sano      OK          <t>  200
+
+== 5. Lo mismo, más la carpeta secretos/ cerrada con 700
+$ chmod 700 secretos
+$ stat -c '%a' secretos
+700
+$ docker compose up -d --force-recreate revisor 2>&1 | eventos | grep -E 'revisor-1 (Started|Error)'
+Container curso-docker-fig09-revisor-1 Started
+$ docker compose ps revisor --format '{{.Name}} | {{.Status}}' | sed -E 's/Up [0-9]+ (seconds|minutes)/Up N/'
+curso-docker-fig09-revisor-1 | Up N (healthy)
+$ tabla
+SERVICIO  ESTADO    TIEMPO  DETALLE
+caido     FALLA        <t>  codigo 503
+lento     LENTO     <t>  200
+sano      OK           <t>  200
+$ chmod 755 secretos
+
+== 6. El orden equivocado, partiendo de 644: primero se regala y luego se cierra
+$ sudo chown "$(id -un)" secretos/revisor_token.txt
+$ chmod 644 secretos/revisor_token.txt
+$ sudo chown 65532:65532 secretos/revisor_token.txt
+$ chmod 600 secretos/revisor_token.txt
+chmod: changing permissions of 'secretos/revisor_token.txt': Operation not permitted
+[código de salida: 1]
+$ stat -c '%a %u:%g' secretos/revisor_token.txt
+644 65532:65532
+$ sudo -u nobody stat -c '%a %n' secretos/revisor_token.txt
+644 secretos/revisor_token.txt
+$ sudo -u nobody cat secretos/revisor_token.txt
+curso-docker-token-de-mentira-7f3a9c
+
+== 7. ¿El grupo 65532 es de alguien en este equipo?
+$ getent group 65532
+[código de salida: 2]

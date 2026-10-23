@@ -1,0 +1,34 @@
+== 1. docker run -d --name a -p 127.0.0.1:PUERTO:9000
+código de salida: 0
+
+== 2. docker run -d --name b -p 127.0.0.1:PUERTO:9000 (el mismo puerto)
+docker: Error response from daemon: failed to set up container networking: driver failed programming external connectivity on endpoint curso-docker-l02-b (dc1814c6dd261d5f6ac915d4b103a3e985a4489040144a3ce76dc22e9f918cf0): Bind for 127.0.0.1:18020 failed: port is already allocated
+
+Run 'docker run --help' for more information
+e40dfd88f4b3
+código de salida: 125
+
+== 3. docker stop a
+código de salida: 0
+
+== 4. docker run --rm --name c … healthcheck
+no sano: Get "http://127.0.0.1:9000/": dial tcp 127.0.0.1:9000: connect: connection refused
+código de salida: 1
+
+== 5. ¿Qué quedó?
+NAMES                STATUS
+curso-docker-l02-b   Created
+curso-docker-l02-a   Exited (0) 4 seconds ago
+
+== 6. Con el puerto ya libre, docker start b
+curso-docker-l02-b
+código de salida: 0
+NAMES                STATUS                           PORTS
+curso-docker-l02-b   Up 1 second (health: starting)   
+docker port: []
+curl al puerto: código HTTP 000
+pedido:   {"9000/tcp":[{"HostIp":"127.0.0.1","HostPort":"18020"}]}
+conectado: {}
+
+== 7. Dejar el equipo limpio
+0

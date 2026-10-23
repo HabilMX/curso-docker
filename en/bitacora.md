@@ -39,7 +39,7 @@ _date:_
 - What `docker build --check` warned me about:
 - How long `docker stop` takes with the *shell* form and with the *exec* form: ____ s and ____ s
 
-## Lesson 4 — Layers, cache and context
+## Lesson 4 — Layers, cache, and context
 
 _date:_
 

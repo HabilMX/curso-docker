@@ -1,0 +1,40 @@
+== Ejercicio 2: 32 MiB, un cuarto de CPU, 20 procesos
+sano
+memoria=33554432 cpus(nano)=250000000 pids=20
+NAME                         MEM USAGE / LIMIT
+curso-docker-l02-ejercicio   1.594MiB / 32MiB
+modo: caido
+curso-docker-l02-ejercicio Up 7 seconds (health: starting)
+curso-docker-l02-ejercicio Up 19 seconds (unhealthy)
+
+== Ejercicio 3: la bitácora como evidencia
+sano
+sano
+sano
+modo: caido
+caido
+caido
+modo: sano
+-- 1. docker logs --tail 3
+servicio-prueba: GET / en modo caido
+servicio-prueba: GET / en modo caido
+servicio-prueba: modo cambiado a sano
+-- 2. docker logs --timestamps
+2026-10-21T15:30:46.687217878Z servicio-prueba escuchando en :9000 en modo sano
+2026-10-21T15:30:46.712613659Z servicio-prueba: GET / en modo sano
+2026-10-21T15:30:46.727375778Z servicio-prueba: GET / en modo sano
+2026-10-21T15:30:46.734891393Z servicio-prueba: GET / en modo sano
+2026-10-21T15:30:46.744749971Z servicio-prueba: GET / en modo sano
+2026-10-21T15:30:46.751853815Z servicio-prueba: modo cambiado a caido
+2026-10-21T15:30:46.762332653Z servicio-prueba: GET / en modo caido
+2026-10-21T15:30:46.771142826Z servicio-prueba: GET / en modo caido
+2026-10-21T15:30:46.779167498Z servicio-prueba: modo cambiado a sano
+-- 3. docker logs --since 1m (renglones)
+9
+-- 4. detenido: la bitácora sigue
+servicio-prueba: GET / en modo caido
+servicio-prueba: modo cambiado a sano
+servicio-prueba: recibí terminated, apagando
+-- 4. borrado: ya no
+Error response from daemon: No such container: curso-docker-l02-bitacora
+código de salida: 1

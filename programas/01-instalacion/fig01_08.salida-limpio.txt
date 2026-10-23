@@ -1,0 +1,9 @@
+$ ./fig01_08.sh
+== 1. Archivos de apt que apuntan a download.docker.com
+(ninguno)
+
+== 2. Llaves de Docker sueltas en las carpetas de llaves
+(ninguna)
+
+== 3. Llaves de Docker en el llavero viejo (apt-key)
+(ninguna)

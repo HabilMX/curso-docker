@@ -1,0 +1,11 @@
+$ ./fig01_08.sh
+== 1. Archivos de apt que apuntan a download.docker.com
+/etc/apt/sources.list.d/docker.list
+
+== 2. Llaves de Docker sueltas en las carpetas de llaves
+-rw-r--r-- 1 root root 2760 Oct 21 15:05 docker-archive-keyring.gpg
+
+== 3. Llaves de Docker en el llavero viejo (apt-key)
+      9DC8 5822 9FC7 DD38 854A  E2D8 8D81 803C 0EBF CD88
+uid           [ unknown] Docker Release (CE deb) <docker@docker.com>
+sub   rsa4096 2017-02-22 [S]

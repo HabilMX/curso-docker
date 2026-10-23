@@ -12,7 +12,7 @@ Son las 2:14 de la madrugada y suena la alerta: el servidor de pruebas dejó de 
 
 **Qué no hace esta lección.** No instala nada (eso es la [Lección 1](01-instalacion.md)) y no enseña los comandos de Docker uno por uno (eso empieza en la [Lección 2](02-contenedores-dia-a-dia.md)). Los programas de esta lección son guiones de *bash* de diez a treinta renglones que llaman a `docker` y a herramientas normales de Linux como `ps` y `uname`. No hace falta que entiendas cada opción todavía, aunque cada una se explica: lo que importa es lo que **imprimen**. Se corren después de la Lección 1, cuando ya tengas Docker.
 
-**Sobre las corridas.** Las salidas de esta lección se obtuvieron el 21 de octubre de 2026 en una Mac con [Colima](https://github.com/abiosoft/colima), que levanta una máquina virtual de Linux para poder correr contenedores. Esa máquina virtual tiene Ubuntu 24.04.4, que es la misma base de Linux Mint 22, así que **los guiones se corrieron dentro de ella** y es ahí donde aparece el «anfitrión» en las salidas: en tu Mint, el anfitrión es tu propia computadora y los mismos comandos funcionan sin cambios. La versión de Docker dentro de esa máquina era la 29.2.1 (cliente y daemon). El curso se planeó con la 29.8.2 y, el día de esta corrida, la más reciente publicada era la 29.9.2, del 20 de octubre de 2026, según las [notas de versión oficiales](https://docs.docker.com/engine/release-notes/29/). Nada de lo que muestra esta lección cambia entre esas versiones; la Lección 1 te enseña a ver la tuya. Lo que **sí** cambia entre una corrida y otra, y se avisa donde ocurre: los números de proceso (PID), los números de los espacios de nombres, los tiempos y, si tu computadora es de procesador Intel o AMD, la palabra `arm64`, que en la tuya dirá `amd64`. Los programas están en [`programas/00-que-es-un-contenedor/`](../programas/00-que-es-un-contenedor), en el repositorio del curso, cada uno con su salida guardada al lado.
+**Sobre las corridas.** Las salidas de esta lección se obtuvieron el 21 de octubre de 2026 en una Mac con [Colima](https://github.com/abiosoft/colima), que levanta una máquina virtual de Linux para poder correr contenedores. Esa máquina virtual tiene Ubuntu 24.04.4, que es la misma base de Linux Mint 22, así que **los guiones se corrieron dentro de ella** y es ahí donde aparece el «anfitrión» en las salidas: en tu Mint, el anfitrión es tu propia computadora y los mismos comandos se escriben igual una vez hecha la Lección 1; cambian los valores propios de tu equipo, que se listan más abajo. La versión de Docker dentro de esa máquina era la 29.2.1 (cliente y daemon). El curso se planeó con la 29.8.2 y, el día de esta corrida, la más reciente publicada era la 29.9.2, del 20 de octubre de 2026, según las [notas de versión oficiales](https://docs.docker.com/engine/release-notes/29/). Las notas de versión de la 29.2.1 a la 29.9.2 no anotan cambios en las capacidades por omisión, en el formato de `docker version` ni en `docker context inspect`, que son los comandos y valores de los que depende esta lección, así que lo que ves aquí debería coincidir con lo tuyo; si una versión posterior cambia algo, manda lo que diga la documentación de tu versión. La Lección 1 te enseña a ver cuál es. Lo que **sí** cambia entre una corrida y otra, y se avisa donde ocurre: los números de proceso (PID), los números de los espacios de nombres, los tiempos y, si tu computadora es de procesador Intel o AMD, la palabra `arm64`, que en la tuya dirá `amd64`. Los programas están en [`programas/00-que-es-un-contenedor/`](../programas/00-que-es-un-contenedor), en el repositorio del curso, cada uno con su salida guardada al lado.
 
 ## Al terminar vas a poder
 
@@ -116,7 +116,7 @@ Ahora la salida, bloque por bloque:
 1. **Desde dentro**, el contenedor ve solo dos procesos: `sleep 300`, que tiene el número **1**, y el `ps` que acabas de lanzar. No ve tu navegador, ni tu terminal, ni nada de lo que corre en tu equipo. Desde su punto de vista, él es el primer proceso del sistema.
 2. **Desde fuera**, Docker te dice que ese mismo proceso tiene el número 836426 en el anfitrión.
 3. Y **el sistema operativo del anfitrión** lo confirma con un `ps` normal, el mismo que usarías para cualquier otro programa: ahí está `sleep 300`, corriendo como `root`. No hay otra computadora. Hay un proceso más en la lista de tu equipo.
-4. Su padre es `containerd-shim`, un pequeño programa que Docker pone a cuidar a cada contenedor. (El nombre completo es `containerd-shim-runc-v2`; `ps` lo recorta porque el campo `comm` solo guarda 15 caracteres.)
+4. Su padre es `containerd-shim`, un pequeño programa que Docker pone a cuidar a cada contenedor, de modo que el contenedor no dependa de que el daemon siga en pie para seguir corriendo. (El nombre completo es `containerd-shim-runc-v2`; `ps` lo recorta porque el campo `comm` solo guarda 15 caracteres. `containerd` y `runc` se ubican en 0.6 y 0.8.)
 
 🔑 **Lee eso otra vez: el mismo proceso tiene dos números.** Dentro es el 1; fuera es el 836426. No son dos procesos: es uno solo, visto desde dos lugares. Que tenga dos números es la primera pista de cómo funciona el aislamiento, y la sección 0.3 la explica.
 
@@ -125,7 +125,7 @@ Ahora la salida, bloque por bloque:
 Que un contenedor sea un proceso no es un detalle técnico; tiene consecuencias que vas a sentir todo el curso:
 
 - **Arranca en milisegundos**, porque arrancar un proceso es rápido. No hay sistema operativo que encender.
-- **Se muere como un proceso.** Si el programa principal termina, el contenedor termina. Si el núcleo lo mata, el contenedor muere. En la Lección 7 vas a ver que eso incluye las señales: `docker stop` le manda a ese proceso número 1 la misma señal que mandarías con `kill`.
+- **Se muere como un proceso.** Si el programa principal termina, el contenedor termina. Si el núcleo lo mata, el contenedor muere. En las Lecciones 3 y 7 vas a ver que eso incluye las señales: `docker stop` le manda a ese proceso número 1 la misma señal que mandarías con `kill`.
 - **Gasta como un proceso.** Usa la memoria y la CPU de tu equipo, de la misma bolsa que todos los demás programas. Si nadie le pone límite, no tiene límite.
 - **Lo ves con tus herramientas de siempre.** `ps`, `top` y el monitor del sistema lo muestran. Eso es útil para diagnosticar y es una advertencia: quien tiene poder sobre los procesos del anfitrión tiene poder sobre los contenedores.
 
@@ -249,8 +249,8 @@ Docker lo dice sin rodeos: usa «una tecnología llamada *namespaces* para dar e
 | UTS | `uts` | el nombre del equipo | tiene su propio *hostname* |
 | IPC | `ipc` | la comunicación entre procesos por memoria compartida | no se cruza con la de otros programas |
 | Cgroup | `cgroup` | la raíz de los grupos de control | ve su propio grupo como si fuera la raíz (0.4) |
-| User | `user` | los números de usuario y grupo | **por omisión, no se aísla** |
-| Time | `time` | ciertos relojes del sistema | **por omisión, no se aísla** |
+| User | `user` | los números de usuario y grupo | **por omisión, no se aísla**; sí se puede activar (`userns-remap`, *rootless*; ver abajo) |
+| Time | `time` | ciertos relojes del sistema | **por omisión, no se aísla**; la referencia de `docker run` no lista ninguna opción para aislarlo |
 
 La fila de Network explica algo que vas a usar desde la Lección 2: dos contenedores pueden escuchar en el puerto 8080 al mismo tiempo sin pelearse, porque cada uno tiene su propia red. La de Mount explica por qué el contenedor de Debian veía archivos de Debian aunque tu equipo sea Mint.
 
@@ -356,7 +356,7 @@ Con límites, cada opción de `docker run` se convierte en un número que el nú
 - `--cpus 0.5` se volvió `50000 100000`: en cada décima de segundo, el grupo puede usar la CPU durante la mitad, 50,000 microsegundos. Es media CPU.
 - `--pids-limit 50` se volvió `50`.
 
-Fíjate en la cadena de responsabilidades. Tú escribes una opción en `docker run`; Docker la traduce y la escribe en un archivo del núcleo; el núcleo es quien la aplica. Docker no vigila al contenedor: el que vigila es el núcleo. Por eso el límite funciona aunque el programa de dentro sea malicioso o esté descompuesto.
+Fíjate en la cadena de responsabilidades. Tú escribes una opción en `docker run`; Docker la traduce y la escribe en un archivo del núcleo; el núcleo es quien la aplica. Docker no vigila al contenedor: el que vigila es el núcleo. Por eso el límite se cumple aunque el programa de dentro esté descompuesto y gaste sin freno memoria o procesos. Ojo con lo que el límite **no** promete: acota lo que el grupo gasta, no lo protege a él ni a ti de un ataque dirigido al núcleo compartido; de eso se ocupan las capas de 0.7.
 
 #### 0.4.3 Lo que pasa cuando se alcanza el límite
 
@@ -389,9 +389,9 @@ código de salida: 137
 OOMKilled=true  ExitCode=137
 ```
 
-Esta salida es estable. Aquí no se usa `--rm`, a propósito: si Docker borrara el contenedor al terminar, no podrías preguntarle después qué le pasó. `--memory-swap 32m` fija el total de memoria más intercambio en el mismo valor que la memoria, o sea, cero de intercambio; sin eso, el proceso tardaría más en morir porque primero llenaría el disco de intercambio.
+Esta salida es estable. Aquí no se usa `--rm`, a propósito: si Docker borrara el contenedor al terminar, no podrías preguntarle después qué le pasó. `--memory-swap 32m` fija el total de memoria más intercambio en el mismo valor que la memoria, o sea, cero de intercambio; sin eso, Docker permite al contenedor usar tanto intercambio como memoria (con `--memory 32m`, otros 32 MiB, siempre que el anfitrión tenga intercambio configurado), así que el proceso sobreviviría más tiempo y el OOM llegaría más tarde ([Docker, «Resource constraints»](https://docs.docker.com/engine/containers/resource_constraints/)).
 
-El contenedor imprimió su mensaje, empezó a comer memoria y, al llegar a 32 MiB, el núcleo lo mató. Nadie más en el equipo se enteró: la base de datos de la escena, si hubiera estado ahí, seguiría viva. El número **137** es la convención para decir «este proceso murió por una señal»: es 128 más el número de la señal, y la señal 9 es `KILL`, la que no se puede atrapar ni ignorar. La convención no la inventó Docker: es la del *shell*, cuyo manual dice que, cuando un comando termina por la señal N, *bash* usa 128+N como código de salida ([manual de Bash](https://www.gnu.org/software/bash/manual/html_node/Exit-Status.html)); puedes comprobarlo en cualquier *bash*: `bash -c 'kill -9 $$'; echo $?` imprime `137`. Docker anota el mismo número en `ExitCode`, y `docker run` lo devuelve tal cual, porque cualquier código distinto de 125, 126 y 127 es el del comando del contenedor ([Docker, códigos de salida](https://docs.docker.com/engine/containers/run/)). Y `OOMKilled=true` es Docker confirmando que fue por falta de memoria. La sección «El error que vas a ver» te dice cómo leer esto cuando aparezca sin que lo hayas provocado.
+El contenedor imprimió su mensaje, empezó a comer memoria y, al llegar a 32 MiB, el núcleo lo mató dentro de su propio grupo. El núcleo no tuvo que escoger a otro: la base de datos de la escena, si hubiera estado ahí, no habría sido la elegida. El número **137** es la convención para decir «este proceso murió por una señal»: es 128 más el número de la señal, y la señal 9 es `KILL`, la que no se puede atrapar ni ignorar. La convención no la inventó Docker: es la del *shell*, cuyo manual dice que, cuando un comando termina por la señal N, *bash* usa 128+N como código de salida ([manual de Bash](https://www.gnu.org/software/bash/manual/html_node/Exit-Status.html)); puedes comprobarlo en cualquier *bash*: `bash -c 'kill -9 $$'; echo $?` imprime `137`. Docker anota el mismo número en `ExitCode`, y `docker run` lo devuelve tal cual, porque cualquier código distinto de 125, 126 y 127 es el del comando del contenedor ([Docker, códigos de salida](https://docs.docker.com/engine/containers/run/)). Y `OOMKilled=true` es Docker confirmando que fue por falta de memoria. La sección «El error que vas a ver» te dice cómo leer esto cuando aparezca sin que lo hayas provocado.
 
 Ahora puedes reescribir la escena con precisión. El contenedor del `revisor` estaba en su propio espacio de nombres —no veía a la base de datos—, pero en un grupo de control sin límite —gastaba de la misma bolsa—. Cuando la bolsa se vació, el núcleo tuvo que matar a alguien **en todo el equipo**, no solo en el grupo del contenedor, y escogió a otro. Con `--memory`, el asesino habría actuado **dentro del grupo** del `revisor`, y solo el `revisor` habría muerto. La Lección 2 pone límites desde el primer contenedor por esta razón.
 
@@ -528,7 +528,7 @@ Tres cosas que se aprenden de esta salida:
 
 1. **`docker version` reporta dos versiones**, porque son dos programas. Casi siempre coinciden, pero no tienen por qué: en la Mac de estas corridas, el cliente de macOS era la 29.8.2 y el daemon de la máquina virtual, la 29.2.1. Cuando un comando se porta raro, la primera pregunta es cuál de las dos versiones lo está causando.
 2. **El cliente y el daemon se hablan por el *socket***. Es una puerta, y quien pueda abrirla manda sobre el daemon.
-3. **Sin daemon, el cliente no sirve para nada.** El mensaje dice exactamente eso: no pudo conectarse a la API de Docker en esa ruta; revisa que la ruta sea correcta y que el daemon esté corriendo. En tu Mint vas a ver este mensaje con la ruta `/var/run/docker.sock` el día que el servicio de Docker esté detenido.
+3. **Sin daemon, el cliente no puede pedirle nada a Docker.** Los comandos que no necesitan al daemon, como `docker --version` o `docker context ls`, sí responden. El mensaje dice eso: no pudo conectarse a la API de Docker en esa ruta; revisa que la ruta sea correcta y que el daemon esté corriendo. En tu Mint vas a ver este mensaje con la ruta `/var/run/docker.sock` el día que el servicio de Docker esté detenido.
 
 #### 0.6.2 Por qué importa saberlo
 
@@ -623,7 +623,7 @@ Con el mapa de esta lección, cada lección siguiente es una pieza que ya sabes 
 - La **Lección 2** maneja procesos aislados: arrancarlos, mirarlos, ponerles presupuesto (0.4) y borrarlos.
 - Las **Lecciones 3, 4 y 5** construyen la **imagen** del `revisor` (0.5): su receta, sus capas y cómo hacerla pequeña.
 - La **Lección 6** separa la configuración y los secretos de la imagen.
-- La **Lección 7** se ocupa del proceso número 1 (0.1) y de recortar sus poderes (0.7).
+- La **Lección 3** mide qué pasa con la señal de `docker stop` según cómo se escriba el `CMD`; la **Lección 7** se ocupa del proceso número 1 (0.1) y de recortar sus poderes (0.7).
 - La **Lección 8** resuelve que la capa del contenedor sea desechable (0.5) y conecta contenedores por red (0.3).
 - La **Lección 9** describe todo eso en un archivo, y la **10** entrega la imagen OCI (0.8) lista para Kubernetes.
 

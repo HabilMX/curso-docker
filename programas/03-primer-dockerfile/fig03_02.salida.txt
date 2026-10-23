@@ -10,3 +10,12 @@ uid=10001 gid=10001 groups=10001
 
 == 4. ¿Existe ese usuario en /etc/passwd de la imagen?
 no está
+
+== 5. ¿Puede ese usuario abrir un puerto bajo? (primer puerto sin privilegios)
+0
+
+== 6. Lo mismo con la red del anfitrión (--network host)
+0
+
+== 7. Y el valor del propio anfitrión (sin contenedor)
+0

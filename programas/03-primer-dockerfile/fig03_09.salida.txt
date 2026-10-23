@@ -1,0 +1,11 @@
+$ ./fig03_09.sh
+$ ls -A
+.dockerignore
+Dockerfile
+cmd
+go.mod
+internal
+$ docker build -q -t curso-docker-l03-revisor:1.0.0-carpeta .
+sha256:1eb7de83592844d2ad855ac15a82a62737971a8b15c0809903d59bc4896e5c6f
+$ docker image ls curso-docker-l03-revisor --format '{{.Repository}}:{{.Tag}} {{.Size}}'
+curso-docker-l03-revisor:1.0.0-carpeta 1.45GB

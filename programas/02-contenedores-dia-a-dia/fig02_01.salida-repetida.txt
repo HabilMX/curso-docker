@@ -1,0 +1,84 @@
+== 1. Correr la imagen antes de construirla
+2acb5a5c09e647e1ffc82cfcfba423d601fe77e980a1cc17b16cafb954364b49
+código de salida: 0
+
+== 2. Construirla: un solo comando
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 836B done
+#1 DONE 0.3s
+
+#2 resolve image config for docker-image://docker.io/docker/dockerfile:1
+#2 DONE 1.7s
+
+#3 docker-image://docker.io/docker/dockerfile:1@sha256:4edf897a3ffa55b89f906fc8cc78afdb3f1834cc9c7083565e611a8a7d5fe99e
+#3 resolve docker.io/docker/dockerfile:1@sha256:4edf897a3ffa55b89f906fc8cc78afdb3f1834cc9c7083565e611a8a7d5fe99e
+#3 resolve docker.io/docker/dockerfile:1@sha256:4edf897a3ffa55b89f906fc8cc78afdb3f1834cc9c7083565e611a8a7d5fe99e 0.2s done
+#3 DONE 0.2s
+
+#3 docker-image://docker.io/docker/dockerfile:1@sha256:4edf897a3ffa55b89f906fc8cc78afdb3f1834cc9c7083565e611a8a7d5fe99e
+#3 CACHED
+
+#4 [internal] load metadata for docker.io/library/golang:1.27.3-trixie@sha256:604106102d33b1084e37ca08adf98ac0813624ae8595bd0d7f3965ecebded09c
+#4 DONE 0.3s
+
+#5 [internal] load metadata for gcr.io/distroless/static-debian13:nonroot@sha256:516757106de35205efb70b91ba03f6f1298424a0678c603255cf2852a7000087
+#5 DONE 0.3s
+
+#6 [internal] load .dockerignore
+#6 transferring context: 2B 0.0s done
+#6 DONE 0.0s
+
+#7 [internal] load build context
+#7 DONE 0.0s
+
+#8 [stage-1 1/2] FROM gcr.io/distroless/static-debian13:nonroot@sha256:516757106de35205efb70b91ba03f6f1298424a0678c603255cf2852a7000087
+#8 resolve gcr.io/distroless/static-debian13:nonroot@sha256:516757106de35205efb70b91ba03f6f1298424a0678c603255cf2852a7000087
+#8 resolve gcr.io/distroless/static-debian13:nonroot@sha256:516757106de35205efb70b91ba03f6f1298424a0678c603255cf2852a7000087 0.2s done
+#8 DONE 0.2s
+
+#9 [compilacion 1/4] FROM docker.io/library/golang:1.27.3-trixie@sha256:604106102d33b1084e37ca08adf98ac0813624ae8595bd0d7f3965ecebded09c
+#9 resolve docker.io/library/golang:1.27.3-trixie@sha256:604106102d33b1084e37ca08adf98ac0813624ae8595bd0d7f3965ecebded09c
+#9 resolve docker.io/library/golang:1.27.3-trixie@sha256:604106102d33b1084e37ca08adf98ac0813624ae8595bd0d7f3965ecebded09c 0.2s done
+#9 DONE 0.2s
+
+#7 [internal] load build context
+#7 transferring context: 54B 0.0s done
+#7 DONE 0.0s
+
+#10 [compilacion 2/4] WORKDIR /src
+#10 CACHED
+
+#11 [compilacion 3/4] COPY go.mod main.go ./
+#11 CACHED
+
+#12 [compilacion 4/4] RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/servicio-prueba .
+#12 CACHED
+
+#13 [stage-1 2/2] COPY --from=compilacion /out/servicio-prueba /servicio-prueba
+#13 CACHED
+
+#14 exporting to image
+#14 exporting layers done
+#14 exporting manifest sha256:1c8afd3011b1b78feb6d6d666f8a3a56ccbc28376efb6a2c55cc183e80eb0892 done
+#14 exporting config sha256:b03af2ba3fc5b02668360cfc0bb63d0f5758ff2496551c7a2c485cf54248228b done
+#14 exporting attestation manifest sha256:3dc24fa2ce5d1133b0b48d1b36a5ad01e8a98aaefea5bebe4c793defb01f7c54
+#14 exporting attestation manifest sha256:3dc24fa2ce5d1133b0b48d1b36a5ad01e8a98aaefea5bebe4c793defb01f7c54 0.1s done
+#14 exporting manifest list sha256:4cd8741b87577a8335767ebabe51db7de3d75553a52b3b1a83e78c57ba492a23 0.0s done
+#14 naming to docker.io/library/curso-docker-l02-prueba:1.0.0
+#14 naming to docker.io/library/curso-docker-l02-prueba:1.0.0 done
+#14 unpacking to docker.io/library/curso-docker-l02-prueba:1.0.0 0.0s done
+#14 DONE 0.2s
+código de salida: 0
+
+== 3. La imagen ya está en tu equipo
+WARNING: This output is designed for human readability. For machine-readable output, please use --format.
+IMAGE                           ID             DISK USAGE   CONTENT SIZE   EXTRA
+curso-docker-l02-prueba:1.0.0   4cd8741b8757       15.1MB         3.37MB   U    
+
+== 4. Y el intento fallido no dejó contenedores
+1
+
+== 5. El tamaño, con un formato propio
+curso-docker-l02-prueba:1.0.0 15.1MB
